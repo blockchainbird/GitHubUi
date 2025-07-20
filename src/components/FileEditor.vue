@@ -162,7 +162,7 @@
                 v-model="termFilter"
                 @keyup="filterTerms"
                 class="form-control"
-                placeholder="Type to filter terms..."
+                placeholder="Type to filter terms or search in definitions..."
                 autocomplete="off"
               >
             </div>
@@ -189,16 +189,19 @@
                   v-for="term in filteredTerms"
                   :key="term.id"
                   @click="insertTermReference(term.id)"
-                  class="list-group-item list-group-item-action d-flex align-items-center"
+                  class="list-group-item list-group-item-action d-flex flex-column align-items-start"
                 >
-                  <i class="bi bi-bookmark-fill me-3" style="color: #0d6efd;"></i>
-                  <div class="flex-grow-1">
-                    <div class="fw-medium">{{ term.id }}</div>
-                    <small v-if="term.aliases.length > 0" class="text-muted">
-                      Aliases: {{ term.aliases.join(', ') }}
-                    </small>
-                    <small class="text-muted d-block">{{ term.file }}</small>
+                  <div class="d-flex align-items-center w-100 mb-2">
+                    <i class="bi bi-bookmark-fill me-3" style="color: #0d6efd;"></i>
+                    <div class="flex-grow-1">
+                      <div class="fw-medium">{{ term.id }}</div>
+                      <small v-if="term.aliases.length > 0" class="text-muted">
+                        Aliases: {{ term.aliases.join(', ') }}
+                      </small>
+                      <small class="text-muted d-block">{{ term.file }}</small>
+                    </div>
                   </div>
+                  <div v-if="term.definition" class="definition-preview w-100 mt-2 pt-2 border-top" v-html="term.definition"></div>
                 </button>
               </div>
             </div>
@@ -497,12 +500,35 @@ export default {
                 aliasesStr.split(',').map(a => a.trim()).filter(a => a.length > 0) : 
                 []
               
+              // Extract definition lines that start with ~ after the term definition
+              const definitionLines = []
+              for (let j = i + 1; j < lines.length; j++) {
+                const defLine = lines[j].trim()
+                if (defLine.startsWith('~')) {
+                  // Remove the ~ and trim whitespace
+                  definitionLines.push(defLine.substring(1).trim())
+                } else if (defLine === '') {
+                  // Skip empty lines
+                  continue
+                } else {
+                  // Stop when we hit a non-~ line that's not empty
+                  break
+                }
+              }
+              
+              // Convert definition lines to HTML <dl> format
+              const definitionHtml = definitionLines.length > 0 
+                ? `<dl>${definitionLines.map(def => `<dd>${def}</dd>`).join('')}</dl>`
+                : ''
+              
               // Validate term ID (should not be empty)
               if (termId) {
                 return {
                   id: termId,
                   aliases: aliases,
-                  file: filePath
+                  file: filePath,
+                  definition: definitionHtml,
+                  definitionText: definitionLines.join(' ')
                 }
               }
             }
@@ -613,7 +639,8 @@ export default {
       } else {
         filteredTerms.value = terms.value.filter(term => 
           term.id.toLowerCase().includes(filter) ||
-          term.aliases.some(alias => alias.toLowerCase().includes(filter))
+          term.aliases.some(alias => alias.toLowerCase().includes(filter)) ||
+          (term.definitionText && term.definitionText.toLowerCase().includes(filter))
         )
       }
     }
@@ -743,6 +770,28 @@ textarea:focus {
 
 .terms-list .list-group-item:last-child {
   border-bottom: none;
+}
+
+.definition-preview {
+  font-size: 0.85rem;
+  color: #6c757d;
+  background-color: #f8f9fa;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  border-left: 3px solid #0d6efd;
+}
+
+.definition-preview dl {
+  margin: 0;
+}
+
+.definition-preview dd {
+  margin: 0;
+  padding: 0.25rem 0;
+}
+
+.definition-preview dd:last-child {
+  padding-bottom: 0;
 }
 </style>
 
