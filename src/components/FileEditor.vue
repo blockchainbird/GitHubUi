@@ -162,7 +162,7 @@
                 v-model="termFilter"
                 @keyup="filterTerms"
                 class="form-control"
-                placeholder="Type to filter terms or search in definitions..."
+                placeholder="Search terms, definitions, or external specs..."
                 autocomplete="off"
               >
             </div>
@@ -187,19 +187,25 @@
               <div class="list-group">
                 <button
                   v-for="term in filteredTerms"
-                  :key="term.id"
-                  @click="insertTermReference(term.id)"
+                  :key="term.id + (term.external ? '_' + term.externalSpec : '')"
+                  @click="insertTermReference(term)"
                   class="list-group-item list-group-item-action d-flex flex-column align-items-start"
+                  :class="{ 'external-term': term.external }"
                 >
                   <div class="d-flex align-items-center w-100 mb-2">
-                    <i class="bi bi-bookmark-fill me-3" style="color: #0d6efd;"></i>
+                    <i class="bi me-3" 
+                       :class="term.external ? 'bi-link-45deg' : 'bi-bookmark-fill'"
+                       :style="term.external ? 'color: #198754;' : 'color: #0d6efd;'"></i>
                     <div class="flex-grow-1">
                       <div class="fw-medium">{{ term.id }}</div>
                       <small v-if="term.aliases.length > 0" class="text-muted">
                         Aliases: {{ term.aliases.join(', ') }}
                       </small>
-                      <small class="text-muted d-block">{{ term.file }}</small>
+                      <small class="text-muted d-block">
+                        {{ term.external ? term.source : term.file }}
+                      </small>
                     </div>
+                    <span v-if="term.external" class="badge bg-success">External</span>
                   </div>
                   <div v-if="term.definition" class="definition-preview w-100 mt-2 pt-2 border-top" v-html="term.definition"></div>
                 </button>
@@ -449,8 +455,8 @@ export default {
           const parsed = JSON.parse(stored)
           // Check if terms were cached within last hour
           if (Date.now() - parsed.timestamp < 3600000) {
-            terms.value = parsed.terms
-            filteredTerms.value = parsed.terms
+            terms.value = parsed.terms || []
+            filteredTerms.value = parsed.terms || []
             return true
           }
         } catch (err) {
@@ -580,7 +586,7 @@ export default {
         
         const termsData = []
         
-        // Process files in parallel but limit concurrency to avoid rate limits
+        // Process local files in parallel but limit concurrency to avoid rate limits
         const batchSize = 5
         for (let i = 0; i < files.length; i += batchSize) {
           const batch = files.slice(i, i + batchSize)
@@ -592,6 +598,12 @@ export default {
               termsData.push(term)
             }
           })
+        }
+        
+        // Load external specs if they exist
+        if (config.external_specs && Array.isArray(config.external_specs)) {
+          const externalTerms = await loadExternalSpecs(config.external_specs)
+          termsData.push(...externalTerms)
         }
         
         termsData.sort((a, b) => a.id.localeCompare(b.id))
@@ -611,6 +623,106 @@ export default {
       } finally {
         loadingTerms.value = false
       }
+    }
+    
+    const loadExternalSpecs = async (externalSpecs) => {
+      const externalTerms = []
+      
+      // Define multiple CORS proxy options, with local PHP proxy first
+      const corsProxies = [
+        '/proxy.php?url=',
+        'https://api.allorigins.win/raw?url=',
+        'https://corsproxy.io/?',
+        'https://api.codetabs.com/v1/proxy?quest=',
+        'https://thingproxy.freeboard.io/fetch/'
+      ]
+      
+      for (const spec of externalSpecs) {
+        let success = false
+        
+        for (let proxyIndex = 0; proxyIndex < corsProxies.length && !success; proxyIndex++) {
+          try {
+            const proxyUrl = corsProxies[proxyIndex]
+            const targetUrl = proxyUrl === 'https://thingproxy.freeboard.io/fetch/' 
+              ? spec.gh_page 
+              : encodeURIComponent(spec.gh_page)
+            
+            console.log(`Loading external spec: ${spec.external_spec} from ${spec.gh_page} (proxy ${proxyIndex + 1}/${corsProxies.length})`)
+            
+            const response = await axios.get(`${proxyUrl}${targetUrl}`, {
+              headers: {
+                'Accept': 'text/html'
+              },
+              timeout: 15000 // Increased timeout to 15 seconds
+            })
+            
+            // Parse the HTML to extract terms from the dl.terms-and-definitions-list
+            const parser = new DOMParser()
+            const doc = parser.parseFromString(response.data, 'text/html')
+            const termsList = doc.querySelector('dl.terms-and-definitions-list')
+            
+            if (termsList) {
+              const dtElements = termsList.querySelectorAll('dt')
+              
+              dtElements.forEach(dt => {
+                const termId = dt.textContent?.trim()
+                if (termId) {
+                  // Collect all dd elements that follow this dt until the next dt
+                  const ddElements = []
+                  let nextElement = dt.nextElementSibling
+                  
+                  while (nextElement && nextElement.tagName.toLowerCase() === 'dd') {
+                    ddElements.push(nextElement.outerHTML)
+                    nextElement = nextElement.nextElementSibling
+                  }
+                  
+                  if (ddElements.length > 0) {
+                    const definitionHtml = `<dl>${ddElements.join('')}</dl>`
+                    const definitionText = ddElements
+                      .map(dd => {
+                        const tempDiv = document.createElement('div')
+                        tempDiv.innerHTML = dd
+                        return tempDiv.textContent || tempDiv.innerText || ''
+                      })
+                      .join(' ')
+                      .trim()
+                    
+                    externalTerms.push({
+                      id: termId,
+                      aliases: [],
+                      file: spec.gh_page,
+                      definition: definitionHtml,
+                      definitionText: definitionText,
+                      external: true,
+                      externalSpec: spec.external_spec,
+                      source: `External: ${spec.external_spec}`
+                    })
+                  }
+                }
+              })
+              
+              console.log(`✅ Successfully loaded ${dtElements.length} terms from ${spec.external_spec} using proxy ${proxyIndex + 1}`)
+              success = true
+            } else {
+              console.warn(`No terms-and-definitions-list found in ${spec.gh_page} using proxy ${proxyIndex + 1}`)
+              // Try next proxy even if HTML was fetched but no terms found
+            }
+          } catch (err) {
+            console.warn(`❌ Proxy ${proxyIndex + 1} failed for ${spec.external_spec}:`, err.message)
+            
+            // If this is the last proxy, log final failure
+            if (proxyIndex === corsProxies.length - 1) {
+              console.error(`🔴 All proxies failed for external spec ${spec.external_spec}. Skipping.`)
+            }
+          }
+        }
+        
+        if (!success) {
+          console.error(`🔴 Unable to load external spec ${spec.external_spec} from ${spec.gh_page} - all proxy methods failed`)
+        }
+      }
+      
+      return externalTerms
     }
     
     const showTermsModal = async () => {
@@ -640,19 +752,26 @@ export default {
         filteredTerms.value = terms.value.filter(term => 
           term.id.toLowerCase().includes(filter) ||
           term.aliases.some(alias => alias.toLowerCase().includes(filter)) ||
-          (term.definitionText && term.definitionText.toLowerCase().includes(filter))
+          (term.definitionText && term.definitionText.toLowerCase().includes(filter)) ||
+          (term.external && term.externalSpec.toLowerCase().includes(filter))
         )
       }
     }
     
-    const insertTermReference = (termId) => {
+    const insertTermReference = (term) => {
       const textarea = editor.value
       if (!textarea) return
       
       const start = textarea.selectionStart
       const end = textarea.selectionEnd
       
-      const refText = `[[ref: ${termId}]]`
+      let refText
+      if (term.external) {
+        refText = `[[tref: ${term.externalSpec}, ${term.id}]]`
+      } else {
+        refText = `[[ref: ${term.id}]]`
+      }
+      
       content.value = content.value.substring(0, start) + refText + content.value.substring(end)
       
       // Hide modal
@@ -792,6 +911,14 @@ textarea:focus {
 
 .definition-preview dd:last-child {
   padding-bottom: 0;
+}
+
+.external-term {
+  border-left: 4px solid #198754 !important;
+}
+
+.external-term:hover {
+  background-color: #f0f8f0 !important;
 }
 </style>
 
