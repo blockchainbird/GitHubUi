@@ -14,8 +14,9 @@ const routes = [
   { path: '/editor/:owner/:repo/:path+', component: FileEditor, props: true }
 ]
 
+const basePath = import.meta.env.VITE_BASE_PATH || '/';
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(basePath),
   routes
 })
 
