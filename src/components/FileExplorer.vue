@@ -79,7 +79,7 @@ import axios from 'axios'
 
 export default {
   name: 'FileExplorer',
-  props: ['owner', 'repo'],
+  props: ['owner', 'repo', 'branch'],
   setup(props) {
     const router = useRouter()
     const loading = ref(true)
@@ -98,19 +98,19 @@ export default {
             'Accept': 'application/vnd.github.v3+json'
           }
         }
-        
-        // Try to get specs.json from repository root
+
+        // Try to get specs.json from repository root, with branch
         const response = await axios.get(
-          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/specs.json`,
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/specs.json?ref=${props.branch}`,
           config
         )
-        
+
         // Decode base64 content
         const content = JSON.parse(atob(response.data.content))
         specDirectory.value = content.spec_directory || 'spec'
         currentDirectory.value = specDirectory.value
         await loadSpecFiles(currentDirectory.value)
-        
+
       } catch (err) {
         console.error('Error loading specs config:', err)
         if (err.response?.status === 404) {
@@ -135,9 +135,9 @@ export default {
             'Accept': 'application/vnd.github.v3+json'
           }
         }
-        // Get files and folders from the given directory
+        // Get files and folders from the given directory, with branch
         const response = await axios.get(
-          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${directory}`,
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${directory}?ref=${props.branch}`,
           config
         )
         // Folders
