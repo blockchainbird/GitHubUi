@@ -82,6 +82,9 @@
                   <button @click="insertList" class="btn btn-outline-secondary" title="List">
                     <i class="bi bi-list-ul"></i>
                   </button>
+                  <button @click="showTermsModal" class="btn btn-outline-info" title="Insert Term Reference">
+                    <i class="bi bi-bookmark"></i>
+                  </button>
                 </div>
               </div>
               
@@ -136,6 +139,80 @@
         </div>
       </div>
     </div>
+
+    <!-- Terms Modal -->
+    <div class="modal fade" id="termsModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="bi bi-bookmark"></i>
+              Insert Term Reference
+              <small v-if="!loadingTerms && terms.length > 0" class="text-muted">
+                ({{ filteredTerms.length }} of {{ terms.length }} terms)
+              </small>
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="termFilter" class="form-label">Search Terms</label>
+              <input
+                id="termFilter"
+                v-model="termFilter"
+                @keyup="filterTerms"
+                class="form-control"
+                placeholder="Type to filter terms..."
+                autocomplete="off"
+              >
+            </div>
+            
+            <div v-if="loadingTerms" class="text-center py-4">
+              <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading terms...</span>
+              </div>
+              <p class="mt-2">Loading terms from repository...</p>
+            </div>
+            
+            <div v-else-if="termsError" class="alert alert-warning" role="alert">
+              {{ termsError }}
+            </div>
+            
+            <div v-else-if="filteredTerms.length === 0 && !loadingTerms" class="text-center py-4">
+              <i class="bi bi-search" style="font-size: 2rem; color: #6c757d;"></i>
+              <p class="mt-2 text-muted">No terms found matching your search.</p>
+            </div>
+            
+            <div v-else class="terms-list" style="max-height: 400px; overflow-y: auto;">
+              <div class="list-group">
+                <button
+                  v-for="term in filteredTerms"
+                  :key="term.id"
+                  @click="insertTermReference(term.id)"
+                  class="list-group-item list-group-item-action d-flex align-items-center"
+                >
+                  <i class="bi bi-bookmark-fill me-3" style="color: #0d6efd;"></i>
+                  <div class="flex-grow-1">
+                    <div class="fw-medium">{{ term.id }}</div>
+                    <small v-if="term.aliases.length > 0" class="text-muted">
+                      Aliases: {{ term.aliases.join(', ') }}
+                    </small>
+                    <small class="text-muted d-block">{{ term.file }}</small>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" @click="refreshTerms" class="btn btn-outline-primary" :disabled="loadingTerms">
+              <i class="bi bi-arrow-clockwise"></i>
+              Refresh Terms
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -146,7 +223,7 @@ import axios from 'axios'
 
 export default {
   name: 'FileEditor',
-  props: ['owner', 'repo', 'path'],
+  props: ['owner', 'repo', 'branch', 'path'],
   setup(props) {
     const router = useRouter()
     const loading = ref(true)
@@ -159,6 +236,14 @@ export default {
     const editMode = ref('edit')
     const commitMessage = ref('')
     const editor = ref(null)
+    
+    // Terms functionality
+    const terms = ref([])
+    const filteredTerms = ref([])
+    const termFilter = ref('')
+    const loadingTerms = ref(false)
+    const termsError = ref('')
+    const specsConfig = ref(null)
     
     const filename = computed(() => {
       return props.path ? decodeURIComponent(props.path).split('/').pop() : ''
@@ -208,7 +293,7 @@ export default {
         }
         
         const response = await axios.get(
-          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${decodedPath.value}`,
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${decodedPath.value}?ref=${props.branch}`,
           config
         )
         
@@ -296,7 +381,8 @@ export default {
         const data = {
           message: commitMessage.value,
           content: btoa(content.value),
-          sha: fileSha.value
+          sha: fileSha.value,
+          branch: props.branch
         }
         
         const response = await axios.put(
@@ -321,8 +407,247 @@ export default {
       }
     }
     
+    // Terms functionality methods
+    const loadSpecsConfig = async () => {
+      try {
+        const token = localStorage.getItem('github_token')
+        const config = {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        }
+
+        const response = await axios.get(
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/specs.json?ref=${props.branch}`,
+          config
+        )
+
+        const content = JSON.parse(atob(response.data.content))
+        specsConfig.value = content
+        return content
+      } catch (err) {
+        console.error('Error loading specs config:', err)
+        // Default fallback
+        return {
+          specs: [{
+            spec_directory: './spec',
+            spec_terms_directory: 'terms-definitions'
+          }]
+        }
+      }
+    }
+    
+    const loadTermsFromStorage = () => {
+      const storageKey = `terms_${props.owner}_${props.repo}_${props.branch}`
+      const stored = localStorage.getItem(storageKey)
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored)
+          // Check if terms were cached within last hour
+          if (Date.now() - parsed.timestamp < 3600000) {
+            terms.value = parsed.terms
+            filteredTerms.value = parsed.terms
+            return true
+          }
+        } catch (err) {
+          console.error('Error parsing stored terms:', err)
+        }
+      }
+      return false
+    }
+    
+    const saveTermsToStorage = (termsData) => {
+      const storageKey = `terms_${props.owner}_${props.repo}_${props.branch}`
+      const data = {
+        terms: termsData,
+        timestamp: Date.now()
+      }
+      localStorage.setItem(storageKey, JSON.stringify(data))
+    }
+    
+    const extractTermsFromFile = async (filePath) => {
+      try {
+        const token = localStorage.getItem('github_token')
+        const config = {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        }
+        
+        const response = await axios.get(
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${filePath}?ref=${props.branch}`,
+          config
+        )
+        
+        const content = atob(response.data.content)
+        const lines = content.split('\n')
+        
+        // Find the first non-empty line and check if it contains a term definition
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim()
+          if (line) {
+            // More robust regex to handle various whitespace patterns
+            const termMatch = line.match(/^\[\[def:\s*([^,\]]+)(?:,\s*([^\]]+))?\]\]/)
+            if (termMatch) {
+              const termId = termMatch[1].trim()
+              const aliasesStr = termMatch[2]
+              const aliases = aliasesStr ? 
+                aliasesStr.split(',').map(a => a.trim()).filter(a => a.length > 0) : 
+                []
+              
+              // Validate term ID (should not be empty)
+              if (termId) {
+                return {
+                  id: termId,
+                  aliases: aliases,
+                  file: filePath
+                }
+              }
+            }
+            break // Only check the first content line
+          }
+        }
+      } catch (err) {
+        console.error(`Error loading file ${filePath}:`, err)
+      }
+      return null
+    }
+    
+    const loadTermsFromRepository = async () => {
+      loadingTerms.value = true
+      termsError.value = ''
+      
+      try {
+        // Load specs config if not already loaded
+        if (!specsConfig.value) {
+          specsConfig.value = await loadSpecsConfig()
+        }
+        
+        const config = specsConfig.value.specs[0]
+        const specDir = config.spec_directory.replace('./', '')
+        const termsDir = config.spec_terms_directory
+        const fullTermsPath = `${specDir}/${termsDir}`
+        
+        const token = localStorage.getItem('github_token')
+        const requestConfig = {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        }
+        
+        // Get files in terms directory
+        const response = await axios.get(
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${fullTermsPath}?ref=${props.branch}`,
+          requestConfig
+        )
+        
+        const files = response.data.filter(item => 
+          item.type === 'file' && 
+          (item.name.toLowerCase().endsWith('.md') || 
+           item.name.toLowerCase().endsWith('.txt') ||
+           item.name.toLowerCase().endsWith('.rst') ||
+           item.name.toLowerCase().endsWith('.adoc'))
+        )
+        
+        const termsData = []
+        
+        // Process files in parallel but limit concurrency to avoid rate limits
+        const batchSize = 5
+        for (let i = 0; i < files.length; i += batchSize) {
+          const batch = files.slice(i, i + batchSize)
+          const promises = batch.map(file => extractTermsFromFile(file.path))
+          const results = await Promise.all(promises)
+          
+          results.forEach(term => {
+            if (term) {
+              termsData.push(term)
+            }
+          })
+        }
+        
+        termsData.sort((a, b) => a.id.localeCompare(b.id))
+        terms.value = termsData
+        filteredTerms.value = termsData
+        
+        // Save to local storage
+        saveTermsToStorage(termsData)
+        
+      } catch (err) {
+        console.error('Error loading terms:', err)
+        if (err.response?.status === 404) {
+          termsError.value = 'Terms directory not found in repository.'
+        } else {
+          termsError.value = 'Failed to load terms from repository.'
+        }
+      } finally {
+        loadingTerms.value = false
+      }
+    }
+    
+    const showTermsModal = async () => {
+      // Try to load from storage first
+      if (!loadTermsFromStorage()) {
+        // If not in storage, load from repository
+        await loadTermsFromRepository()
+      }
+      
+      // Reset filter
+      termFilter.value = ''
+      filteredTerms.value = terms.value
+      
+      // Show modal
+      const modal = new bootstrap.Modal(document.getElementById('termsModal'))
+      modal.show()
+    }
+    
+    const filterTerms = () => {
+      const filter = termFilter.value.toLowerCase()
+      if (!filter) {
+        filteredTerms.value = terms.value
+      } else {
+        filteredTerms.value = terms.value.filter(term => 
+          term.id.toLowerCase().includes(filter) ||
+          term.aliases.some(alias => alias.toLowerCase().includes(filter))
+        )
+      }
+    }
+    
+    const insertTermReference = (termId) => {
+      const textarea = editor.value
+      if (!textarea) return
+      
+      const start = textarea.selectionStart
+      const end = textarea.selectionEnd
+      
+      const refText = `[[ref: ${termId}]]`
+      content.value = content.value.substring(0, start) + refText + content.value.substring(end)
+      
+      // Hide modal
+      const modal = bootstrap.Modal.getInstance(document.getElementById('termsModal'))
+      modal.hide()
+      
+      nextTick(() => {
+        textarea.focus()
+        const newPosition = start + refText.length
+        textarea.setSelectionRange(newPosition, newPosition)
+      })
+    }
+    
+    const refreshTerms = async () => {
+      // Clear storage cache
+      const storageKey = `terms_${props.owner}_${props.repo}_${props.branch}`
+      localStorage.removeItem(storageKey)
+      
+      // Reload from repository
+      await loadTermsFromRepository()
+      filterTerms()
+    }
+    
     const goBack = () => {
-      router.push(`/files/${props.owner}/${props.repo}`)
+      router.push(`/files/${props.owner}/${props.repo}/${props.branch}`)
     }
     
     onMounted(() => {
@@ -349,7 +674,17 @@ export default {
       insertList,
       saveFile,
       commitChanges,
-      goBack
+      goBack,
+      // Terms functionality
+      terms,
+      filteredTerms,
+      termFilter,
+      loadingTerms,
+      termsError,
+      showTermsModal,
+      filterTerms,
+      insertTermReference,
+      refreshTerms
     }
   }
 }
@@ -388,4 +723,24 @@ textarea:focus {
   box-shadow: none !important;
   border-color: transparent !important;
 }
+
+.terms-list .list-group-item:hover {
+  background-color: #f8f9fa;
+}
+
+.terms-list .list-group-item {
+  cursor: pointer;
+  border-left: none;
+  border-right: none;
+}
+
+.terms-list .list-group-item:first-child {
+  border-top: none;
+}
+
+.terms-list .list-group-item:last-child {
+  border-bottom: none;
+}
 </style>
+
+```
