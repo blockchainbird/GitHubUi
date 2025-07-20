@@ -178,7 +178,7 @@ export default {
     
     const openFile = (file) => {
       const encodedPath = encodeURIComponent(file.path)
-      router.push(`/editor/${props.owner}/${props.repo}/${encodedPath}`)
+      router.push(`/editor/${props.owner}/${props.repo}/${props.branch}/${encodedPath}`)
     }
 
     const openFolder = (folder) => {
