@@ -7,7 +7,8 @@ yarn-error.log*
 # Production build
 dist/
 
-# Local development
+# env files
+.env
 .env.local
 .env.development.local
 .env.test.local
