@@ -107,7 +107,12 @@ export default {
 
         // Decode base64 content
         const content = JSON.parse(atob(response.data.content))
-        specDirectory.value = content.spec_directory || 'spec'
+        // Get spec_directory from the first item in specs array
+        if (Array.isArray(content.specs) && content.specs.length > 0) {
+          specDirectory.value = content.specs[0].spec_directory || 'spec'
+        } else {
+          specDirectory.value = 'spec'
+        }
         currentDirectory.value = specDirectory.value
         await loadSpecFiles(currentDirectory.value)
 
