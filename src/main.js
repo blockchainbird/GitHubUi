@@ -19,6 +19,17 @@ const router = createRouter({
   history: createWebHistory(basePath),
   routes
 })
+// Global navigation guard to check authentication
+router.beforeEach((to, from, next) => {
+  const publicPages = ['/login'];
+  const authRequired = !publicPages.includes(to.path);
+  const user = localStorage.getItem('github_user');
+  if (authRequired && !user) {
+    next('/login');
+  } else {
+    next();
+  }
+});
 
 const app = createApp(App)
 app.use(router)
