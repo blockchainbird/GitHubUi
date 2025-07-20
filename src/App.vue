@@ -4,7 +4,7 @@
       <div class="container-fluid">
         <a class="navbar-brand" href="#">
           <i class="bi bi-github"></i>
-          GitHub UI - Spec Editor
+          Spec-Up-T Editor
         </a>
         <div v-if="isAuthenticated" class="d-flex">
           <span class="navbar-text me-3">{{ user.login }}</span>
