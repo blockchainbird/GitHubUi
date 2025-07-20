@@ -588,19 +588,22 @@ export default {
     }
     
     const showTermsModal = async () => {
+      // Show modal immediately with loading spinner
+      loadingTerms.value = true
+      termsError.value = ''
+      termFilter.value = ''
+      filteredTerms.value = []
+      const modal = new bootstrap.Modal(document.getElementById('termsModal'))
+      modal.show()
+
       // Try to load from storage first
       if (!loadTermsFromStorage()) {
         // If not in storage, load from repository
         await loadTermsFromRepository()
+      } else {
+        loadingTerms.value = false
       }
-      
-      // Reset filter
-      termFilter.value = ''
       filteredTerms.value = terms.value
-      
-      // Show modal
-      const modal = new bootstrap.Modal(document.getElementById('termsModal'))
-      modal.show()
     }
     
     const filterTerms = () => {
