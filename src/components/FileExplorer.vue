@@ -37,6 +37,21 @@
           </div>
           
           <div v-else class="list-group list-group-flush">
+            <!-- Show folders first -->
+            <button
+              v-for="folder in folders"
+              :key="folder.path"
+              @click="openFolder(folder)"
+              class="list-group-item list-group-item-action d-flex align-items-center"
+            >
+              <i class="bi bi-folder-fill me-3" style="color: #ffc107;"></i>
+              <div class="flex-grow-1">
+                <div class="fw-medium">{{ folder.name }}</div>
+                <small class="text-muted">{{ folder.path }}</small>
+              </div>
+              <i class="bi bi-chevron-right"></i>
+            </button>
+            <!-- Then show files -->
             <button
               v-for="file in files"
               :key="file.path"
@@ -71,6 +86,8 @@ export default {
     const error = ref('')
     const specDirectory = ref('')
     const files = ref([])
+    const folders = ref([])
+    const currentDirectory = ref('')
     
     const loadSpecsConfig = async () => {
       try {
@@ -91,23 +108,26 @@ export default {
         // Decode base64 content
         const content = JSON.parse(atob(response.data.content))
         specDirectory.value = content.spec_directory || 'spec'
-        
-        await loadSpecFiles()
+        currentDirectory.value = specDirectory.value
+        await loadSpecFiles(currentDirectory.value)
         
       } catch (err) {
         console.error('Error loading specs config:', err)
         if (err.response?.status === 404) {
           error.value = 'specs.json file not found in repository root. Using default "specs" directory.'
           specDirectory.value = 'specs'
-          await loadSpecFiles()
+          currentDirectory.value = specDirectory.value
+          await loadSpecFiles(currentDirectory.value)
         } else {
           error.value = 'Failed to load repository configuration.'
         }
       }
     }
     
-    const loadSpecFiles = async () => {
+    const loadSpecFiles = async (directory) => {
       try {
+        loading.value = true
+        error.value = ''
         const token = localStorage.getItem('github_token')
         const config = {
           headers: {
@@ -115,14 +135,19 @@ export default {
             'Accept': 'application/vnd.github.v3+json'
           }
         }
-        
-        // Get files from spec directory
+        // Get files and folders from the given directory
         const response = await axios.get(
-          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${specDirectory.value}`,
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${directory}`,
           config
         )
-        
-        // Filter for text files (md, txt, etc.)
+        // Folders
+        folders.value = response.data
+          .filter(item => item.type === 'dir')
+          .map(folder => ({
+            name: folder.name,
+            path: folder.path
+          }))
+        // Files
         const textFileExtensions = ['.md', '.txt', '.rst', '.adoc', '.html']
         files.value = response.data
           .filter(file => file.type === 'file')
@@ -133,11 +158,11 @@ export default {
             sha: file.sha,
             download_url: file.download_url
           }))
-        
+        currentDirectory.value = directory
       } catch (err) {
         console.error('Error loading spec files:', err)
         if (err.response?.status === 404) {
-          error.value = `Spec directory "${specDirectory.value}" not found in repository.`
+          error.value = `Spec directory "${directory}" not found in repository.`
         } else {
           error.value = 'Failed to load spec files.'
         }
@@ -150,6 +175,10 @@ export default {
       const encodedPath = encodeURIComponent(file.path)
       router.push(`/editor/${props.owner}/${props.repo}/${encodedPath}`)
     }
+
+    const openFolder = (folder) => {
+      loadSpecFiles(folder.path)
+    }
     
     onMounted(() => {
       loadSpecsConfig()
@@ -160,7 +189,10 @@ export default {
       error,
       specDirectory,
       files,
-      openFile
+      folders,
+      openFile,
+      openFolder,
+      currentDirectory
     }
   }
 }
