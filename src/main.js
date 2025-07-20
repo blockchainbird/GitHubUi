@@ -10,7 +10,7 @@ const routes = [
   { path: '/', redirect: '/login' },
   { path: '/login', component: LoginPage },
   { path: '/home', component: HomePage },
-  { path: '/files/:owner/:repo', component: FileExplorer, props: true },
+  { path: '/files/:owner/:repo/:branch', component: FileExplorer, props: true },
   { path: '/editor/:owner/:repo/:path+', component: FileEditor, props: true }
 ]
 
