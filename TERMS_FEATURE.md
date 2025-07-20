@@ -1,17 +1,20 @@
 # Term Reference Feature
 
 ## Overview
-The WYSIWYG editor now includes a **Term Reference** feature that allows you to easily insert references to terms defined in your specification documents.
+
+The WYSIWYG editor now includes a **Term Reference** feature that allows you to easily insert references to terms defined in your specification documents and external specifications.
 
 ## How it works
 
 ### 1. Term Collection
 - The feature reads the `specs.json` file from your repository root to get configuration
 - It looks for terms in the `spec_directory/spec_terms_directory` path (e.g., `./spec/terms-definitions`)
+- **NEW**: It also loads terms from external specifications listed in `external_specs`
 - Terms are extracted from the first line of each file that matches this pattern:
   ```
   [[def: term-id, alias1, alias2, ...]]
   ```
+- **External terms** are extracted from GitHub pages using `<dl class="terms-and-definitions-list">` elements
 
 ### 2. Caching
 - Terms are cached in browser localStorage for 1 hour to reduce API calls
@@ -22,9 +25,30 @@ The WYSIWYG editor now includes a **Term Reference** feature that allows you to 
 1. Click the bookmark icon (📖) in the editor toolbar
 2. A modal opens showing all available terms
 3. Use the search box to filter terms by name or alias
-4. Click on any term to insert `[[ref: term-id]]` at cursor position
+4. Click on any term to insert the appropriate reference:
+   - Local terms: `[[ref: term-id]]`
+   - External terms: `[[tref: external_spec, term-id]]`
 
-### 4. Configuration
+### 4. External Specifications
+The feature now supports external specifications defined in `specs.json`:
+```json
+"external_specs": [
+  {
+    "external_spec": "toip1",
+    "gh_page": "https://henkvancann.github.io/ctwg-main-glossary/",
+    "url": "https://github.com/henkvancann/ctwg-main-glossary",
+    "terms_dir": "spec/terms-definitions"
+  }
+]
+```
+
+External terms are:
+- Loaded from GitHub Pages specified in `gh_page`
+- Extracted from `<dl class="terms-and-definitions-list">` elements
+- Displayed with a green link icon and "External" badge
+- Inserted as `[[tref: external_spec, term-id]]` format
+
+### 5. Configuration
 The feature expects a `specs.json` file in the repository root with this structure:
 ```json
 {
