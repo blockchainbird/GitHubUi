@@ -11,7 +11,7 @@ const routes = [
   { path: '/login', component: LoginPage },
   { path: '/home', component: HomePage },
   { path: '/files/:owner/:repo/:branch', component: FileExplorer, props: true },
-  { path: '/editor/:owner/:repo/:path+', component: FileEditor, props: true }
+  { path: '/editor/:owner/:repo/:branch/:path+', component: FileEditor, props: true }
 ]
 
 const basePath = import.meta.env.VITE_BASE_PATH || '/';
