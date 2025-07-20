@@ -90,7 +90,7 @@ export default {
         
         // Decode base64 content
         const content = JSON.parse(atob(response.data.content))
-        specDirectory.value = content.spec_directory || 'specs'
+        specDirectory.value = content.spec_directory || 'spec'
         
         await loadSpecFiles()
         
