@@ -36,6 +36,18 @@
                 required
               >
             </div>
+
+            <div class="mb-4">
+              <label for="branch" class="form-label">Branch</label>
+              <input
+                type="text"
+                id="branch"
+                v-model="branch"
+                class="form-control"
+                placeholder="e.g., main"
+                required
+              >
+            </div>
             
             <div class="d-grid">
               <button type="submit" class="btn btn-primary" :disabled="!owner || !repo || loading">
@@ -74,18 +86,19 @@ export default {
     const router = useRouter()
     const owner = ref('')
     const repo = ref('')
+    const branch = ref('main')
     const loading = ref(false)
     const error = ref('')
     
     const accessRepository = async () => {
-      if (!owner.value || !repo.value) {
-        error.value = 'Please enter both username/organization and repository name'
+      if (!owner.value || !repo.value || !branch.value) {
+        error.value = 'Please enter username/organization, repository name, and branch.'
         return
       }
-      
+
       loading.value = true
       error.value = ''
-      
+
       try {
         const token = localStorage.getItem('github_token')
         const config = {
@@ -94,13 +107,13 @@ export default {
             'Accept': 'application/vnd.github.v3+json'
           }
         }
-        
+
         // Check if repository exists and we have access
         await axios.get(`https://api.github.com/repos/${owner.value}/${repo.value}`, config)
-        
-        // Navigate to file explorer
-        router.push(`/files/${owner.value}/${repo.value}`)
-        
+
+        // Navigate to file explorer with branch
+        router.push(`/files/${owner.value}/${repo.value}/${branch.value}`)
+
       } catch (err) {
         console.error('Repository access error:', err)
         if (err.response?.status === 404) {
@@ -118,6 +131,7 @@ export default {
     return {
       owner,
       repo,
+      branch,
       loading,
       error,
       accessRepository
