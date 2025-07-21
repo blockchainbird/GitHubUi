@@ -7,6 +7,7 @@ A Vue.js web application that connects to GitHub for editing specification files
 - **GitHub Authentication**: Secure login using GitHub Personal Access Tokens
 - **Repository Access**: Enter GitHub username/organization and repository name
 - **File Explorer**: Browse spec files from the configured spec directory
+- **External Specs Manager**: Manage external specification references in specs.json
 - **WYSIWYG Editor**: Simple editor with basic formatting options
 - **Live Preview**: Preview markdown files as you edit
 - **Git Integration**: Save changes directly to GitHub with commit messages
@@ -48,17 +49,47 @@ A Vue.js web application that connects to GitHub for editing specification files
    - Toggle between Edit and Preview modes
    - Save changes with descriptive commit messages
 
+5. **Manage External Specifications**: Use the External Specs Manager to configure references to other repositories
+   - Click "External Specs" button in the file explorer
+   - Add new external specification references
+   - Edit existing external spec configurations
+   - Remove external specs that are no longer needed
+   - Save changes directly to the specs.json file
+
 ### Configuration
 
 The app looks for a `specs.json` file in the repository root with the following structure:
 
 ```json
 {
-  "spec_directory": "docs"
+  "specs": [
+    {
+      "spec_directory": "docs",
+      "external_specs": [
+        {
+          "external_spec": "toip1",
+          "gh_page": "https://henkvancann.github.io/ctwg-main-glossary/",
+          "url": "https://github.com/henkvancann/ctwg-main-glossary",
+          "terms_dir": "spec/terms-definitions"
+        }
+      ]
+    }
+  ]
 }
 ```
 
-If this file doesn't exist, the app will default to looking for files in a `specs` directory.
+#### External Specifications
+
+External specifications allow you to reference terms from other repositories. Each external spec requires:
+
+- **external_spec**: Unique identifier for the external specification
+- **gh_page**: GitHub Pages URL where the spec is hosted
+- **url**: GitHub repository URL
+- **terms_dir**: Directory path containing the terms definitions
+
+The External Specs Manager provides a user-friendly interface to manage these configurations without manually editing JSON.
+
+If the specs.json file doesn't exist, the app will default to looking for files in a `specs` directory.
 
 ## Tech Stack
 
