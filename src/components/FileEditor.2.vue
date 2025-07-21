@@ -628,12 +628,8 @@ export default {
     const loadExternalSpecs = async (externalSpecs) => {
       const externalTerms = []
       
-      // Define multiple CORS proxy options, with local PHP proxy first
-      // Use VITE_BASE_PATH for proxy path if available
-      const basePath = import.meta.env.VITE_BASE_PATH || '/';
-      const proxyPath = basePath.endsWith('/') ? basePath + 'proxy.php?url=' : basePath + '/proxy.php?url=';
+      // Define multiple CORS proxy options
       const corsProxies = [
-        proxyPath,
         'https://api.allorigins.win/raw?url=',
         'https://corsproxy.io/?',
         'https://api.codetabs.com/v1/proxy?quest=',

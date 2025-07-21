@@ -547,6 +547,81 @@ export default {
       return null
     }
     
+    const extractTermsFromExternalFile = async (filePath, owner, repo, externalSpec) => {
+      try {
+        const token = localStorage.getItem('github_token')
+        const config = {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        }
+        
+        const response = await axios.get(
+          `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`,
+          config
+        )
+        
+        const content = atob(response.data.content)
+        const lines = content.split('\n')
+        
+        // Find the first non-empty line and check if it contains a term definition
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim()
+          if (line) {
+            // More robust regex to handle various whitespace patterns
+            const termMatch = line.match(/^\[\[def:\s*([^,\]]+)(?:,\s*([^\]]+))?\]\]/)
+            if (termMatch) {
+              const termId = termMatch[1].trim()
+              const aliasesStr = termMatch[2]
+              const aliases = aliasesStr ? 
+                aliasesStr.split(',').map(a => a.trim()).filter(a => a.length > 0) : 
+                []
+              
+              // Extract definition lines that start with ~ after the term definition
+              const definitionLines = []
+              for (let j = i + 1; j < lines.length; j++) {
+                const defLine = lines[j].trim()
+                if (defLine.startsWith('~')) {
+                  // Remove the ~ and trim whitespace
+                  definitionLines.push(defLine.substring(1).trim())
+                } else if (defLine === '') {
+                  // Skip empty lines
+                  continue
+                } else {
+                  // Stop when we hit a non-~ line that's not empty
+                  break
+                }
+              }
+              
+              // Convert definition lines to HTML <dl> format
+              const definitionHtml = definitionLines.length > 0 
+                ? `<dl>${definitionLines.map(def => `<dd>${def}</dd>`).join('')}</dl>`
+                : ''
+              
+              // Validate term ID (should not be empty)
+              if (termId) {
+                return {
+                  id: termId,
+                  aliases: aliases,
+                  file: `${owner}/${repo}:${filePath}`,
+                  definition: definitionHtml,
+                  definitionText: definitionLines.join(' '),
+                  external: true,
+                  externalSpec: externalSpec,
+                  source: `External: ${externalSpec}`
+                }
+              }
+            }
+            break // Only check the first content line
+          }
+        }
+      } catch (err) {
+        console.error(`Error loading external file ${filePath} from ${owner}/${repo}:`, err)
+      }
+      return null
+    }
+    
     const loadTermsFromRepository = async () => {
       loadingTerms.value = true
       termsError.value = ''
@@ -628,100 +703,58 @@ export default {
     const loadExternalSpecs = async (externalSpecs) => {
       const externalTerms = []
       
-      // Define multiple CORS proxy options, with local PHP proxy first
-      // Use VITE_BASE_PATH for proxy path if available
-      const basePath = import.meta.env.VITE_BASE_PATH || '/';
-      const proxyPath = basePath.endsWith('/') ? basePath + 'proxy.php?url=' : basePath + '/proxy.php?url=';
-      const corsProxies = [
-        proxyPath,
-        'https://api.allorigins.win/raw?url=',
-        'https://corsproxy.io/?',
-        'https://api.codetabs.com/v1/proxy?quest=',
-        'https://thingproxy.freeboard.io/fetch/'
-      ]
-      
       for (const spec of externalSpecs) {
-        let success = false
-        
-        for (let proxyIndex = 0; proxyIndex < corsProxies.length && !success; proxyIndex++) {
-          try {
-            const proxyUrl = corsProxies[proxyIndex]
-            const targetUrl = proxyUrl === 'https://thingproxy.freeboard.io/fetch/' 
-              ? spec.gh_page 
-              : encodeURIComponent(spec.gh_page)
-            
-            console.log(`Loading external spec: ${spec.external_spec} from ${spec.gh_page} (proxy ${proxyIndex + 1}/${corsProxies.length})`)
-            
-            const response = await axios.get(`${proxyUrl}${targetUrl}`, {
-              headers: {
-                'Accept': 'text/html'
-              },
-              timeout: 15000 // Increased timeout to 15 seconds
-            })
-            
-            // Parse the HTML to extract terms from the dl.terms-and-definitions-list
-            const parser = new DOMParser()
-            const doc = parser.parseFromString(response.data, 'text/html')
-            const termsList = doc.querySelector('dl.terms-and-definitions-list')
-            
-            if (termsList) {
-              const dtElements = termsList.querySelectorAll('dt')
-              
-              dtElements.forEach(dt => {
-                const termId = dt.textContent?.trim()
-                if (termId) {
-                  // Collect all dd elements that follow this dt until the next dt
-                  const ddElements = []
-                  let nextElement = dt.nextElementSibling
-                  
-                  while (nextElement && nextElement.tagName.toLowerCase() === 'dd') {
-                    ddElements.push(nextElement.outerHTML)
-                    nextElement = nextElement.nextElementSibling
-                  }
-                  
-                  if (ddElements.length > 0) {
-                    const definitionHtml = `<dl>${ddElements.join('')}</dl>`
-                    const definitionText = ddElements
-                      .map(dd => {
-                        const tempDiv = document.createElement('div')
-                        tempDiv.innerHTML = dd
-                        return tempDiv.textContent || tempDiv.innerText || ''
-                      })
-                      .join(' ')
-                      .trim()
-                    
-                    externalTerms.push({
-                      id: termId,
-                      aliases: [],
-                      file: spec.gh_page,
-                      definition: definitionHtml,
-                      definitionText: definitionText,
-                      external: true,
-                      externalSpec: spec.external_spec,
-                      source: `External: ${spec.external_spec}`
-                    })
-                  }
-                }
-              })
-              
-              console.log(`✅ Successfully loaded ${dtElements.length} terms from ${spec.external_spec} using proxy ${proxyIndex + 1}`)
-              success = true
-            } else {
-              console.warn(`No terms-and-definitions-list found in ${spec.gh_page} using proxy ${proxyIndex + 1}`)
-              // Try next proxy even if HTML was fetched but no terms found
-            }
-          } catch (err) {
-            console.warn(`❌ Proxy ${proxyIndex + 1} failed for ${spec.external_spec}:`, err.message)
-            
-            // If this is the last proxy, log final failure
-            if (proxyIndex === corsProxies.length - 1) {
-              console.error(`🔴 All proxies failed for external spec ${spec.external_spec}. Skipping.`)
+        try {
+          console.log(`Loading external spec: ${spec.external_spec} from ${spec.url}`)
+          
+          // Extract owner and repo from GitHub URL
+          const urlMatch = spec.url.match(/github\.com\/([^\/]+)\/([^\/]+)/)
+          if (!urlMatch) {
+            console.warn(`Invalid GitHub URL format: ${spec.url}`)
+            continue
+          }
+          
+          const [, owner, repo] = urlMatch
+          const termsDir = spec.terms_dir || 'spec/terms-definitions'
+          
+          const token = localStorage.getItem('github_token')
+          const config = {
+            headers: {
+              'Authorization': `token ${token}`,
+              'Accept': 'application/vnd.github.v3+json'
             }
           }
-        }
-        
-        if (!success) {
-          console.error(`🔴 Unable to load external spec ${spec.external_spec} from ${spec.gh_page} - all proxy methods failed`)
+          
+          // Get files in the external terms directory
+          const response = await axios.get(
+            `https://api.github.com/repos/${owner}/${repo}/contents/${termsDir}`,
+            config
+          )
+          
+          const files = response.data.filter(item => 
+            item.type === 'file' && 
+            (item.name.toLowerCase().endsWith('.md') || 
+             item.name.toLowerCase().endsWith('.txt') ||
+             item.name.toLowerCase().endsWith('.rst') ||
+             item.name.toLowerCase().endsWith('.adoc'))
+          )
+          
+          // Process external files with same logic as local files
+          const batchSize = 3 // Smaller batch size for external repos
+          for (let i = 0; i < files.length; i += batchSize) {
+            const batch = files.slice(i, i + batchSize)
+            const promises = batch.map(file => extractTermsFromExternalFile(file.path, owner, repo, spec.external_spec))
+            const results = await Promise.all(promises)
+            
+            results.forEach(term => {
+              if (term) {
+                externalTerms.push(term)
+              }
+            })
+          }
+          
+        } catch (err) {
+          console.error(`Error loading external spec ${spec.external_spec}:`, err)
         }
       }
       

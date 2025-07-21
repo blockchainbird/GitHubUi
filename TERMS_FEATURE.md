@@ -27,7 +27,7 @@ The WYSIWYG editor now includes a **Term Reference** feature that allows you to 
 3. Use the search box to filter terms by name or alias
 4. Click on any term to insert the appropriate reference:
    - Local terms: `[[ref: term-id]]`
-   - External terms: `[[tref: external_spec, term-id]]`
+   - External terms: `[[xref: external_spec, term-id]]`
 
 ### 4. External Specifications
 The feature now supports external specifications defined in `specs.json`:
@@ -46,7 +46,7 @@ External terms are:
 - Loaded from GitHub Pages specified in `gh_page`
 - Extracted from `<dl class="terms-and-definitions-list">` elements
 - Displayed with a green link icon and "External" badge
-- Inserted as `[[tref: external_spec, term-id]]` format
+- Inserted as `[[xref: external_spec, term-id]]` format
 
 ### 5. Configuration
 The feature expects a `specs.json` file in the repository root with this structure:
