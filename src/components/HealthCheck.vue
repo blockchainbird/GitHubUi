@@ -798,6 +798,204 @@ export default {
       return results
     }
 
+    const checkTrefTermReferences = async () => {
+      const results = []
+      
+      try {
+        // First, get the spec directory from specs.json
+        const specsContent = await fetchFileContent('specs.json')
+        let specDirectory = 'spec' // default
+        
+        if (specsContent) {
+          try {
+            const specs = JSON.parse(specsContent)
+            if (specs.specs && specs.specs.length > 0 && specs.specs[0].spec_directory) {
+              specDirectory = specs.specs[0].spec_directory
+            }
+          } catch (error) {
+            // Use default if parsing fails
+          }
+        }
+
+        // Get all markdown files in the spec directory
+        const dirContents = await getDirectoryContents(specDirectory)
+        
+        if (!dirContents) {
+          results.push({
+            name: 'Term reference check',
+            success: false,
+            details: `Cannot check term references - spec directory '${specDirectory}' not found`
+          })
+          return results
+        }
+
+        const markdownFiles = dirContents.filter(item => 
+          item.type === 'file' && item.name.toLowerCase().endsWith('.md')
+        )
+
+        if (markdownFiles.length === 0) {
+          results.push({
+            name: 'Term reference check',
+            success: true,
+            status: 'warning',
+            details: 'No markdown files found to check for term references'
+          })
+          return results
+        }
+
+        // Collect all term references and definitions
+        const allTermRefs = new Set()
+        const allTermDefs = new Set()
+        const fileTermRefs = new Map()
+        
+        // First pass: collect all term references [[term]] and definitions
+        for (const file of markdownFiles) {
+          const content = await fetchFileContent(file.path)
+          if (content) {
+            // Find all [[term]] references
+            const termRefs = content.match(/\[\[([^\]]+)\]\]/g) || []
+            const termsInFile = []
+            
+            termRefs.forEach(ref => {
+              const term = ref.replace(/\[\[|\]\]/g, '').trim().toLowerCase()
+              allTermRefs.add(term)
+              termsInFile.push(term)
+            })
+            
+            if (termsInFile.length > 0) {
+              fileTermRefs.set(file.name, termsInFile)
+            }
+
+            // Find term definitions (lines that define terms)
+            // Look for patterns like "## Term Name" or "**Term Name**:" or "Term Name:" at start of line
+            const lines = content.split('\n')
+            lines.forEach(line => {
+              const trimmedLine = line.trim()
+              
+              // Check for header definitions like "## Term Name"
+              const headerMatch = trimmedLine.match(/^#+\s*(.+)$/)
+              if (headerMatch) {
+                const term = headerMatch[1].trim().toLowerCase()
+                allTermDefs.add(term)
+              }
+              
+              // Check for bold definitions like "**Term Name**:"
+              const boldMatch = trimmedLine.match(/^\*\*([^*]+)\*\*\s*:/)
+              if (boldMatch) {
+                const term = boldMatch[1].trim().toLowerCase()
+                allTermDefs.add(term)
+              }
+              
+              // Check for simple definitions like "Term Name:"
+              const simpleMatch = trimmedLine.match(/^([^:]+):\s*$/)
+              if (simpleMatch && simpleMatch[1].length < 50) { // Avoid matching long sentences
+                const term = simpleMatch[1].trim().toLowerCase()
+                allTermDefs.add(term)
+              }
+            })
+          }
+        }
+
+        // Also check external specs for term definitions
+        if (specsContent) {
+          try {
+            const specs = JSON.parse(specsContent)
+            if (specs.specs && specs.specs.length > 0 && specs.specs[0].external_specs) {
+              for (const extSpec of specs.specs[0].external_specs) {
+                if (extSpec.terms_dir) {
+                  // For external specs, we can't easily check the actual terms
+                  // but we can note that they exist
+                  results.push({
+                    name: `External spec terms available`,
+                    success: true,
+                    details: `External spec "${extSpec.external_spec}" defines terms in "${extSpec.terms_dir}"`
+                  })
+                }
+              }
+            }
+          } catch (error) {
+            // Ignore parsing errors
+          }
+        }
+
+        // Summary results
+        results.push({
+          name: 'Term references found',
+          success: allTermRefs.size > 0,
+          status: allTermRefs.size === 0 ? 'warning' : undefined,
+          details: allTermRefs.size === 0 ? 
+            'No term references ([[term]]) found in markdown files' : 
+            `Found ${allTermRefs.size} unique term reference(s): ${Array.from(allTermRefs).slice(0, 10).join(', ')}${allTermRefs.size > 10 ? '...' : ''}`
+        })
+
+        results.push({
+          name: 'Term definitions found',
+          success: allTermDefs.size > 0,
+          status: allTermDefs.size === 0 ? 'warning' : undefined,
+          details: allTermDefs.size === 0 ? 
+            'No term definitions found in markdown files' : 
+            `Found ${allTermDefs.size} potential term definition(s)`
+        })
+
+        // Check for undefined term references
+        const undefinedTerms = new Set()
+        allTermRefs.forEach(term => {
+          if (!allTermDefs.has(term)) {
+            undefinedTerms.add(term)
+          }
+        })
+
+        if (undefinedTerms.size > 0) {
+          results.push({
+            name: 'All term references have definitions',
+            success: false,
+            details: `${undefinedTerms.size} term reference(s) may not have definitions: ${Array.from(undefinedTerms).slice(0, 5).join(', ')}${undefinedTerms.size > 5 ? '...' : ''}. Note: External spec terms cannot be validated from this check.`
+          })
+        } else if (allTermRefs.size > 0) {
+          results.push({
+            name: 'All term references have definitions',
+            success: true,
+            details: 'All term references appear to have corresponding definitions'
+          })
+        }
+
+        // Per-file breakdown
+        if (fileTermRefs.size > 0) {
+          results.push({
+            name: 'Files with term references',
+            success: true,
+            details: `${fileTermRefs.size} file(s) contain term references: ${Array.from(fileTermRefs.keys()).join(', ')}`
+          })
+        }
+
+        // Check for orphaned definitions (definitions without references)
+        const orphanedDefs = new Set()
+        allTermDefs.forEach(term => {
+          if (!allTermRefs.has(term)) {
+            orphanedDefs.add(term)
+          }
+        })
+
+        if (orphanedDefs.size > 0) {
+          results.push({
+            name: 'Unused term definitions',
+            success: true,
+            status: 'warning',
+            details: `${orphanedDefs.size} term definition(s) may not be referenced: ${Array.from(orphanedDefs).slice(0, 5).join(', ')}${orphanedDefs.size > 5 ? '...' : ''}. This may be normal if terms are used in external specs.`
+          })
+        }
+
+      } catch (error) {
+        results.push({
+          name: 'Term reference check failed',
+          success: false,
+          details: `Error: ${error.message}`
+        })
+      }
+
+      return results
+    }
+
     // Main health check runner
     const runHealthCheck = async () => {
       isRunning.value = true
@@ -834,6 +1032,13 @@ export default {
         checkResults.push({
           title: 'Check External Specs URLs',
           results: externalResults
+        })
+
+        // Run term reference check
+        const trefResults = await checkTrefTermReferences()
+        checkResults.push({
+          title: 'Check Term References ([[term]])',
+          results: trefResults
         })
 
         // Run terms intro check
