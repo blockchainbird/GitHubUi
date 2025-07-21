@@ -1,5 +1,6 @@
 <template>
   <div id="app">
+    <MainNav />
     <nav class="navbar navbar-dark bg-dark">
       <div class="container-fluid">
         <a class="navbar-brand" href="#">
@@ -14,7 +15,6 @@
         </div>
       </div>
     </nav>
-    
     <main class="container-fluid mt-3">
       <router-view @login="handleLogin" @logout="handleLogout"></router-view>
     </main>
@@ -22,11 +22,14 @@
 </template>
 
 <script>
+
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import MainNav from './components/MainNav.vue'
 
 export default {
   name: 'App',
+  components: { MainNav },
   setup() {
     const router = useRouter()
     const isAuthenticated = ref(false)
