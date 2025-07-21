@@ -6,6 +6,7 @@ import HomePage from './components/HomePage.vue'
 import FileExplorer from './components/FileExplorer.vue'
 import FileEditor from './components/FileEditor.vue'
 import ExternalSpecsManager from './components/ExternalSpecsManager.vue'
+import HealthCheck from './components/HealthCheck.vue'
 
 const routes = [
   { path: '/', redirect: '/login' },
@@ -13,7 +14,8 @@ const routes = [
   { path: '/home', component: HomePage },
   { path: '/files/:owner/:repo/:branch', component: FileExplorer, props: true },
   { path: '/editor/:owner/:repo/:branch/:path+', component: FileEditor, props: true },
-  { path: '/external-specs/:owner/:repo/:branch', component: ExternalSpecsManager, props: true }
+  { path: '/external-specs/:owner/:repo/:branch', component: ExternalSpecsManager, props: true },
+  { path: '/health-check/:owner/:repo/:branch', component: HealthCheck, props: true }
 ]
 
 const basePath = import.meta.env.VITE_BASE_PATH || '/';
