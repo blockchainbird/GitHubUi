@@ -3,6 +3,9 @@
     <div class="col-md-6 col-lg-4">
       <div class="card">
         <div class="card-body">
+          <div class="text-center mb-3">
+            <img src="/assets/logo.svg" alt="Logo" style="max-width: 120px; width: 60%; height: auto; margin-bottom: 0.5rem;" />
+          </div>
           <h2 class="card-title text-center mb-4">
             <i class="bi bi-github"></i>
             Login to GitHub
