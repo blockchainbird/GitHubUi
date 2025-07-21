@@ -28,12 +28,34 @@ router.beforeEach((to, from, next) => {
   const publicPages = ['/login'];
   const authRequired = !publicPages.includes(to.path);
   const user = localStorage.getItem('github_user');
-  if (authRequired && !user) {
+  const token = localStorage.getItem('github_token');
+  
+  if (authRequired && (!user || !token)) {
     next('/login');
   } else {
     next();
   }
 });
+
+// Global error handler for axios
+import axios from 'axios'
+
+// Add response interceptor to handle authentication errors globally
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+      // Token is invalid or expired, clear it and redirect to login
+      localStorage.removeItem('github_token')
+      localStorage.removeItem('github_user')
+      // Only redirect if we're not already on the login page
+      if (router.currentRoute.value.path !== '/login') {
+        router.push('/login')
+      }
+    }
+    return Promise.reject(error)
+  }
+)
 
 const app = createApp(App)
 app.use(router)

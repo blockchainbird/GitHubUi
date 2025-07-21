@@ -107,6 +107,18 @@ export default {
     const folders = ref([])
     const currentDirectory = ref('')
     
+    // Helper function to check authentication and redirect if needed
+    const checkAuthAndRedirect = (error) => {
+      if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+        // Token is invalid or expired, clear it and redirect to login
+        localStorage.removeItem('github_token')
+        localStorage.removeItem('github_user')
+        router.push('/login')
+        return true
+      }
+      return false
+    }
+    
     const loadSpecsConfig = async () => {
       try {
         const token = localStorage.getItem('github_token')
@@ -136,6 +148,9 @@ export default {
 
       } catch (err) {
         console.error('Error loading specs config:', err)
+        if (checkAuthAndRedirect(err)) {
+          return
+        }
         if (err.response?.status === 404) {
           error.value = 'specs.json file not found in repository root. Using default "specs" directory.'
           specDirectory.value = 'specs'
@@ -184,6 +199,9 @@ export default {
         currentDirectory.value = directory
       } catch (err) {
         console.error('Error loading spec files:', err)
+        if (checkAuthAndRedirect(err)) {
+          return
+        }
         if (err.response?.status === 404) {
           error.value = `Spec directory "${directory}" not found in repository.`
         } else {

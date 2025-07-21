@@ -185,6 +185,18 @@ export default {
       return 'bg-light'
     }
 
+    // Helper function to check authentication and redirect if needed
+    const checkAuthAndRedirect = (error) => {
+      if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+        // Token is invalid or expired, clear it and redirect to login
+        localStorage.removeItem('github_token')
+        localStorage.removeItem('github_user')
+        router.push('/login')
+        return true
+      }
+      return false
+    }
+
     // Helper function to fetch file content from GitHub
     const fetchFileContent = async (filePath) => {
       try {
@@ -194,6 +206,9 @@ export default {
         )
         return atob(response.data.content)
       } catch (error) {
+        if (checkAuthAndRedirect(error)) {
+          throw new Error('Authentication required - redirecting to login')
+        }
         return null
       }
     }
@@ -262,6 +277,9 @@ export default {
         )
         return response.data
       } catch (error) {
+        if (checkAuthAndRedirect(error)) {
+          throw new Error('Authentication required - redirecting to login')
+        }
         return null
       }
     }
@@ -673,6 +691,9 @@ export default {
             details: `Branch '${props.branch}' exists`
           })
         } catch (branchError) {
+          if (checkAuthAndRedirect(branchError)) {
+            throw new Error('Authentication required - redirecting to login')
+          }
           results.push({
             name: 'Branch exists',
             success: false,
@@ -681,6 +702,9 @@ export default {
         }
 
       } catch (error) {
+        if (checkAuthAndRedirect(error)) {
+          throw new Error('Authentication required - redirecting to login')
+        }
         results.push({
           name: 'Repository accessible',
           success: false,
@@ -1059,6 +1083,12 @@ export default {
 
       } catch (err) {
         console.error('Health check error:', err)
+        // Check if it's an authentication error
+        if (err.message && err.message.includes('Authentication required')) {
+          // Already redirected, just show a message
+          error.value = 'Authentication required. Redirecting to login...'
+          return
+        }
         error.value = `Failed to run health check: ${err.message}`
       } finally {
         isRunning.value = false

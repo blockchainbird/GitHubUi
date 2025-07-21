@@ -262,6 +262,18 @@ export default {
     const termsError = ref('')
     const specsConfig = ref(null)
     
+    // Helper function to check authentication and redirect if needed
+    const checkAuthAndRedirect = (error) => {
+      if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+        // Token is invalid or expired, clear it and redirect to login
+        localStorage.removeItem('github_token')
+        localStorage.removeItem('github_user')
+        router.push('/login')
+        return true
+      }
+      return false
+    }
+    
     const filename = computed(() => {
       return props.path ? decodeURIComponent(props.path).split('/').pop() : ''
     })
@@ -320,6 +332,9 @@ export default {
         
       } catch (err) {
         console.error('Error loading file:', err)
+        if (checkAuthAndRedirect(err)) {
+          return
+        }
         error.value = 'Failed to load file content.'
       } finally {
         loading.value = false
@@ -418,6 +433,9 @@ export default {
         
       } catch (err) {
         console.error('Error saving file:', err)
+        if (checkAuthAndRedirect(err)) {
+          return
+        }
         error.value = 'Failed to save file. Please try again.'
       } finally {
         saving.value = false
@@ -445,6 +463,9 @@ export default {
         return content
       } catch (err) {
         console.error('Error loading specs config:', err)
+        if (checkAuthAndRedirect(err)) {
+          return null
+        }
         // Default fallback
         return {
           specs: [{
@@ -551,6 +572,9 @@ export default {
         }
       } catch (err) {
         console.error(`Error loading file ${filePath}:`, err)
+        if (checkAuthAndRedirect(err)) {
+          return null
+        }
       }
       return null
     }
@@ -623,6 +647,9 @@ export default {
         
       } catch (err) {
         console.error('Error loading terms:', err)
+        if (checkAuthAndRedirect(err)) {
+          return
+        }
         if (err.response?.status === 404) {
           termsError.value = 'Terms directory not found in repository.'
         } else {

@@ -244,6 +244,18 @@ export default {
     const originalSpecsJson = ref(null)
     const hasChanges = ref(false)
     
+    // Helper function to check authentication and redirect if needed
+    const checkAuthAndRedirect = (error) => {
+      if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+        // Token is invalid or expired, clear it and redirect to login
+        localStorage.removeItem('github_token')
+        localStorage.removeItem('github_user')
+        router.push('/login')
+        return true
+      }
+      return false
+    }
+    
     // New spec form
     const newSpec = ref({
       external_spec: '',
@@ -317,6 +329,9 @@ export default {
         
       } catch (err) {
         console.error('Error loading specs:', err)
+        if (checkAuthAndRedirect(err)) {
+          return
+        }
         error.value = err.message
       } finally {
         loading.value = false
@@ -421,6 +436,9 @@ export default {
         
       } catch (err) {
         console.error('Error saving specs:', err)
+        if (checkAuthAndRedirect(err)) {
+          return
+        }
         error.value = err.message
       } finally {
         saving.value = false
