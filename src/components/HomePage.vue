@@ -25,7 +25,7 @@
               >
             </div>
             
-            <div class="mb-4">
+            <div class="mb-4 position-relative">
               <label for="repo" class="form-label">Repository Name</label>
               <input
                 type="text"
@@ -34,10 +34,34 @@
                 class="form-control"
                 placeholder="e.g., Hello-World"
                 required
+                @focus="onRepoInputFocus"
+                autocomplete="off"
               >
             </div>
+            <Modal v-if="showRepoModal" @close="showRepoModal = false">
+              <template #header>
+                <span>Select a Repository</span>
+              </template>
+              <template #body>
+                <div
+                  style="max-height: 60vh; overflow-y: auto; min-width: 300px;"
+                >
+                  <div v-if="repoLoading" class="text-center my-3">
+                    <span class="spinner-border spinner-border-sm me-2"></span> Loading repositories...
+                  </div>
+                  <div v-else-if="repoList.length === 0" class="text-center text-muted my-3">
+                    No repositories found.
+                  </div>
+                  <ul v-else class="list-group">
+                    <li v-for="item in repoList" :key="item.id" class="list-group-item list-group-item-action" style="cursor:pointer" @click="selectRepo(item.name)">
+                      <i class="bi bi-git"></i> {{ item.name }}
+                    </li>
+                  </ul>
+                </div>
+              </template>
+            </Modal>
 
-            <div class="mb-4">
+            <div class="mb-4 position-relative">
               <label for="branch" class="form-label">Branch</label>
               <input
                 type="text"
@@ -46,8 +70,32 @@
                 class="form-control"
                 placeholder="e.g., main"
                 required
+                @focus="onBranchInputFocus"
+                autocomplete="off"
               >
             </div>
+            <Modal v-if="showBranchModal" @close="showBranchModal = false">
+              <template #header>
+                <span>Select a Branch</span>
+              </template>
+              <template #body>
+                <div
+                  style="max-height: 60vh; overflow-y: auto; min-width: 300px;"
+                >
+                  <div v-if="branchLoading" class="text-center my-3">
+                    <span class="spinner-border spinner-border-sm me-2"></span> Loading branches...
+                  </div>
+                  <div v-else-if="branchList.length === 0" class="text-center text-muted my-3">
+                    No branches found.
+                  </div>
+                  <ul v-else class="list-group">
+                    <li v-for="item in branchList" :key="item.name" class="list-group-item list-group-item-action" style="cursor:pointer" @click="selectBranch(item.name)">
+                      <i class="bi bi-git"></i> {{ item.name }}
+                    </li>
+                  </ul>
+                </div>
+              </template>
+            </Modal>
             
             <div class="d-grid">
               <button type="submit" class="btn btn-primary" :disabled="!owner || !repo || loading">
@@ -103,6 +151,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import Modal from './Modal.vue'
 
 export default {
   name: 'HomePage',
@@ -113,7 +162,90 @@ export default {
     const branch = ref('main')
     const loading = ref(false)
     const error = ref('')
-    
+    // Modal and repo/branch list state
+    const showRepoModal = ref(false)
+    const repoList = ref([])
+    const repoLoading = ref(false)
+    const showBranchModal = ref(false)
+    const branchList = ref([])
+    const branchLoading = ref(false)
+    // Fetch branches for the selected repo
+    const fetchBranches = async () => {
+      if (!owner.value || !repo.value) return
+      branchLoading.value = true
+      branchList.value = []
+      try {
+        const token = localStorage.getItem('github_token')
+        const config = token ? {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        } : { headers: { 'Accept': 'application/vnd.github.v3+json' } }
+        const res = await axios.get(`https://api.github.com/repos/${owner.value}/${repo.value}/branches?per_page=100`, config)
+        branchList.value = (res.data || []).map(b => ({ name: b.name }))
+      } catch (e) {
+        branchList.value = []
+      } finally {
+        branchLoading.value = false
+      }
+    }
+
+    // Show modal and fetch branches on input focus
+    const onBranchInputFocus = async () => {
+      if (!owner.value || !repo.value) return
+      showBranchModal.value = true
+      await fetchBranches()
+    }
+
+    // Select branch from modal
+    const selectBranch = (branchName) => {
+      branch.value = branchName
+      showBranchModal.value = false
+    }
+
+    // Fetch repos for the given owner
+    const fetchRepos = async () => {
+      if (!owner.value) return
+      repoLoading.value = true
+      repoList.value = []
+      try {
+        const token = localStorage.getItem('github_token')
+        const config = token ? {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        } : { headers: { 'Accept': 'application/vnd.github.v3+json' } }
+        // Try user repos first, then org repos if user fails
+        let res
+        try {
+          res = await axios.get(`https://api.github.com/users/${owner.value}/repos?per_page=100`, config)
+        } catch (e) {
+          // fallback to org
+          res = await axios.get(`https://api.github.com/orgs/${owner.value}/repos?per_page=100`, config)
+        }
+        repoList.value = res.data || []
+      } catch (e) {
+        repoList.value = []
+      } finally {
+        repoLoading.value = false
+      }
+    }
+
+    // Show modal and fetch repos on input focus
+    const onRepoInputFocus = async () => {
+      if (!owner.value) return
+      showRepoModal.value = true
+      await fetchRepos()
+    }
+
+    // Select repo from modal
+    const selectRepo = (repoName) => {
+      repo.value = repoName
+      showRepoModal.value = false
+    }
+
     const accessRepository = async () => {
       if (!owner.value || !repo.value || !branch.value) {
         error.value = 'Please enter username/organization, repository name, and branch.'
@@ -151,15 +283,26 @@ export default {
         loading.value = false
       }
     }
-    
+
     return {
       owner,
       repo,
       branch,
       loading,
       error,
-      accessRepository
+      accessRepository,
+      showRepoModal,
+      repoList,
+      repoLoading,
+      onRepoInputFocus,
+      selectRepo,
+      showBranchModal,
+      branchList,
+      branchLoading,
+      onBranchInputFocus,
+      selectBranch
     }
-  }
+  },
+  components: { Modal }
 }
 </script>
