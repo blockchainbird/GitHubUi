@@ -93,6 +93,10 @@
                   <button @click="showTermsModal" class="btn btn-outline-info" title="Insert Term Reference">
                     <i class="bi bi-bookmark"></i>
                   </button>
+                  <button @click="showAddTermModal" class="btn btn-outline-success" title="Add New Term">
+                    <i class="bi bi-plus-circle"></i>
+                    Term
+                  </button>
                 </div>
               </div>
               
@@ -230,6 +234,92 @@
         </div>
       </div>
     </div>
+
+    <!-- Add Term Modal -->
+    <div class="modal fade" id="addTermModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="bi bi-plus-circle"></i>
+              Add New Term
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div v-if="addTermError" class="alert alert-danger" role="alert">
+              {{ addTermError }}
+            </div>
+            
+            <div class="mb-3">
+              <label for="termName" class="form-label">Term <span class="text-danger">*</span></label>
+              <input
+                id="termName"
+                v-model="newTerm.name"
+                @input="onTermNameChange"
+                type="text"
+                class="form-control"
+                placeholder="Enter the term..."
+                required
+              >
+              <div class="form-text">Enter the main term that will be defined</div>
+            </div>
+            
+            <div v-if="newTerm.name.trim()" class="mb-3">
+              <label class="form-label">Aliases</label>
+              <div v-for="(alias, index) in newTerm.aliases" :key="index" class="input-group mb-2">
+                <input
+                  v-model="newTerm.aliases[index]"
+                  @input="onAliasChange(index)"
+                  type="text"
+                  class="form-control"
+                  :placeholder="`Alias ${index + 1}...`"
+                >
+                <button 
+                  @click="removeAlias(index)" 
+                  type="button" 
+                  class="btn btn-outline-danger"
+                  :disabled="newTerm.aliases.length === 1"
+                  title="Remove alias"
+                >
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+              <button 
+                @click="addAlias" 
+                type="button" 
+                class="btn btn-outline-secondary btn-sm"
+                title="Add another alias"
+              >
+                <i class="bi bi-plus"></i>
+                Add Alias
+              </button>
+              <div class="form-text">Add alternative terms or synonyms for this definition</div>
+            </div>
+            
+            <div v-if="newTerm.name.trim()" class="mb-3">
+              <label class="form-label">Preview</label>
+              <div class="border rounded p-3 bg-light">
+                <code>{{ generateTermDefinition() }}</code>
+              </div>
+              <div class="form-text">This is what will be inserted into your document</div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button 
+              @click="insertNewTerm" 
+              type="button" 
+              class="btn btn-success"
+              :disabled="!newTerm.name.trim()"
+            >
+              <i class="bi bi-plus-circle"></i>
+              Add Term
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -261,6 +351,13 @@ export default {
     const loadingTerms = ref(false)
     const termsError = ref('')
     const specsConfig = ref(null)
+    
+    // Add Term modal state
+    const newTerm = ref({
+      name: '',
+      aliases: ['']
+    })
+    const addTermError = ref('')
     
     // Helper function to check authentication and redirect if needed
     const checkAuthAndRedirect = (error) => {
@@ -833,6 +930,87 @@ export default {
       filterTerms()
     }
     
+    // Add Term functionality
+    const showAddTermModal = () => {
+      // Reset form
+      newTerm.value = {
+        name: '',
+        aliases: ['']
+      }
+      addTermError.value = ''
+      
+      const modal = new bootstrap.Modal(document.getElementById('addTermModal'))
+      modal.show()
+    }
+    
+    const onTermNameChange = () => {
+      addTermError.value = ''
+      // If term name exists and we only have an empty alias, keep one empty alias ready
+      if (newTerm.value.name.trim() && newTerm.value.aliases.length === 1 && !newTerm.value.aliases[0].trim()) {
+        // Keep the empty alias for user to fill
+      }
+    }
+    
+    const onAliasChange = (index) => {
+      addTermError.value = ''
+      // If this is the last alias and it's been filled, add a new empty one
+      if (index === newTerm.value.aliases.length - 1 && newTerm.value.aliases[index].trim()) {
+        newTerm.value.aliases.push('')
+      }
+    }
+    
+    const addAlias = () => {
+      newTerm.value.aliases.push('')
+    }
+    
+    const removeAlias = (index) => {
+      if (newTerm.value.aliases.length > 1) {
+        newTerm.value.aliases.splice(index, 1)
+      }
+    }
+    
+    const generateTermDefinition = () => {
+      if (!newTerm.value.name.trim()) return ''
+      
+      const term = newTerm.value.name.trim()
+      const validAliases = newTerm.value.aliases
+        .map(alias => alias.trim())
+        .filter(alias => alias.length > 0)
+      
+      if (validAliases.length === 0) {
+        return `[[def: ${term}]]`
+      } else {
+        return `[[def: ${term}, ${validAliases.join(', ')}]]`
+      }
+    }
+    
+    const insertNewTerm = () => {
+      if (!newTerm.value.name.trim()) {
+        addTermError.value = 'Please enter a term name'
+        return
+      }
+      
+      const textarea = editor.value
+      if (!textarea) return
+      
+      const start = textarea.selectionStart
+      const end = textarea.selectionEnd
+      
+      const termDefinition = generateTermDefinition()
+      
+      content.value = content.value.substring(0, start) + termDefinition + content.value.substring(end)
+      
+      // Hide modal
+      const modal = bootstrap.Modal.getInstance(document.getElementById('addTermModal'))
+      modal.hide()
+      
+      nextTick(() => {
+        textarea.focus()
+        const newPosition = start + termDefinition.length
+        textarea.setSelectionRange(newPosition, newPosition)
+      })
+    }
+    
     const goBack = () => {
       router.push(`/files/${props.owner}/${props.repo}/${props.branch}`)
     }
@@ -871,7 +1049,17 @@ export default {
       showTermsModal,
       filterTerms,
       insertTermReference,
-      refreshTerms
+      refreshTerms,
+      // Add Term functionality
+      newTerm,
+      addTermError,
+      showAddTermModal,
+      onTermNameChange,
+      onAliasChange,
+      addAlias,
+      removeAlias,
+      generateTermDefinition,
+      insertNewTerm
     }
   }
 }
