@@ -71,11 +71,11 @@
                   class="form-control"
                   placeholder="Filter files and folders..."
                   @input="applyFilter"
-                  @keydown.escape="clearFilter"
+                  @keydown.escape="clearFilterCompletely"
                 >
                 <button 
                   v-if="filterText"
-                  @click="clearFilter"
+                  @click="clearFilterCompletely"
                   class="btn btn-outline-secondary"
                   type="button"
                   title="Clear filter"
@@ -156,10 +156,14 @@
               :key="file.path"
               @click="openFile(file)"
               class="list-group-item list-group-item-action d-flex align-items-center"
+              :class="{ 'recently-created': file.name === recentlyCreatedFile }"
             >
               <i class="bi bi-file-text me-3" style="color: #0d6efd;"></i>
               <div class="flex-grow-1">
-                <div class="fw-medium">{{ file.name }}</div>
+                <div class="fw-medium">
+                  {{ file.name }}
+                  <span v-if="file.name === recentlyCreatedFile" class="badge bg-success ms-2">New</span>
+                </div>
                 <small class="text-muted">{{ file.path }}</small>
               </div>
               <i class="bi bi-chevron-right"></i>
@@ -290,11 +294,25 @@
 .text-muted small {
   font-size: 0.875em;
 }
+
+/* Recently created file highlighting */
+.list-group-item.recently-created {
+  background-color: #d1edff;
+  border-color: #0d6efd;
+}
+
+.list-group-item.recently-created:hover {
+  background-color: #b8e0ff;
+}
+
+.badge.bg-success {
+  font-size: 0.7em;
+}
 </style>
 
 <script>
-import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, onUnmounted, nextTick, computed, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 
 export default {
@@ -302,6 +320,7 @@ export default {
   props: ['owner', 'repo', 'branch'],
   setup(props) {
     const router = useRouter()
+    const route = useRoute()
     const loading = ref(true)
     const error = ref('')
     const specDirectory = ref('')
@@ -315,6 +334,7 @@ export default {
     const dropdownOpen = ref(false)
     const dropdownButton = ref(null)
     const dropdownMenu = ref(null)
+    const recentlyCreatedFile = ref('')
     
     // Create file modal state
     const showCreateFileModal = ref(false)
@@ -333,7 +353,11 @@ export default {
       if (selectedFilter.value === 'Folders') {
         result = []
       } else if (selectedFilter.value.startsWith('.')) {
-        result = result.filter(file => file.name.toLowerCase().endsWith(selectedFilter.value))
+        result = result.filter(file => 
+          file.name.toLowerCase().endsWith(selectedFilter.value) ||
+          // Always include recently created file
+          file.name === recentlyCreatedFile.value
+        )
       }
       
       // Apply text filter
@@ -341,8 +365,16 @@ export default {
         const searchTerm = filterText.value.toLowerCase()
         result = result.filter(file => 
           file.name.toLowerCase().includes(searchTerm) ||
-          file.path.toLowerCase().includes(searchTerm)
+          file.path.toLowerCase().includes(searchTerm) ||
+          // Always include recently created file even if it doesn't match filter
+          file.name === recentlyCreatedFile.value
         )
+      }
+      
+      // Debug logging (remove in production)
+      if (recentlyCreatedFile.value) {
+        console.log('Recently created file:', recentlyCreatedFile.value)
+        console.log('Filtered result includes recently created:', result.some(f => f.name === recentlyCreatedFile.value))
       }
       
       return result
@@ -479,6 +511,8 @@ export default {
     }
 
     const openFolder = (folder) => {
+      recentlyCreatedFile.value = '' // Clear when navigating to different folder
+      localStorage.removeItem('recentlyCreatedFile') // Also clear from localStorage
       loadSpecFiles(folder.path)
     }
     
@@ -555,7 +589,20 @@ export default {
         
         // Close modal and refresh file list
         closeCreateFileModal()
+        
+        // Store the newly created file name for filtering purposes
+        recentlyCreatedFile.value = newFileName.value
+        // Also store in localStorage to persist across navigation
+        localStorage.setItem('recentlyCreatedFile', newFileName.value)
+        
+        // Don't clear filters - let the computed properties handle showing the new file
         await loadSpecFiles(currentDirectory.value || specDirectory.value)
+        
+        // Auto-clear the recently created indicator after 10 seconds
+        setTimeout(() => {
+          recentlyCreatedFile.value = ''
+          localStorage.removeItem('recentlyCreatedFile')
+        }, 10000)
         
         // Navigate to the new file for editing
         const encodedPath = encodeURIComponent(filePath)
@@ -593,11 +640,25 @@ export default {
     const clearFilter = () => {
       filterText.value = ''
       selectedFilter.value = 'All'
+      // Don't clear recentlyCreatedFile here - let it remain for tracking
+    }
+    
+    const clearFilterCompletely = () => {
+      filterText.value = ''
+      selectedFilter.value = 'All'
+      recentlyCreatedFile.value = '' // Clear recently created file tracking when user manually clears
+      localStorage.removeItem('recentlyCreatedFile') // Also clear from localStorage
     }
     
     const applyFilter = () => {
-      // This method is called on input, but the computed properties
-      // automatically handle the filtering reactively
+      // Clear recently created file indicator when user starts filtering
+      if (filterText.value && recentlyCreatedFile.value) {
+        // Small delay to allow the user to see their new file first
+        setTimeout(() => {
+          recentlyCreatedFile.value = ''
+          localStorage.removeItem('recentlyCreatedFile')
+        }, 2000)
+      }
     }
     
     // Close dropdown when clicking outside
@@ -609,14 +670,54 @@ export default {
       }
     }
     
+    // Function to refresh file list when returning to the page
+    const handleVisibilityChange = () => {
+      if (!document.hidden && route.path.includes('/files/') && (currentDirectory.value || specDirectory.value)) {
+        console.log('Page became visible, checking if we need to refresh file list...')
+        // Check if we have a recently created file that might not be in the current list
+        const storedRecentFile = localStorage.getItem('recentlyCreatedFile')
+        if (storedRecentFile && !files.value.some(f => f.name === storedRecentFile)) {
+          console.log('Recently created file not found in list, refreshing...')
+          loadSpecFiles(currentDirectory.value || specDirectory.value)
+        }
+      }
+    }
+    
     onMounted(() => {
       loadSpecsConfig()
       document.addEventListener('click', handleClickOutside)
+      document.addEventListener('visibilitychange', handleVisibilityChange)
+      
+      // Check if we have a recently created file in localStorage
+      const storedRecentFile = localStorage.getItem('recentlyCreatedFile')
+      if (storedRecentFile) {
+        recentlyCreatedFile.value = storedRecentFile
+        // Auto-clear after 30 seconds to give user time to navigate back
+        setTimeout(() => {
+          recentlyCreatedFile.value = ''
+          localStorage.removeItem('recentlyCreatedFile')
+        }, 30000)
+      }
+    })
+    
+    // Watch for when user navigates back to this component  
+    watch(() => route.path, (newPath, oldPath) => {
+      // If we're on the file explorer route and the path changed
+      if (newPath.includes('/files/') && oldPath && !oldPath.includes('/files/')) {
+        console.log('Navigating back to file explorer, refreshing file list...')
+        // Small delay to ensure component is fully mounted
+        setTimeout(() => {
+          if (currentDirectory.value || specDirectory.value) {
+            loadSpecFiles(currentDirectory.value || specDirectory.value)
+          }
+        }, 200)
+      }
     })
     
     // Clean up event listener
     onUnmounted(() => {
       document.removeEventListener('click', handleClickOutside)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
     })
     
     return {
@@ -632,6 +733,7 @@ export default {
       dropdownOpen,
       dropdownButton,
       dropdownMenu,
+      recentlyCreatedFile,
       openFile,
       openFolder,
       currentDirectory,
@@ -650,6 +752,7 @@ export default {
       selectFilter,
       setFilter,
       clearFilter,
+      clearFilterCompletely,
       applyFilter
     }
   }
