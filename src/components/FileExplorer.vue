@@ -42,30 +42,103 @@
     
     <div v-else-if="specDirectory">
       <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h5 class="mb-0">
-            <i class="bi bi-folder-fill"></i>
-            Spec Directory: {{ specDirectory }}
-          </h5>
-          <button 
-            @click="showCreateModal" 
-            class="btn btn-success btn-sm"
-            title="Create New File"
-          >
-            <i class="bi bi-plus-circle"></i>
-            New File
-          </button>
+        <div class="card-header">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">
+              <i class="bi bi-folder-fill"></i>
+              Spec Directory: {{ specDirectory }}
+            </h5>
+            <button 
+              @click="showCreateModal" 
+              class="btn btn-success btn-sm"
+              title="Create New File"
+            >
+              <i class="bi bi-plus-circle"></i>
+              New File
+            </button>
+          </div>
+          
+          <!-- Filter/Search Bar -->
+          <div class="row g-2">
+            <div class="col">
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="bi bi-search"></i>
+                </span>
+                <input
+                  v-model="filterText"
+                  type="text"
+                  class="form-control"
+                  placeholder="Filter files and folders..."
+                  @input="applyFilter"
+                  @keydown.escape="clearFilter"
+                >
+                <button 
+                  v-if="filterText"
+                  @click="clearFilter"
+                  class="btn btn-outline-secondary"
+                  type="button"
+                  title="Clear filter"
+                >
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-auto">
+              <div class="dropdown">
+                <button 
+                  ref="dropdownButton"
+                  class="btn btn-outline-secondary dropdown-toggle" 
+                  type="button" 
+                  @click="toggleDropdown"
+                  title="Filter options"
+                >
+                  <i class="bi bi-funnel"></i>
+                  {{ selectedFilter }}
+                </button>
+                <ul 
+                  ref="dropdownMenu"
+                  class="dropdown-menu"
+                  :class="{ show: dropdownOpen }"
+                >
+                  <li><a class="dropdown-item" href="#" @click.prevent="selectFilter('All')">All</a></li>
+                  <li><a class="dropdown-item" href="#" @click.prevent="selectFilter('Files')">Files Only</a></li>
+                  <li><a class="dropdown-item" href="#" @click.prevent="selectFilter('Folders')">Folders Only</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item" href="#" @click.prevent="selectFilter('.md')">.md Files</a></li>
+                  <li><a class="dropdown-item" href="#" @click.prevent="selectFilter('.txt')">.txt Files</a></li>
+                  <li><a class="dropdown-item" href="#" @click.prevent="selectFilter('.html')">.html Files</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Results info -->
+          <div v-if="filterText || selectedFilter !== 'All'" class="mt-2">
+            <small class="text-muted">
+              Showing {{ filteredFolders.length + filteredFiles.length }} results
+              <span v-if="filterText">(filtered by: "{{ filterText }}")</span>
+              <span v-if="selectedFilter !== 'All'">({{ selectedFilter }})</span>
+            </small>
+          </div>
         </div>
         <div class="card-body">
-          <div v-if="files.length === 0" class="text-center py-4">
+          <div v-if="filteredFiles.length === 0 && filteredFolders.length === 0" class="text-center py-4">
             <i class="bi bi-folder2-open" style="font-size: 3rem; color: #6c757d;"></i>
-            <p class="mt-2 text-muted">No files found in the spec directory.</p>
+            <p class="mt-2 text-muted">
+              <span v-if="filterText || selectedFilter !== 'All'">
+                No items match your filter criteria.
+              </span>
+              <span v-else>
+                No files found in the spec directory.
+              </span>
+            </p>
           </div>
           
           <div v-else class="list-group list-group-flush">
-            <!-- Show folders first -->
+            <!-- Show filtered folders first -->
             <button
-              v-for="folder in folders"
+              v-for="folder in filteredFolders"
               :key="folder.path"
               @click="openFolder(folder)"
               class="list-group-item list-group-item-action d-flex align-items-center"
@@ -77,9 +150,9 @@
               </div>
               <i class="bi bi-chevron-right"></i>
             </button>
-            <!-- Then show files -->
+            <!-- Then show filtered files -->
             <button
-              v-for="file in files"
+              v-for="file in filteredFiles"
               :key="file.path"
               @click="openFile(file)"
               class="list-group-item list-group-item-action d-flex align-items-center"
@@ -180,8 +253,47 @@
   </div>
 </template>
 
+<style scoped>
+.dropdown-menu.show {
+  display: block;
+}
+
+.input-group-text {
+  background-color: #f8f9fa;
+  border-color: #dee2e6;
+}
+
+.list-group-item:hover {
+  background-color: #f8f9fa;
+}
+
+.list-group-item.list-group-item-action {
+  border-left: none;
+  border-right: none;
+}
+
+.list-group-item.list-group-item-action:first-child {
+  border-top: none;
+}
+
+.list-group-item.list-group-item-action:last-child {
+  border-bottom: none;
+}
+
+/* Make filter section stand out slightly */
+.card-header {
+  background-color: #fff;
+  border-bottom: 2px solid #e9ecef;
+}
+
+/* Results counter styling */
+.text-muted small {
+  font-size: 0.875em;
+}
+</style>
+
 <script>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 
@@ -197,6 +309,13 @@ export default {
     const folders = ref([])
     const currentDirectory = ref('')
     
+    // Filter state
+    const filterText = ref('')
+    const selectedFilter = ref('All')
+    const dropdownOpen = ref(false)
+    const dropdownButton = ref(null)
+    const dropdownMenu = ref(null)
+    
     // Create file modal state
     const showCreateFileModal = ref(false)
     const newFileName = ref('')
@@ -205,6 +324,49 @@ export default {
     const creatingFile = ref(false)
     const createFileError = ref('')
     const fileNameInput = ref(null)
+    
+    // Computed properties for filtered results
+    const filteredFiles = computed(() => {
+      let result = files.value
+      
+      // Apply filter type
+      if (selectedFilter.value === 'Folders') {
+        result = []
+      } else if (selectedFilter.value.startsWith('.')) {
+        result = result.filter(file => file.name.toLowerCase().endsWith(selectedFilter.value))
+      }
+      
+      // Apply text filter
+      if (filterText.value) {
+        const searchTerm = filterText.value.toLowerCase()
+        result = result.filter(file => 
+          file.name.toLowerCase().includes(searchTerm) ||
+          file.path.toLowerCase().includes(searchTerm)
+        )
+      }
+      
+      return result
+    })
+    
+    const filteredFolders = computed(() => {
+      let result = folders.value
+      
+      // Apply filter type
+      if (selectedFilter.value === 'Files' || selectedFilter.value.startsWith('.')) {
+        result = []
+      }
+      
+      // Apply text filter
+      if (filterText.value) {
+        const searchTerm = filterText.value.toLowerCase()
+        result = result.filter(folder => 
+          folder.name.toLowerCase().includes(searchTerm) ||
+          folder.path.toLowerCase().includes(searchTerm)
+        )
+      }
+      
+      return result
+    })
     
     // Helper function to check authentication and redirect if needed
     const checkAuthAndRedirect = (error) => {
@@ -414,8 +576,47 @@ export default {
       }
     }
     
+    // Filter methods
+    const toggleDropdown = () => {
+      dropdownOpen.value = !dropdownOpen.value
+    }
+    
+    const selectFilter = (filterType) => {
+      selectedFilter.value = filterType
+      dropdownOpen.value = false
+    }
+    
+    const setFilter = (filterType) => {
+      selectedFilter.value = filterType
+    }
+    
+    const clearFilter = () => {
+      filterText.value = ''
+      selectedFilter.value = 'All'
+    }
+    
+    const applyFilter = () => {
+      // This method is called on input, but the computed properties
+      // automatically handle the filtering reactively
+    }
+    
+    // Close dropdown when clicking outside
+    const handleClickOutside = (event) => {
+      if (dropdownButton.value && dropdownMenu.value) {
+        if (!dropdownButton.value.contains(event.target) && !dropdownMenu.value.contains(event.target)) {
+          dropdownOpen.value = false
+        }
+      }
+    }
+    
     onMounted(() => {
       loadSpecsConfig()
+      document.addEventListener('click', handleClickOutside)
+    })
+    
+    // Clean up event listener
+    onUnmounted(() => {
+      document.removeEventListener('click', handleClickOutside)
     })
     
     return {
@@ -424,6 +625,13 @@ export default {
       specDirectory,
       files,
       folders,
+      filteredFiles,
+      filteredFolders,
+      filterText,
+      selectedFilter,
+      dropdownOpen,
+      dropdownButton,
+      dropdownMenu,
       openFile,
       openFolder,
       currentDirectory,
@@ -437,7 +645,12 @@ export default {
       showCreateModal,
       closeCreateFileModal,
       createNewFile,
-      updateDefaultContent
+      updateDefaultContent,
+      toggleDropdown,
+      selectFilter,
+      setFilter,
+      clearFilter,
+      applyFilter
     }
   }
 }
