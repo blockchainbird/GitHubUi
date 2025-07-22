@@ -42,11 +42,19 @@
     
     <div v-else-if="specDirectory">
       <div class="card">
-        <div class="card-header">
+        <div class="card-header d-flex justify-content-between align-items-center">
           <h5 class="mb-0">
             <i class="bi bi-folder-fill"></i>
             Spec Directory: {{ specDirectory }}
           </h5>
+          <button 
+            @click="showCreateModal" 
+            class="btn btn-success btn-sm"
+            title="Create New File"
+          >
+            <i class="bi bi-plus-circle"></i>
+            New File
+          </button>
         </div>
         <div class="card-body">
           <div v-if="files.length === 0" class="text-center py-4">
@@ -87,11 +95,93 @@
         </div>
       </div>
     </div>
+    
+    <!-- Create New File Modal -->
+    <div v-if="showCreateFileModal" class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @click.self="closeCreateFileModal" @keyup.escape="closeCreateFileModal">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="bi bi-plus-circle"></i>
+              Create New File
+            </h5>
+            <button @click="closeCreateFileModal" type="button" class="btn-close"></button>
+          </div>
+          <div class="modal-body">
+            <div v-if="createFileError" class="alert alert-danger" role="alert">
+              {{ createFileError }}
+            </div>
+            
+            <div class="mb-3">
+              <label for="fileName" class="form-label">File Name</label>
+              <input
+                v-model="newFileName"
+                ref="fileNameInput"
+                type="text"
+                class="form-control"
+                id="fileName"
+                placeholder="example.md"
+                @keyup.enter="createNewFile"
+                @input="updateDefaultContent"
+              >
+              <div class="form-text">
+                Supported extensions: .md, .txt, .rst, .adoc, .html
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="fileContent" class="form-label">Initial Content (Optional)</label>
+              <textarea
+                v-model="newFileContent"
+                class="form-control"
+                id="fileContent"
+                rows="6"
+                placeholder="Enter initial content for the file..."
+                @keydown.ctrl.enter="createNewFile"
+              ></textarea>
+              <div class="form-text">
+                Press Ctrl+Enter to create the file quickly
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="commitMsg" class="form-label">Commit Message</label>
+              <input
+                v-model="newFileCommitMessage"
+                type="text"
+                class="form-control"
+                id="commitMsg"
+                placeholder="Add new file"
+                @keydown.ctrl.enter="createNewFile"
+              >
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button @click="closeCreateFileModal" type="button" class="btn btn-secondary">Cancel</button>
+            <button 
+              @click="createNewFile" 
+              type="button" 
+              class="btn btn-success"
+              :disabled="!newFileName.trim() || creatingFile"
+            >
+              <span v-if="creatingFile">
+                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                Creating...
+              </span>
+              <span v-else>
+                <i class="bi bi-plus-circle"></i>
+                Create File
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 
@@ -106,6 +196,15 @@ export default {
     const files = ref([])
     const folders = ref([])
     const currentDirectory = ref('')
+    
+    // Create file modal state
+    const showCreateFileModal = ref(false)
+    const newFileName = ref('')
+    const newFileContent = ref('')
+    const newFileCommitMessage = ref('Add new file')
+    const creatingFile = ref(false)
+    const createFileError = ref('')
+    const fileNameInput = ref(null)
     
     // Helper function to check authentication and redirect if needed
     const checkAuthAndRedirect = (error) => {
@@ -221,6 +320,100 @@ export default {
       loadSpecFiles(folder.path)
     }
     
+    const showCreateModal = async () => {
+      showCreateFileModal.value = true
+      await nextTick()
+      if (fileNameInput.value) {
+        fileNameInput.value.focus()
+      }
+    }
+    
+    const closeCreateFileModal = () => {
+      showCreateFileModal.value = false
+      newFileName.value = ''
+      newFileContent.value = ''
+      newFileCommitMessage.value = 'Add new file'
+      createFileError.value = ''
+    }
+    
+    const updateDefaultContent = () => {
+      const fileName = newFileName.value.toLowerCase()
+      if (fileName.endsWith('.md') && !newFileContent.value) {
+        const baseName = newFileName.value.replace(/\.[^/.]+$/, "")
+        newFileContent.value = `# ${baseName}\n\n## Overview\n\nDescription of this specification.\n\n## Details\n\nDetailed content goes here.\n`
+      }
+    }
+    
+    const createNewFile = async () => {
+      if (!newFileName.value.trim()) {
+        createFileError.value = 'Please enter a file name'
+        return
+      }
+      
+      // Validate file extension
+      const allowedExtensions = ['.md', '.txt', '.rst', '.adoc', '.html']
+      const hasValidExtension = allowedExtensions.some(ext => 
+        newFileName.value.toLowerCase().endsWith(ext)
+      )
+      
+      if (!hasValidExtension) {
+        createFileError.value = 'File must have one of these extensions: ' + allowedExtensions.join(', ')
+        return
+      }
+      
+      try {
+        creatingFile.value = true
+        createFileError.value = ''
+        
+        const token = localStorage.getItem('github_token')
+        const config = {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        }
+        
+        // Construct the file path
+        const filePath = currentDirectory.value ? 
+          `${currentDirectory.value}/${newFileName.value}` : 
+          `${specDirectory.value}/${newFileName.value}`
+        
+        // Create the file via GitHub API
+        const createData = {
+          message: newFileCommitMessage.value || 'Add new file',
+          content: btoa(newFileContent.value || ''), // Base64 encode the content
+          branch: props.branch
+        }
+        
+        await axios.put(
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${filePath}`,
+          createData,
+          config
+        )
+        
+        // Close modal and refresh file list
+        closeCreateFileModal()
+        await loadSpecFiles(currentDirectory.value || specDirectory.value)
+        
+        // Navigate to the new file for editing
+        const encodedPath = encodeURIComponent(filePath)
+        router.push(`/editor/${props.owner}/${props.repo}/${props.branch}/${encodedPath}`)
+        
+      } catch (err) {
+        console.error('Error creating file:', err)
+        if (checkAuthAndRedirect(err)) {
+          return
+        }
+        if (err.response?.status === 422) {
+          createFileError.value = 'A file with this name already exists'
+        } else {
+          createFileError.value = 'Failed to create file. Please try again.'
+        }
+      } finally {
+        creatingFile.value = false
+      }
+    }
+    
     onMounted(() => {
       loadSpecsConfig()
     })
@@ -233,7 +426,18 @@ export default {
       folders,
       openFile,
       openFolder,
-      currentDirectory
+      currentDirectory,
+      showCreateFileModal,
+      newFileName,
+      newFileContent,
+      newFileCommitMessage,
+      creatingFile,
+      createFileError,
+      fileNameInput,
+      showCreateModal,
+      closeCreateFileModal,
+      createNewFile,
+      updateDefaultContent
     }
   }
 }
