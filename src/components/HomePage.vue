@@ -29,14 +29,23 @@
               </template>
               <template #body>
                 <div style="max-height: 60vh; overflow-y: auto; min-width: 300px;">
+                  <div class="mb-3">
+                    <input 
+                      type="text" 
+                      v-model="repoFilter" 
+                      class="form-control" 
+                      placeholder="Filter repositories..." 
+                      @input="filterRepos"
+                    >
+                  </div>
                   <div v-if="repoLoading" class="text-center my-3">
                     <span class="spinner-border spinner-border-sm me-2"></span> Loading repositories...
                   </div>
-                  <div v-else-if="repoList.length === 0" class="text-center text-muted my-3">
+                  <div v-else-if="filteredRepoList.length === 0" class="text-center text-muted my-3">
                     No repositories found.
                   </div>
                   <ul v-else class="list-group">
-                    <li v-for="item in repoList" :key="item.id" class="list-group-item list-group-item-action"
+                    <li v-for="item in filteredRepoList" :key="item.id" class="list-group-item list-group-item-action"
                       style="cursor:pointer" @click="selectRepo(item.name)">
                       <i class="bi bi-git"></i> {{ item.name }}
                     </li>
@@ -56,14 +65,23 @@
               </template>
               <template #body>
                 <div style="max-height: 60vh; overflow-y: auto; min-width: 300px;">
+                  <div class="mb-3">
+                    <input 
+                      type="text" 
+                      v-model="branchFilter" 
+                      class="form-control" 
+                      placeholder="Filter branches..." 
+                      @input="filterBranches"
+                    >
+                  </div>
                   <div v-if="branchLoading" class="text-center my-3">
                     <span class="spinner-border spinner-border-sm me-2"></span> Loading branches...
                   </div>
-                  <div v-else-if="branchList.length === 0" class="text-center text-muted my-3">
+                  <div v-else-if="filteredBranchList.length === 0" class="text-center text-muted my-3">
                     No branches found.
                   </div>
                   <ul v-else class="list-group">
-                    <li v-for="item in branchList" :key="item.name" class="list-group-item list-group-item-action"
+                    <li v-for="item in filteredBranchList" :key="item.name" class="list-group-item list-group-item-action"
                       style="cursor:pointer" @click="selectBranch(item.name)">
                       <i class="bi bi-git"></i> {{ item.name }}
                     </li>
@@ -172,9 +190,13 @@ export default {
     const showRepoModal = ref(false)
     const repoList = ref([])
     const repoLoading = ref(false)
+    const repoFilter = ref('')
+    const filteredRepoList = ref([])
     const showBranchModal = ref(false)
     const branchList = ref([])
     const branchLoading = ref(false)
+    const branchFilter = ref('')
+    const filteredBranchList = ref([])
     // Fetch branches for the selected repo
     const fetchBranches = async () => {
       if (!owner.value || !repo.value) return
@@ -190,10 +212,37 @@ export default {
         } : { headers: { 'Accept': 'application/vnd.github.v3+json' } }
         const res = await axios.get(`https://api.github.com/repos/${owner.value}/${repo.value}/branches?per_page=100`, config)
         branchList.value = (res.data || []).map(b => ({ name: b.name }))
+        filteredBranchList.value = [...branchList.value]
       } catch (e) {
         branchList.value = []
+        filteredBranchList.value = []
       } finally {
         branchLoading.value = false
+      }
+    }
+
+    // Filter repositories
+    const filterRepos = () => {
+      const filter = repoFilter.value.toLowerCase().trim()
+      if (!filter) {
+        filteredRepoList.value = [...repoList.value]
+      } else {
+        filteredRepoList.value = repoList.value.filter(repo => 
+          repo.name.toLowerCase().includes(filter) ||
+          (repo.description && repo.description.toLowerCase().includes(filter))
+        )
+      }
+    }
+
+    // Filter branches
+    const filterBranches = () => {
+      const filter = branchFilter.value.toLowerCase().trim()
+      if (!filter) {
+        filteredBranchList.value = [...branchList.value]
+      } else {
+        filteredBranchList.value = branchList.value.filter(branch => 
+          branch.name.toLowerCase().includes(filter)
+        )
       }
     }
 
@@ -231,6 +280,7 @@ export default {
     // Show modal and fetch branches on input focus
     const onBranchInputFocus = async () => {
       if (!owner.value || !repo.value) return
+      branchFilter.value = ''
       showBranchModal.value = true
       await fetchBranches()
     }
@@ -239,6 +289,7 @@ export default {
     const selectBranch = (branchName) => {
       branch.value = branchName
       showBranchModal.value = false
+      branchFilter.value = ''
     }
 
     // Fetch repos for the given owner
@@ -263,8 +314,10 @@ export default {
           res = await axios.get(`https://api.github.com/orgs/${owner.value}/repos?per_page=100`, config)
         }
         repoList.value = res.data || []
+        filteredRepoList.value = [...repoList.value]
       } catch (e) {
         repoList.value = []
+        filteredRepoList.value = []
       } finally {
         repoLoading.value = false
       }
@@ -273,6 +326,7 @@ export default {
     // Show modal and fetch repos on input focus
     const onRepoInputFocus = async () => {
       if (!owner.value) return
+      repoFilter.value = ''
       showRepoModal.value = true
       await fetchRepos()
     }
@@ -281,6 +335,7 @@ export default {
     const selectRepo = (repoName) => {
       repo.value = repoName
       showRepoModal.value = false
+      repoFilter.value = ''
     }
 
     const accessRepository = async () => {
@@ -339,13 +394,19 @@ export default {
       showRepoModal,
       repoList,
       repoLoading,
+      repoFilter,
+      filteredRepoList,
       onRepoInputFocus,
       selectRepo,
+      filterRepos,
       showBranchModal,
       branchList,
       branchLoading,
+      branchFilter,
+      filteredBranchList,
       onBranchInputFocus,
       selectBranch,
+      filterBranches,
       visitedRepos,
       removeRepo,
       clearAllRepos,
