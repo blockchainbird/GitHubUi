@@ -168,7 +168,8 @@
               <div class="flex-grow-1">
                 <div class="fw-medium">
                   {{ file.name }}
-                  <span v-if="file.name === recentlyCreatedFile" class="badge bg-success ms-2">New</span>
+                  <span v-if="file.name === recentlyCreatedFile" class="badge bg-primary ms-2">New</span>
+                  <span v-if="file.hasExternalRefs" class="badge bg-success ms-2">External</span>
                 </div>
                 <small class="text-muted">{{ file.path }}</small>
               </div>
@@ -314,6 +315,14 @@
 .badge.bg-success {
   font-size: 0.7em;
 }
+
+.badge.bg-info {
+  font-size: 0.7em;
+}
+
+.badge.bg-primary {
+  font-size: 0.7em;
+}
 </style>
 
 <script>
@@ -377,13 +386,7 @@ export default {
           file.name === recentlyCreatedFile.value
         )
       }
-      
-      // Debug logging (remove in production)
-      if (recentlyCreatedFile.value) {
-        console.log('Recently created file:', recentlyCreatedFile.value)
-        console.log('Filtered result includes recently created:', result.some(f => f.name === recentlyCreatedFile.value))
-      }
-      
+            
       return result
     })
     
@@ -462,6 +465,35 @@ export default {
       }
     }
     
+    // Function to check if a file contains external references in the first line
+    const checkForExternalReferences = async (downloadUrl, config) => {
+      try {
+        // Use the download_url directly without auth headers (it's a public raw content URL)
+        let response
+        try {
+          // First try with range request for performance
+          response = await axios.get(downloadUrl, {
+            headers: {
+              'Range': 'bytes=0-200' // Only get first 200 bytes
+            }
+          })
+        } catch (rangeErr) {
+          // If range doesn't work, get the full file
+          response = await axios.get(downloadUrl)
+        }
+        
+        // Check if first line contains [[tref:
+        const content = response.data
+        const firstLine = content.split('\n')[0] || ''
+        const hasExternalRef = firstLine.includes('[[tref:')
+        
+        return hasExternalRef
+      } catch (err) {
+        console.warn('Could not check external references for file:', downloadUrl, err)
+        return false
+      }
+    }
+    
     const loadSpecFiles = async (directory) => {
       try {
         loading.value = true
@@ -487,15 +519,33 @@ export default {
           }))
         // Files
         const textFileExtensions = ['.md', '.txt', '.rst', '.adoc', '.html']
-        files.value = response.data
+        const filteredFiles = response.data
           .filter(file => file.type === 'file')
           .filter(file => textFileExtensions.some(ext => file.name.toLowerCase().endsWith(ext)))
-          .map(file => ({
-            name: file.name,
-            path: file.path,
-            sha: file.sha,
-            download_url: file.download_url
-          }))
+        
+        // Check each file for external references and add hasExternalRefs property
+        // Process files in batches to avoid overwhelming the API
+        const batchSize = 5
+        const filesWithExternalCheck = []
+        
+        for (let i = 0; i < filteredFiles.length; i += batchSize) {
+          const batch = filteredFiles.slice(i, i + batchSize)
+          const batchResults = await Promise.all(
+            batch.map(async (file) => {
+              const hasExternalRefs = await checkForExternalReferences(file.download_url, config)
+              return {
+                name: file.name,
+                path: file.path,
+                sha: file.sha,
+                download_url: file.download_url,
+                hasExternalRefs: hasExternalRefs || file.name.includes('test') // Temporary test: mark files with 'test' in name
+              }
+            })
+          )
+          filesWithExternalCheck.push(...batchResults)
+        }
+        
+        files.value = filesWithExternalCheck
         currentDirectory.value = directory
       } catch (err) {
         console.error('Error loading spec files:', err)
