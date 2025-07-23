@@ -179,6 +179,29 @@
               >
             </div>
             
+            <div class="mb-3">
+              <label class="form-label">Reference Type</label>
+              <div class="btn-group w-100" role="group">
+                <input type="radio" class="btn-check" id="refType-auto" v-model="referenceType" value="auto" autocomplete="off" checked>
+                <label class="btn btn-outline-primary" for="refType-auto">Auto</label>
+                
+                <input type="radio" class="btn-check" id="refType-ref" v-model="referenceType" value="ref" autocomplete="off">
+                <label class="btn btn-outline-primary" for="refType-ref">[[ref:]]</label>
+                
+                <input type="radio" class="btn-check" id="refType-xref" v-model="referenceType" value="xref" autocomplete="off">
+                <label class="btn btn-outline-primary" for="refType-xref">[[xref:]]</label>
+                
+                <input type="radio" class="btn-check" id="refType-tref" v-model="referenceType" value="tref" autocomplete="off">
+                <label class="btn btn-outline-primary" for="refType-tref">[[tref:]]</label>
+                
+                <input type="radio" class="btn-check" id="refType-def" v-model="referenceType" value="def" autocomplete="off">
+                <label class="btn btn-outline-success" for="refType-def">[[def:]]</label>
+              </div>
+              <div class="form-text">
+                Auto: Uses the appropriate format based on term type (ref for local, xref for external). Use [[def:]] to create term definitions.
+              </div>
+            </div>
+            
             <div v-if="loadingTerms" class="text-center py-4">
               <div class="spinner-border" role="status">
                 <span class="visually-hidden">Loading terms...</span>
@@ -352,6 +375,7 @@ export default {
     const loadingTerms = ref(false)
     const termsError = ref('')
     const specsConfig = ref(null)
+    const referenceType = ref('auto')
     
     // Add Term modal state
     const newTerm = ref({
@@ -402,6 +426,102 @@ export default {
         .replace(/^\* (.*$)/gim, '<li>$1</li>')
         .replace(/^\d+\. (.*$)/gim, '<li>$1</li>')
         .replace(/\n/gim, '<br>')
+      
+      // Process term reference patterns: [[tref: spec_name, term_id]], [[xref: spec_name, term_id]], and [[ref: term_id]]
+      // We need to access terms.value to make this reactive
+      const currentTerms = terms.value
+      
+      // Handle tref and xref patterns (external references)
+      html = html.replace(/\[\[(tref|xref):\s*([^,\]]+),\s*([^\]]+)\]\]/g, (match, refType, specName, termId) => {
+        const cleanSpecName = specName.trim()
+        const cleanTermId = termId.trim()
+        
+        // Try to find the term definition from current terms
+        const termDef = currentTerms.find(t => {
+          // For external specs, match by external spec name and term id
+          if (t.external && t.externalSpec === cleanSpecName && t.id === cleanTermId) {
+            return true
+          }
+          // For local specs, just match by term id (assuming local spec)
+          if (!t.external && t.id === cleanTermId) {
+            return true
+          }
+          return false
+        })
+        
+        if (termDef) {
+          const definition = termDef.definition || termDef.definitionText || 'No definition available'
+          return `<h2 class="term-reference">
+            <span class="term-name">${cleanTermId}</span>
+            <div class="term-definition">${definition}</div>
+          </h2>`
+        } else {
+          // If definition not found and terms are not loaded, trigger loading
+          if (currentTerms.length === 0) {
+            // Trigger async loading without blocking
+            setTimeout(() => loadTermDefinitionAsync(cleanSpecName, cleanTermId), 0)
+            return `<div class="term-reference">
+              <span class="term-name">${cleanTermId}</span>
+              <div class="term-definition loading">Loading definition...</div>
+            </div>`
+          } else {
+            // Terms are loaded but term not found
+            return `<div class="term-reference">
+              <span class="term-name">${cleanTermId}</span>
+              <div class="term-definition not-found">Definition not found for "${cleanTermId}" in spec "${cleanSpecName}"</div>
+            </div>`
+          }
+        }
+      })
+      
+      // Handle ref patterns (local references)
+      html = html.replace(/\[\[ref:\s*([^\]]+)\]\]/g, (match, termId) => {
+        const cleanTermId = termId.trim()
+        
+        // Try to find the term definition from current terms
+        const termDef = currentTerms.find(t => {
+          // For local specs, match by term id
+          if (!t.external && t.id === cleanTermId) {
+            return true
+          }
+          return false
+        })
+        
+        if (termDef) {
+          const definition = termDef.definition || termDef.definitionText || 'No definition available'
+          return `<div class="term-reference">
+            <span class="term-name">${cleanTermId}</span>
+            <div class="term-definition">${definition}</div>
+          </div>`
+        } else {
+          // If definition not found and terms are not loaded, trigger loading
+          if (currentTerms.length === 0) {
+            // Trigger async loading without blocking
+            setTimeout(() => loadTermDefinitionAsync('', cleanTermId), 0)
+            return `<div class="term-reference">
+              <span class="term-name">${cleanTermId}</span>
+              <div class="term-definition loading">Loading definition...</div>
+            </div>`
+          } else {
+            // Terms are loaded but term not found
+            return `<div class="term-reference">
+              <span class="term-name">${cleanTermId}</span>
+              <div class="term-definition not-found">Definition not found for "${cleanTermId}"</div>
+            </div>`
+          }
+        }
+      })
+      
+      // Handle def patterns (term definitions) [[def: term-id, alias1, alias2, ...]]
+      html = html.replace(/\[\[def:\s*([^,\]]+)(?:,\s*([^\]]+))?\]\]/g, (match, termId, aliases) => {
+        const cleanTermId = termId.trim()
+        const cleanAliases = aliases ? aliases.split(',').map(a => a.trim()).filter(a => a.length > 0) : []
+        
+        return `<h2 class="term-definition-marker">
+          <span class="definition-term-name">${cleanTermId}</span>
+          ${cleanAliases.length > 0 ? `<div class="definition-aliases">Aliases: ${cleanAliases.join(', ')}</div>` : ''}
+        </h2>`
+      })
       
       // Wrap consecutive list items in ul tags
       html = html.replace(/(<li>.*<\/li>)/gim, '<ul>$1</ul>')
@@ -902,10 +1022,42 @@ export default {
       const end = textarea.selectionEnd
       
       let refText
-      if (term.external) {
-        refText = `[[xref: ${term.externalSpec}, ${term.id}]]`
-      } else {
-        refText = `[[ref: ${term.id}]]`
+      
+      // Determine reference format based on user selection
+      switch (referenceType.value) {
+        case 'ref':
+          refText = `[[ref: ${term.id}]]`
+          break
+        case 'xref':
+          if (term.external) {
+            refText = `[[xref: ${term.externalSpec}, ${term.id}]]`
+          } else {
+            refText = `[[xref: local, ${term.id}]]`
+          }
+          break
+        case 'tref':
+          if (term.external) {
+            refText = `[[tref: ${term.externalSpec}, ${term.id}]]`
+          } else {
+            refText = `[[tref: local, ${term.id}]]`
+          }
+          break
+        case 'def':
+          // For def, include aliases if available
+          if (term.aliases && term.aliases.length > 0) {
+            refText = `[[def: ${term.id}, ${term.aliases.join(', ')}]]`
+          } else {
+            refText = `[[def: ${term.id}]]`
+          }
+          break
+        case 'auto':
+        default:
+          if (term.external) {
+            refText = `[[xref: ${term.externalSpec}, ${term.id}]]`
+          } else {
+            refText = `[[ref: ${term.id}]]`
+          }
+          break
       }
       
       content.value = content.value.substring(0, start) + refText + content.value.substring(end)
@@ -1010,6 +1162,19 @@ export default {
         const newPosition = start + termDefinition.length
         textarea.setSelectionRange(newPosition, newPosition)
       })
+    }
+    
+    // Helper functions for tref processing
+    const loadTermDefinitionAsync = async (specName, termId) => {
+      // If terms are not loaded yet, load them
+      if (!terms.value || terms.value.length === 0) {
+        // Try loading from storage first
+        if (!loadTermsFromStorage()) {
+          // If not in storage, load from repository
+          await loadTermsFromRepository()
+        }
+        // The computed property will automatically re-render when terms.value changes
+      }
     }
     
     const goBack = () => {
@@ -1149,6 +1314,76 @@ textarea:focus {
 
 .external-term:hover {
   background-color: #f0f8f0 !important;
+}
+
+/* Term reference styles */
+.term-reference {
+  margin: 1rem 0;
+  padding: 0.75rem;
+  border: 1px solid #e9ecef;
+  border-radius: 0.375rem;
+  background-color: #f8f9fa;
+}
+
+.term-name {
+  font-weight: 600;
+  color: #0d6efd;
+  font-size: 1.1em;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.term-definition {
+  color: #495057;
+  font-size: 0.95em;
+  line-height: 1.5;
+}
+
+.term-definition.loading {
+  color: #6c757d;
+  font-style: italic;
+}
+
+.term-definition.not-found {
+  color: #dc3545;
+  font-style: italic;
+  background-color: #f8d7da;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  border: 1px solid #f5c6cb;
+}
+
+.term-definition dl {
+  margin: 0;
+}
+
+.term-definition dd {
+  margin: 0;
+  padding: 0.25rem 0;
+}
+
+/* Term definition marker styles */
+.term-definition-marker {
+  margin: 1rem 0;
+  padding: 0.75rem;
+  border: 2px solid #28a745;
+  border-radius: 0.375rem;
+  background-color: #d4edda;
+  border-left: 4px solid #28a745;
+}
+
+.definition-term-name {
+  font-weight: 700;
+  color: #155724;
+  font-size: 1.2em;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.definition-aliases {
+  color: #6c757d;
+  font-size: 0.9em;
+  font-style: italic;
 }
 </style>
 
