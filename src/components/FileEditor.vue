@@ -431,8 +431,8 @@ export default {
       // We need to access terms.value to make this reactive
       const currentTerms = terms.value
       
-      // Handle tref and xref patterns (external references)
-      html = html.replace(/\[\[(tref|xref):\s*([^,\]]+),\s*([^\]]+)\]\]/g, (match, refType, specName, termId) => {
+      // Handle tref patterns (external references)
+      html = html.replace(/\[\[tref:\s*([^,\]]+),\s*([^\]]+)\]\]/g, (match, refType, specName, termId) => {
         const cleanSpecName = specName.trim()
         const cleanTermId = termId.trim()
         
@@ -455,6 +455,49 @@ export default {
             <span class="term-name">${cleanTermId}</span>
             <div class="term-definition">${definition}</div>
           </h2>`
+        } else {
+          // If definition not found and terms are not loaded, trigger loading
+          if (currentTerms.length === 0) {
+            // Trigger async loading without blocking
+            setTimeout(() => loadTermDefinitionAsync(cleanSpecName, cleanTermId), 0)
+            return `<div class="term-reference">
+              <span class="term-name">${cleanTermId}</span>
+              <div class="term-definition loading">Loading definition...</div>
+            </div>`
+          } else {
+            // Terms are loaded but term not found
+            return `<div class="term-reference">
+              <span class="term-name">${cleanTermId}</span>
+              <div class="term-definition not-found">Definition not found for "${cleanTermId}" in spec "${cleanSpecName}"</div>
+            </div>`
+          }
+        }
+      })
+
+      // Handle xref patterns (external references)
+      html = html.replace(/\[\[xref:\s*([^,\]]+),\s*([^\]]+)\]\]/g, (match, specName, termId) => {
+        const cleanSpecName = specName.trim()
+        const cleanTermId = termId.trim()
+
+        // Try to find the term definition from current terms
+        const termDef = currentTerms.find(t => {
+          // For external specs, match by external spec name and term id
+          if (t.external && t.externalSpec === cleanSpecName && t.id === cleanTermId) {
+            return true
+          }
+          // For local specs, just match by term id (assuming local spec)
+          if (!t.external && t.id === cleanTermId) {
+            return true
+          }
+          return false
+        })
+
+        if (termDef) {
+          const definition = termDef.definition || termDef.definitionText || 'No definition available'
+          return `<div class="term-reference">
+            <span class="term-name">${cleanTermId}</span>
+            <div class="term-definition">${definition}</div>
+          </div>`
         } else {
           // If definition not found and terms are not loaded, trigger loading
           if (currentTerms.length === 0) {
@@ -1234,7 +1277,7 @@ export default {
 }
 </script>
 
-<style scoped>
+<style>
 .markdown-preview {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.6;
@@ -1322,7 +1365,7 @@ textarea:focus {
   padding: 0.75rem;
   border: 1px solid #e9ecef;
   border-radius: 0.375rem;
-  background-color: #f8f9fa;
+  background-color: #94c3f1;
 }
 
 .term-name {
