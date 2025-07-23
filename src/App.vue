@@ -64,7 +64,14 @@ export default {
           const parsedUser = JSON.parse(userData)
           handleLogin({ ...parsedUser, token })
           if (router.currentRoute.value.path === '/login') {
-            router.push('/home')
+            // Check if there's an intended redirect URL
+            const intendedRedirect = localStorage.getItem('intended_redirect')
+            if (intendedRedirect) {
+              localStorage.removeItem('intended_redirect')
+              router.push(intendedRedirect)
+            } else {
+              router.push('/home')
+            }
           }
         } catch (error) {
           localStorage.removeItem('github_token')

@@ -114,7 +114,15 @@ export default {
         }
         
         emit('login', userData)
-        router.push('/home')
+        
+        // Check if there's an intended redirect URL
+        const intendedRedirect = localStorage.getItem('intended_redirect')
+        if (intendedRedirect) {
+          localStorage.removeItem('intended_redirect')
+          router.push(intendedRedirect)
+        } else {
+          router.push('/home')
+        }
         
       } catch (err) {
         console.error('Login error:', err)

@@ -33,6 +33,10 @@ router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('github_token');
 
   if (authRequired && (!user || !token)) {
+    // Store the intended destination before redirecting to login
+    if (to.path !== '/login') {
+      localStorage.setItem('intended_redirect', to.fullPath);
+    }
     next('/login');
   } else {
     next();
@@ -50,8 +54,9 @@ axios.interceptors.response.use(
       // Token is invalid or expired, clear it and redirect to login
       localStorage.removeItem('github_token')
       localStorage.removeItem('github_user')
-      // Only redirect if we're not already on the login page
+      // Store the current path as intended redirect before redirecting to login
       if (router.currentRoute.value.path !== '/login') {
+        localStorage.setItem('intended_redirect', router.currentRoute.value.fullPath);
         router.push('/login')
       }
     }
