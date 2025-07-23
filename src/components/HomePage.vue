@@ -85,37 +85,6 @@
               </button>
             </div>
           </form>
-
-          <div class="mt-4 text-center">
-            <small class="text-muted">
-              This will look for a <code>specs.json</code> file in the repository root
-              to find the spec directory.
-            </small>
-          </div>
-
-          <hr class="my-4">
-
-          <div class="text-center">
-            <h6 class="text-muted mb-3">
-              <i class="bi bi-link-45deg"></i>
-              External Specifications Management
-            </h6>
-            <p class="small text-muted mb-3">
-              Once you access a repository, you can also manage external specifications
-              that reference terms from other repositories.
-            </p>
-            <div class="d-flex justify-content-center gap-2 flex-wrap">
-              <span class="badge bg-light text-dark">
-                <i class="bi bi-plus-circle"></i> Add External Specs
-              </span>
-              <span class="badge bg-light text-dark">
-                <i class="bi bi-pencil"></i> Edit Configurations
-              </span>
-              <span class="badge bg-light text-dark">
-                <i class="bi bi-trash"></i> Remove Specs
-              </span>
-            </div>
-          </div>
         </div>
       </div>
     </div>
