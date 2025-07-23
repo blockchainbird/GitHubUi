@@ -46,7 +46,7 @@
           <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="mb-0">
               <i class="bi bi-folder-fill"></i>
-              Spec Directory: {{ specDirectory }}
+              Spec Directory: {{ currentDirectory }}
             </h5>
             <button 
               @click="showCreateModal" 
@@ -712,7 +712,7 @@ export default {
         // Small delay to ensure component is fully mounted
         setTimeout(() => {
           if (currentDirectory.value || specDirectory.value) {
-            loadSpecFiles(currentDirectory.value || specDirectory.value)
+            loadSpecFiles(currentDirectory.value || specDirectory.value);
           }
         }, 200)
       }
