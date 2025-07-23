@@ -432,10 +432,9 @@ export default {
       const currentTerms = terms.value
       
       // Handle tref patterns (external references)
-      html = html.replace(/\[\[tref:\s*([^,\]]+),\s*([^\]]+)\]\]/g, (match, refType, specName, termId) => {
+      html = html.replace(/\[\[tref:\s*([^,\]]+),\s*([^\]]+)\]\]/g, (match, specName, termId) => {
         const cleanSpecName = specName.trim()
         const cleanTermId = termId.trim()
-        
         // Try to find the term definition from current terms
         const termDef = currentTerms.find(t => {
           // For external specs, match by external spec name and term id
@@ -448,7 +447,6 @@ export default {
           }
           return false
         })
-        
         if (termDef) {
           const definition = termDef.definition || termDef.definitionText || 'No definition available'
           return `<h2 class="term-reference">
