@@ -944,6 +944,21 @@ export default {
               ? spec.gh_page 
               : encodeURIComponent(spec.gh_page)
             
+            // Check if first proxy (our PHP proxy) is responsive
+            if (proxyIndex === 0) {
+              try {
+                console.log(`🔄 Checking proxy status for ${spec.external_spec}...`)
+                const statusResponse = await axios.get(`${proxyUrl.replace('?url=', '?status=1&url=')}${targetUrl}`, {
+                  timeout: 2000
+                })
+                if (statusResponse.data?.status === 'proxy_active') {
+                  console.log(`✅ Proxy is responsive for ${spec.external_spec}`)
+                }
+              } catch (statusErr) {
+                console.warn(`⚠️ Proxy status check failed for ${spec.external_spec}, proceeding anyway`)
+              }
+            }
+            
             console.log(`Loading external spec: ${spec.external_spec} from ${spec.gh_page} (proxy ${proxyIndex + 1}/${corsProxies.length})`)
             
             const response = await axios.get(`${proxyUrl}${targetUrl}`, {
