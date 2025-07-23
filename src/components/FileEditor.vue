@@ -327,6 +327,7 @@
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import { addToVisitedRepos } from '../utils/visitedRepos.js'
 
 export default {
   name: 'FileEditor',
@@ -1016,6 +1017,9 @@ export default {
     }
     
     onMounted(() => {
+      // Add this repository to visited history
+      addToVisitedRepos(props.owner, props.repo, props.branch)
+      
       loadFileContent()
     })
     

@@ -314,6 +314,7 @@
 import { ref, onMounted, onUnmounted, nextTick, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
+import { addToVisitedRepos } from '../utils/visitedRepos.js'
 
 export default {
   name: 'FileExplorer',
@@ -684,6 +685,9 @@ export default {
     }
     
     onMounted(() => {
+      // Add this repository to visited history
+      addToVisitedRepos(props.owner, props.repo, props.branch)
+      
       loadSpecsConfig()
       document.addEventListener('click', handleClickOutside)
       document.addEventListener('visibilitychange', handleVisibilityChange)

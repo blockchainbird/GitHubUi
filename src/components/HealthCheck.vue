@@ -104,6 +104,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import { addToVisitedRepos } from '../utils/visitedRepos.js'
 
 export default {
   name: 'HealthCheck',
@@ -1094,6 +1095,11 @@ export default {
         isRunning.value = false
       }
     }
+
+    onMounted(() => {
+      // Add this repository to visited history
+      addToVisitedRepos(props.owner, props.repo, props.branch)
+    })
 
     return {
       isRunning,

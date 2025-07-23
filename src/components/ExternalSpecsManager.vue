@@ -224,6 +224,7 @@
 <script>
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { addToVisitedRepos } from '../utils/visitedRepos.js'
 
 export default {
   name: 'ExternalSpecsManager',
@@ -456,6 +457,9 @@ export default {
     }
     
     onMounted(() => {
+      // Add this repository to visited history
+      addToVisitedRepos(owner.value, repo.value, branch.value)
+      
       loadSpecs()
     })
     
