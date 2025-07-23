@@ -21,6 +21,20 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET');
 header('Access-Control-Allow-Headers: *');
 
+// Check if client wants status updates
+$wantStatus = isset($_GET['status']) && $_GET['status'] === '1';
+
+if ($wantStatus) {
+    // Send immediate status response
+    header('Content-Type: application/json');
+    echo json_encode([
+        'status' => 'proxy_active', 
+        'message' => 'Proxy responding, fetching content...',
+        'timestamp' => time()
+    ]);
+    exit;
+}
+
 // Forward the request
 $ch = curl_init($url);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
