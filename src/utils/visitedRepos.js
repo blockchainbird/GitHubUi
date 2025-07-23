@@ -3,7 +3,7 @@
  */
 
 const STORAGE_KEY = 'visited_repositories'
-const MAX_REPOS = 12
+const MAX_REPOS = 48
 
 /**
  * Load visited repositories from localStorage
