@@ -1,6 +1,9 @@
 <template>
   <nav class="main-nav">
-    <button @click="showModal = true" class="btn btn-outline-secondary">About</button>
+    <button @click="$router.push('/home')" class="btn btn-outline-secondary">
+      Home
+    </button>
+    <button @click="showModal = true" class="ms-3 btn btn-outline-secondary">About</button>
     <a href="https://blockchainbird.github.io/spec-up-t-website/" target="_blank" rel="noopener"
       class="ms-3 btn btn-outline-secondary">
       Documentation
