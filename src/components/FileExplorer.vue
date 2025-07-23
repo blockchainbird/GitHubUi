@@ -123,6 +123,12 @@
           </div>
         </div>
         <div class="card-body">
+          <!-- Go Up button: only show if not at root specDirectory -->
+          <div v-if="showGoUpButton" class="mb-3">
+            <button @click="goUpDirectory" class="btn btn-outline-secondary btn-sm" :disabled="loading">
+              <i class="bi bi-arrow-up"></i> Go Up
+            </button>
+          </div>
           <div v-if="filteredFiles.length === 0 && filteredFolders.length === 0" class="text-center py-4">
             <i class="bi bi-folder2-open" style="font-size: 3rem; color: #6c757d;"></i>
             <p class="mt-2 text-muted">
@@ -724,6 +730,37 @@ export default {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     })
     
+    // Go Up directory function (never go above root specDirectory)
+    const goUpDirectory = () => {
+      const current = normalizeDir(currentDirectory.value);
+      const root = normalizeDir(specDirectory.value);
+      if (current === root) return;
+      const parts = current.split('/');
+      if (parts.length > 1) {
+        parts.pop();
+        const parent = parts.join('/') || root;
+        // Prevent going above root
+        if (normalizeDir(parent).startsWith(root)) {
+          loadSpecFiles(parent);
+        } else {
+          loadSpecFiles(root);
+        }
+      } else {
+        loadSpecFiles(root);
+      }
+    };
+
+    // Utility to normalize directory strings (remove trailing slashes)
+    function normalizeDir(dir) {
+      return dir ? dir.replace(/\/+$/, '') : '';
+    }
+
+    // Only show Go Up button if not at root and not loading
+    const showGoUpButton = computed(() => {
+      if (loading.value) return false;
+      return normalizeDir(currentDirectory.value) !== normalizeDir(specDirectory.value);
+    });
+
     return {
       loading,
       error,
@@ -757,7 +794,9 @@ export default {
       setFilter,
       clearFilter,
       clearFilterCompletely,
-      applyFilter
+      applyFilter,
+      goUpDirectory,
+      showGoUpButton
     }
   }
 }
