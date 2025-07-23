@@ -1,5 +1,5 @@
 import { createApp } from 'vue'
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import App from './App.vue'
 import LoginPage from './components/LoginPage.vue'
 import HomePage from './components/HomePage.vue'
@@ -19,17 +19,19 @@ const routes = [
 ]
 
 const basePath = import.meta.env.VITE_BASE_PATH || '/';
+
 const router = createRouter({
-  history: createWebHistory(basePath),
+  history: createWebHashHistory(basePath),
   routes
 })
+
 // Global navigation guard to check authentication
 router.beforeEach((to, from, next) => {
   const publicPages = ['/login'];
   const authRequired = !publicPages.includes(to.path);
   const user = localStorage.getItem('github_user');
   const token = localStorage.getItem('github_token');
-  
+
   if (authRequired && (!user || !token)) {
     next('/login');
   } else {
