@@ -861,13 +861,11 @@ export default {
             'Accept': 'application/vnd.github.v3+json'
           }
         }
-        console.log("KORKORKOR");
         // Get files in terms directory
         const response = await axios.get(
           `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${fullTermsPath}?ref=${props.branch}`,
           requestConfig
         )
-        console.log("KORKORKOR2");
         const files = response.data.filter(item => 
           item.type === 'file' && 
           (item.name.toLowerCase().endsWith('.md') || 
@@ -1277,6 +1275,7 @@ export default {
       filterTerms,
       insertTermReference,
       refreshTerms,
+      referenceType,
       // Add Term functionality
       newTerm,
       addTermError,
