@@ -206,7 +206,7 @@
               <div class="spinner-border" role="status">
                 <span class="visually-hidden">Loading terms...</span>
               </div>
-              <p class="mt-2">Loading terms from repository...</p>
+              <p class="mt-2">Loading terms from repository... {{ proxyInfo }}</p>
             </div>
             
             <div v-else-if="termsError" class="alert alert-warning" role="alert">
@@ -373,6 +373,7 @@ export default {
     const filteredTerms = ref([])
     const termFilter = ref('')
     const loadingTerms = ref(false)
+    const proxyInfo = ref('')
     const termsError = ref('')
     const specsConfig = ref(null)
     const referenceType = ref('auto')
@@ -860,13 +861,13 @@ export default {
             'Accept': 'application/vnd.github.v3+json'
           }
         }
-        
+        console.log("KORKORKOR");
         // Get files in terms directory
         const response = await axios.get(
           `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${fullTermsPath}?ref=${props.branch}`,
           requestConfig
         )
-        
+        console.log("KORKORKOR2");
         const files = response.data.filter(item => 
           item.type === 'file' && 
           (item.name.toLowerCase().endsWith('.md') || 
@@ -880,10 +881,10 @@ export default {
         // Process local files in parallel but limit concurrency to avoid rate limits
         const batchSize = 5
         for (let i = 0; i < files.length; i += batchSize) {
+          proxyInfo.value = `Processing files ${i + 1} to ${Math.min(i + batchSize, files.length)}...`;
           const batch = files.slice(i, i + batchSize)
           const promises = batch.map(file => extractTermsFromFile(file.path))
           const results = await Promise.all(promises)
-          
           results.forEach(term => {
             if (term) {
               termsData.push(term)
@@ -1270,6 +1271,7 @@ export default {
       filteredTerms,
       termFilter,
       loadingTerms,
+      proxyInfo,
       termsError,
       showTermsModal,
       filterTerms,
