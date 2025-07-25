@@ -101,6 +101,10 @@
                     <i class="bi bi-plus-circle"></i>
                     Term
                   </button>
+                  <button @click="showHelpModal" class="btn btn-outline-info" title="Editor Help">
+                    <i class="bi bi-question-circle"></i>
+                    Help
+                  </button>
                 </div>
               </div>
 
@@ -306,6 +310,27 @@
         </div>
       </div>
     </div>
+
+    <!-- Help Modal -->
+    <div class="modal fade" id="helpModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="bi bi-question-circle"></i>
+              Editor Help
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="help-content" v-html="helpContent"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -349,6 +374,29 @@ export default {
       aliases: ['']
     })
     const addTermError = ref('')
+
+    // Help modal content
+    const helpContent = ref(`
+      <h6><i class="bi bi-info-circle"></i> Editor Overview</h6>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p>
+      
+      <h6><i class="bi bi-pencil"></i> Editing Features</h6>
+      <ul>
+        <li><strong>Bold Text:</strong> Ut aliquip ex ea commodo consequat</li>
+        <li><strong>Italic Text:</strong> Duis aute irure dolor in reprehenderit</li>
+        <li><strong>Code Blocks:</strong> Voluptate velit esse cillum dolore</li>
+        <li><strong>Links:</strong> Eu fugiat nulla pariatur excepteur sint</li>
+      </ul>
+      
+      <h6><i class="bi bi-bookmark"></i> Term References</h6>
+      <p>Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Sed ut perspiciatis unde omnis iste natus error sit voluptatem:</p>
+      <div class="alert alert-info">
+        <strong>Tip:</strong> Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+      </div>
+      
+      <h6><i class="bi bi-eye"></i> Preview Mode</h6>
+      <p>Quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
+    `)
 
     // Content validation state
     const validationWarnings = ref([])
@@ -1192,6 +1240,12 @@ export default {
       modal.show()
     }
 
+    // Help functionality
+    const showHelpModal = () => {
+      const modal = new bootstrap.Modal(document.getElementById('helpModal'))
+      modal.show()
+    }
+
     const onTermNameChange = () => {
       addTermError.value = ''
       // If term name exists and we only have an empty alias, keep one empty alias ready
@@ -1331,7 +1385,10 @@ export default {
       addAlias,
       removeAlias,
       generateTermDefinition,
-      insertNewTerm
+      insertNewTerm,
+      // Help functionality
+      helpContent,
+      showHelpModal
     }
   }
 }
@@ -1487,6 +1544,26 @@ textarea:focus {
   color: #6c757d;
   font-size: 0.9em;
   font-style: italic;
+}
+
+/* Help modal styles */
+.help-content h6 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: #495057;
+  font-weight: 600;
+}
+
+.help-content h6:first-child {
+  margin-top: 0;
+}
+
+.help-content ul {
+  margin-bottom: 1rem;
+}
+
+.help-content li {
+  margin-bottom: 0.25rem;
 }
 
 /* Validation warnings styles */
