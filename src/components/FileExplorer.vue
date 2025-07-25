@@ -535,8 +535,7 @@ export default {
     const updateDefaultContent = () => {
       const fileName = newFileName.value.toLowerCase()
       if (fileName.endsWith('.md') && !newFileContent.value) {
-        const baseName = newFileName.value.replace(/\.[^/.]+$/, "")
-        newFileContent.value = `# ${baseName}\n\n## Overview\n\nDescription of this specification.\n\n## Details\n\nDetailed content goes here.\n`
+        newFileContent.value = `[[def: term, alias1, alias2]]\n\n~ First paragraph\n\n~ Second paragraph\n`
       }
     }
 
