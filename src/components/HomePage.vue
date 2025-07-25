@@ -15,13 +15,14 @@
           <form @submit.prevent="accessRepository">
             <div class="mb-3">
               <label for="owner" class="form-label">GitHub Username/Organization</label>
-              <input type="text" id="owner" v-model="owner" class="form-control" placeholder="e.g., octocat" required>
+              <input type="text" id="owner" v-model="owner" class="form-control" placeholder="e.g., trustoverip"
+                required>
             </div>
 
             <div class="mb-4 position-relative">
               <label for="repo" class="form-label">Repository Name</label>
-              <input type="text" id="repo" v-model="repo" class="form-control" placeholder="e.g., Hello-World" required
-                @focus="onRepoInputFocus" autocomplete="off">
+              <input type="text" id="repo" v-model="repo" class="form-control"
+                placeholder="e.g., tswg-keri-specification" required @focus="onRepoInputFocus" autocomplete="off">
             </div>
             <Modal v-if="showRepoModal" @close="showRepoModal = false">
               <template #header>
