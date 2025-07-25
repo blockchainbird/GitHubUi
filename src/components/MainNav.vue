@@ -12,6 +12,12 @@
       <i class="bi bi-box-arrow-up-right"></i>
       Documentation
     </a>
+    <button @click="$router.push(`/external-specs/${owner}/${repo}/${branch}`)"
+      class="ms-3 btn btn-outline-primary me-2" title="Manage External Specifications">
+      <i class="bi bi-link-45deg"></i>
+      External Specs
+    </button>
+
     <button v-if="showHealthCheckButton" @click="navigateToHealthCheck" class="ms-3 btn btn-outline-success"
       title="Run Health Check">
       <i class="bi bi-heart-pulse"></i>

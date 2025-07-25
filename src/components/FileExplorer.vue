@@ -6,14 +6,6 @@
         {{ owner }}/{{ repo }} - Spec Files
       </h2>
       <div>
-        <button 
-          @click="$router.push(`/external-specs/${owner}/${repo}/${branch}`)" 
-          class="btn btn-outline-primary me-2"
-          title="Manage External Specifications"
-        >
-          <i class="bi bi-link-45deg"></i>
-          External Specs
-        </button>
         <button @click="$router.push('/home')" class="btn btn-outline-secondary">
           <i class="bi bi-arrow-left"></i>
           Back to Home
