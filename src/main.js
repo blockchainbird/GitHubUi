@@ -12,6 +12,9 @@ import 'bootstrap'
 import 'bootstrap-icons/font/bootstrap-icons.css'
 import './styles/custom-bootstrap.scss'
 
+// Import Google Analytics
+import googleAnalytics from './utils/googleAnalytics.js'
+
 const routes = [
   { path: '/', redirect: '/login' },
   { path: '/login', component: LoginPage },
@@ -29,6 +32,12 @@ const router = createRouter({
   routes
 })
 
+// Initialize Google Analytics
+const measurementId = import.meta.env.VITE_GA_MEASUREMENT_ID
+if (measurementId) {
+  googleAnalytics.init(measurementId)
+}
+
 // Global navigation guard to check authentication
 router.beforeEach((to, from, next) => {
   const publicPages = ['/login', '/color-demo'];
@@ -44,6 +53,13 @@ router.beforeEach((to, from, next) => {
     next('/login');
   } else {
     next();
+  }
+});
+
+// Track page views after navigation
+router.afterEach((to) => {
+  if (googleAnalytics.isEnabled()) {
+    googleAnalytics.trackPageView(to.fullPath, to.meta.title || document.title)
   }
 });
 
@@ -71,3 +87,11 @@ axios.interceptors.response.use(
 const app = createApp(App)
 app.use(router)
 app.mount('#app')
+
+// Track initial page view after the app is mounted
+if (measurementId && googleAnalytics.isEnabled()) {
+  // Use setTimeout to ensure the router is ready
+  setTimeout(() => {
+    googleAnalytics.trackPageView(router.currentRoute.value.fullPath, document.title)
+  }, 100)
+}

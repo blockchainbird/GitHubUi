@@ -97,6 +97,11 @@
           </form>
         </div>
       </div>
+      
+      <!-- Google Analytics Demo Section -->
+      <!-- <div class="mt-4">
+        <GoogleAnalyticsDemo />
+      </div> -->
     </div>
     <!-- Recently Visited Repositories Section -->
     <div v-if="visitedRepos.length > 0" class="col-12 mt-4">
@@ -160,6 +165,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import Modal from './Modal.vue'
+// import GoogleAnalyticsDemo from './GoogleAnalyticsDemo.vue'
 // import { addToVisitedRepos } from '../utils/visitedRepos.js'
 import {
   loadVisitedRepos,
@@ -406,7 +412,10 @@ export default {
       formatDate
     }
   },
-  components: { Modal }
+  components: { 
+    Modal
+    // GoogleAnalyticsDemo 
+  }
 }
 </script>
 <style scoped>

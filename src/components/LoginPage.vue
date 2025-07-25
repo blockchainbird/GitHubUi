@@ -72,12 +72,14 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import { useGoogleAnalytics } from '../composables/useGoogleAnalytics.js'
 
 export default {
   name: 'LoginPage',
   emits: ['login'],
   setup(props, { emit }) {
     const router = useRouter()
+    const { trackLogin, trackEvent } = useGoogleAnalytics()
     const token = ref('')
     const loading = ref(false)
     const error = ref('')
@@ -110,6 +112,9 @@ export default {
 
         emit('login', userData)
 
+        // Track successful login
+        trackLogin('github')
+
         // Check if there's an intended redirect URL
         const intendedRedirect = localStorage.getItem('intended_redirect')
         if (intendedRedirect) {
@@ -121,6 +126,12 @@ export default {
 
       } catch (err) {
         console.error('Login error:', err)
+        
+        // Track login failure
+        trackEvent('login_error', {
+          error_type: err.response?.status === 401 ? 'invalid_token' : 'unknown'
+        })
+        
         if (err.response?.status === 401) {
           error.value = 'Invalid token. Please check your GitHub Personal Access Token.'
         } else {

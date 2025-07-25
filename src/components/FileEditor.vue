@@ -302,12 +302,14 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { addToVisitedRepos } from '../utils/visitedRepos.js'
+import { useGoogleAnalytics } from '../composables/useGoogleAnalytics.js'
 
 export default {
   name: 'FileEditor',
   props: ['owner', 'repo', 'branch', 'path'],
   setup(props) {
     const router = useRouter()
+    const { trackFileOperation } = useGoogleAnalytics()
     const loading = ref(true)
     const saving = ref(false)
     const error = ref('')
@@ -363,6 +365,12 @@ export default {
     const hasChanges = computed(() => {
       return content.value !== originalContent.value
     })
+    
+    // Helper function to get file extension for analytics
+    const getFileExtension = (filePath) => {
+      const ext = filePath.split('.').pop()?.toLowerCase()
+      return ext || 'unknown'
+    }
 
     const renderedContent = computed(() => {
       if (!isMarkdown.value) return content.value
@@ -540,6 +548,9 @@ export default {
         fileSha.value = response.data.sha
         content.value = atob(response.data.content)
         originalContent.value = content.value
+        
+        // Track file view
+        trackFileOperation('view', getFileExtension(decodedPath.value))
 
       } catch (err) {
         console.error('Error loading file:', err)
@@ -637,6 +648,9 @@ export default {
         fileSha.value = response.data.content.sha
         originalContent.value = content.value
         success.value = 'File saved and committed successfully!'
+        
+        // Track file save
+        trackFileOperation('save', getFileExtension(decodedPath.value))
 
         // Hide modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('commitModal'))
