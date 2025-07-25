@@ -18,6 +18,7 @@
     <main class="container-fluid mt-3">
       <router-view @login="handleLogin" @logout="handleLogout"></router-view>
     </main>
+    <BackToTop />
   </div>
 </template>
 
@@ -26,10 +27,11 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import MainNav from './components/MainNav.vue'
+import BackToTop from './components/BackToTop.vue'
 
 export default {
   name: 'App',
-  components: { MainNav },
+  components: { MainNav, BackToTop },
   setup() {
     const router = useRouter()
     const isAuthenticated = ref(false)
