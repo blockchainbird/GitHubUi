@@ -377,25 +377,35 @@ export default {
 
     // Help modal content
     const helpContent = ref(`
-      <h6><i class="bi bi-info-circle"></i> Editor Overview</h6>
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p>
-      
-      <h6><i class="bi bi-pencil"></i> Editing Features</h6>
-      <ul>
-        <li><strong>Bold Text:</strong> Ut aliquip ex ea commodo consequat</li>
-        <li><strong>Italic Text:</strong> Duis aute irure dolor in reprehenderit</li>
-        <li><strong>Code Blocks:</strong> Voluptate velit esse cillum dolore</li>
-        <li><strong>Links:</strong> Eu fugiat nulla pariatur excepteur sint</li>
-      </ul>
-      
-      <h6><i class="bi bi-bookmark"></i> Term References</h6>
-      <p>Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Sed ut perspiciatis unde omnis iste natus error sit voluptatem:</p>
-      <div class="alert alert-info">
-        <strong>Tip:</strong> Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-      </div>
-      
-      <h6><i class="bi bi-eye"></i> Preview Mode</h6>
-      <p>Quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
+<h6><i class="bi bi-info-circle"></i> Term Definition</h6>
+
+<p>This is how the content of the file for a Term Definition should look like:</p>
+
+<code><pre>
+[[def: term, alias1, alias2]]
+
+~ First paragraph with a local reference: [[ref: term_id]]
+
+~ Second paragraph with an external reference: [[xref: spec_name, term_id]]
+</pre></code>
+
+<div class="alert alert-info">
+  <strong>Tip:</strong>The editor will help you insert these definitions and references.
+</div>
+
+<h6><i class="bi bi-info-circle"></i> External Term Definition</h6>
+
+<p>This is how the content of the file for an External Term Definition should look like:</p>
+
+<code><pre>
+[[tref: spec_name, term, alias1, alias2]]
+
+&lt; the external definition will be inserted here &gt;
+
+~ First paragraph with local definition content.
+
+~ Second paragraph with local definition content.
+</pre></code>
     `)
 
     // Content validation state
