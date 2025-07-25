@@ -157,7 +157,7 @@
               <input v-model="newFileName" ref="fileNameInput" type="text" class="form-control" id="fileName"
                 placeholder="example.md" @keyup.enter="createNewFile" @input="updateDefaultContent">
               <div class="form-text">
-                Supported extensions: .md, .txt, .rst, .adoc, .html
+                Supported extensions: .md
               </div>
             </div>
 
@@ -546,7 +546,7 @@ export default {
       }
 
       // Validate file extension
-      const allowedExtensions = ['.md', '.txt', '.rst', '.adoc', '.html']
+      const allowedExtensions = ['.md']
       const hasValidExtension = allowedExtensions.some(ext =>
         newFileName.value.toLowerCase().endsWith(ext)
       )
