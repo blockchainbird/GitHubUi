@@ -25,27 +25,30 @@ export default {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
 }
+
 .modal-content {
   background: #fff;
   border-radius: 8px;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.2);
   max-width: 400px;
   width: 90vw;
   padding: 1.5rem;
   position: relative;
 }
+
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
 }
+
 .close-btn {
   background: none;
   border: none;
@@ -53,9 +56,11 @@ export default {
   cursor: pointer;
   color: #888;
 }
+
 .close-btn:hover {
   color: #2d72d9;
 }
+
 .modal-body {
   font-size: 1rem;
   color: #222;

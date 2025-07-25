@@ -1,6 +1,6 @@
 <template>
   <div>
-        <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
       <h2>
         <i class="bi bi-pencil-square"></i>
         Editing: {{ filename }}
@@ -21,22 +21,22 @@
         </button>
       </div>
     </div>
-    
+
     <div v-if="error" class="alert alert-danger" role="alert">
       {{ error }}
     </div>
-    
+
     <div v-if="success" class="alert alert-success" role="alert">
       {{ success }}
     </div>
-    
+
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border" role="status">
         <span class="visually-hidden">Loading...</span>
       </div>
       <p class="mt-2">Loading file content...</p>
     </div>
-    
+
     <div v-else class="row">
       <div class="col-12">
         <div class="card">
@@ -50,14 +50,15 @@
               <label class="btn btn-outline-primary btn-sm" for="edit-mode">
                 <i class="bi bi-pencil"></i> Edit
               </label>
-              
-              <input type="radio" class="btn-check" id="preview-mode" v-model="editMode" value="preview" autocomplete="off">
+
+              <input type="radio" class="btn-check" id="preview-mode" v-model="editMode" value="preview"
+                autocomplete="off">
               <label class="btn btn-outline-primary btn-sm" for="preview-mode">
                 <i class="bi bi-eye"></i> Preview
               </label>
             </div>
           </div>
-          
+
           <div class="card-body p-0">
             <!-- Edit Mode -->
             <div v-if="editMode === 'edit'" class="position-relative">
@@ -90,17 +91,12 @@
                   </button>
                 </div>
               </div>
-              
-              <textarea
-                ref="editor"
-                v-model="content"
-                @input="handleContentChange"
-                class="form-control border-0"
+
+              <textarea ref="editor" v-model="content" @input="handleContentChange" class="form-control border-0"
                 style="min-height: 600px; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; resize: vertical;"
-                placeholder="Start editing your content here..."
-              ></textarea>
+                placeholder="Start editing your content here..."></textarea>
             </div>
-            
+
             <!-- Preview Mode -->
             <div v-else class="p-4" style="min-height: 600px;">
               <div v-if="isMarkdown" v-html="renderedContent" class="markdown-preview"></div>
@@ -110,7 +106,7 @@
         </div>
       </div>
     </div>
-    
+
     <!-- Commit Message Modal -->
     <div class="modal fade" id="commitModal" tabindex="-1">
       <div class="modal-dialog">
@@ -122,14 +118,8 @@
           <div class="modal-body">
             <div class="mb-3">
               <label for="commitMessage" class="form-label">Commit Message</label>
-              <textarea
-                id="commitMessage"
-                v-model="commitMessage"
-                class="form-control"
-                rows="3"
-                placeholder="Describe your changes..."
-                required
-              ></textarea>
+              <textarea id="commitMessage" v-model="commitMessage" class="form-control" rows="3"
+                placeholder="Describe your changes..." required></textarea>
             </div>
           </div>
           <div class="modal-footer">
@@ -160,68 +150,63 @@
           <div class="modal-body">
             <div class="mb-3">
               <label for="termFilter" class="form-label">Search Terms</label>
-              <input
-                id="termFilter"
-                v-model="termFilter"
-                @keyup="filterTerms"
-                class="form-control"
-                placeholder="Search terms, definitions, or external specs..."
-                autocomplete="off"
-              >
+              <input id="termFilter" v-model="termFilter" @keyup="filterTerms" class="form-control"
+                placeholder="Search terms, definitions, or external specs..." autocomplete="off">
             </div>
-            
+
             <div class="mb-3">
               <label class="form-label">Reference Type</label>
               <div class="btn-group w-100" role="group">
-                <input type="radio" class="btn-check" id="refType-auto" v-model="referenceType" value="auto" autocomplete="off" checked>
+                <input type="radio" class="btn-check" id="refType-auto" v-model="referenceType" value="auto"
+                  autocomplete="off" checked>
                 <label class="btn btn-outline-primary" for="refType-auto">Auto</label>
-                
-                <input type="radio" class="btn-check" id="refType-ref" v-model="referenceType" value="ref" autocomplete="off">
+
+                <input type="radio" class="btn-check" id="refType-ref" v-model="referenceType" value="ref"
+                  autocomplete="off">
                 <label class="btn btn-outline-primary" for="refType-ref">[[ref:]]</label>
-                
-                <input type="radio" class="btn-check" id="refType-xref" v-model="referenceType" value="xref" autocomplete="off">
+
+                <input type="radio" class="btn-check" id="refType-xref" v-model="referenceType" value="xref"
+                  autocomplete="off">
                 <label class="btn btn-outline-primary" for="refType-xref">[[xref:]]</label>
-                
-                <input type="radio" class="btn-check" id="refType-tref" v-model="referenceType" value="tref" autocomplete="off">
+
+                <input type="radio" class="btn-check" id="refType-tref" v-model="referenceType" value="tref"
+                  autocomplete="off">
                 <label class="btn btn-outline-primary" for="refType-tref">[[tref:]]</label>
-                
+
                 <!-- <input type="radio" class="btn-check" id="refType-def" v-model="referenceType" value="def" autocomplete="off">
                 <label class="btn btn-outline-success" for="refType-def">[[def:]]</label> -->
               </div>
               <div class="form-text">
-                Auto: Uses the appropriate format based on term type (ref for local, xref for external). Use [[def:]] to create term definitions.
+                Auto: Uses the appropriate format based on term type (ref for local, xref for external). Use [[def:]] to
+                create term definitions.
               </div>
             </div>
-            
+
             <div v-if="loadingTerms" class="text-center py-4">
               <div class="spinner-border" role="status">
                 <span class="visually-hidden">Loading terms...</span>
               </div>
               <p class="mt-2">Loading terms from repository... {{ proxyInfo }}</p>
             </div>
-            
+
             <div v-else-if="termsError" class="alert alert-warning" role="alert">
               {{ termsError }}
             </div>
-            
+
             <div v-else-if="filteredTerms.length === 0 && !loadingTerms" class="text-center py-4">
               <i class="bi bi-search" style="font-size: 2rem; color: #6c757d;"></i>
               <p class="mt-2 text-muted">No terms found matching your search.</p>
             </div>
-            
+
             <div v-else class="terms-list" style="max-height: 400px; overflow-y: auto;">
               <div class="list-group">
-                <button
-                  v-for="term in filteredTerms"
-                  :key="term.id + (term.external ? '_' + term.externalSpec : '')"
+                <button v-for="term in filteredTerms" :key="term.id + (term.external ? '_' + term.externalSpec : '')"
                   @click="insertTermReference(term)"
                   class="list-group-item list-group-item-action d-flex flex-column align-items-start"
-                  :class="{ 'external-term': term.external }"
-                >
+                  :class="{ 'external-term': term.external }">
                   <div class="d-flex align-items-center w-100 mb-2">
-                    <i class="bi me-3" 
-                       :class="term.external ? 'bi-link-45deg' : 'bi-bookmark-fill'"
-                       :style="term.external ? 'color: #198754;' : 'color: #0d6efd;'"></i>
+                    <i class="bi me-3" :class="term.external ? 'bi-link-45deg' : 'bi-bookmark-fill'"
+                      :style="term.external ? 'color: #198754;' : 'color: #0d6efd;'"></i>
                     <div class="flex-grow-1">
                       <div class="fw-medium">{{ term.id }}</div>
                       <small v-if="term.aliases.length > 0" class="text-muted">
@@ -233,7 +218,8 @@
                     </div>
                     <span v-if="term.external" class="badge bg-success">External</span>
                   </div>
-                  <div v-if="term.definition" class="definition-preview w-100 mt-2 pt-2 border-top" v-html="term.definition"></div>
+                  <div v-if="term.definition" class="definition-preview w-100 mt-2 pt-2 border-top"
+                    v-html="term.definition"></div>
                 </button>
               </div>
             </div>
@@ -264,53 +250,32 @@
             <div v-if="addTermError" class="alert alert-danger" role="alert">
               {{ addTermError }}
             </div>
-            
+
             <div class="mb-3">
               <label for="termName" class="form-label">Term <span class="text-danger">*</span></label>
-              <input
-                id="termName"
-                v-model="newTerm.name"
-                @input="onTermNameChange"
-                type="text"
-                class="form-control"
-                placeholder="Enter the term..."
-                required
-              >
+              <input id="termName" v-model="newTerm.name" @input="onTermNameChange" type="text" class="form-control"
+                placeholder="Enter the term..." required>
               <div class="form-text">Enter the main term that will be defined</div>
             </div>
-            
+
             <div v-if="newTerm.name.trim()" class="mb-3">
               <label class="form-label">Aliases</label>
               <div v-for="(alias, index) in newTerm.aliases" :key="index" class="input-group mb-2">
-                <input
-                  v-model="newTerm.aliases[index]"
-                  @input="onAliasChange(index)"
-                  type="text"
-                  class="form-control"
-                  :placeholder="`Alias ${index + 1}...`"
-                >
-                <button 
-                  @click="removeAlias(index)" 
-                  type="button" 
-                  class="btn btn-outline-danger"
-                  :disabled="newTerm.aliases.length === 1"
-                  title="Remove alias"
-                >
+                <input v-model="newTerm.aliases[index]" @input="onAliasChange(index)" type="text" class="form-control"
+                  :placeholder="`Alias ${index + 1}...`">
+                <button @click="removeAlias(index)" type="button" class="btn btn-outline-danger"
+                  :disabled="newTerm.aliases.length === 1" title="Remove alias">
                   <i class="bi bi-x"></i>
                 </button>
               </div>
-              <button 
-                @click="addAlias" 
-                type="button" 
-                class="btn btn-outline-secondary btn-sm"
-                title="Add another alias"
-              >
+              <button @click="addAlias" type="button" class="btn btn-outline-secondary btn-sm"
+                title="Add another alias">
                 <i class="bi bi-plus"></i>
                 Add Alias
               </button>
               <div class="form-text">Add alternative terms or synonyms for this definition</div>
             </div>
-            
+
             <div v-if="newTerm.name.trim()" class="mb-3">
               <label class="form-label">Preview</label>
               <div class="border rounded p-3 bg-light">
@@ -321,12 +286,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button 
-              @click="insertNewTerm" 
-              type="button" 
-              class="btn btn-success"
-              :disabled="!newTerm.name.trim()"
-            >
+            <button @click="insertNewTerm" type="button" class="btn btn-success" :disabled="!newTerm.name.trim()">
               <i class="bi bi-plus-circle"></i>
               Add Term
             </button>
@@ -358,7 +318,7 @@ export default {
     const editMode = ref('edit')
     const commitMessage = ref('')
     const editor = ref(null)
-    
+
     // Terms functionality
     const terms = ref([])
     const filteredTerms = ref([])
@@ -368,14 +328,14 @@ export default {
     const termsError = ref('')
     const specsConfig = ref(null)
     const referenceType = ref('auto')
-    
+
     // Add Term modal state
     const newTerm = ref({
       name: '',
       aliases: ['']
     })
     const addTermError = ref('')
-    
+
     // Helper function to check authentication and redirect if needed
     const checkAuthAndRedirect = (error) => {
       if (error.response && (error.response.status === 401 || error.response.status === 403)) {
@@ -387,26 +347,26 @@ export default {
       }
       return false
     }
-    
+
     const filename = computed(() => {
       return props.path ? decodeURIComponent(props.path).split('/').pop() : ''
     })
-    
+
     const decodedPath = computed(() => {
       return props.path ? decodeURIComponent(props.path) : ''
     })
-    
+
     const isMarkdown = computed(() => {
       return filename.value.toLowerCase().endsWith('.md')
     })
-    
+
     const hasChanges = computed(() => {
       return content.value !== originalContent.value
     })
-    
+
     const renderedContent = computed(() => {
       if (!isMarkdown.value) return content.value
-      
+
       // Basic markdown rendering (you might want to use a proper markdown library)
       let html = content.value
         .replace(/^### (.*$)/gim, '<h3>$1</h3>')
@@ -418,11 +378,11 @@ export default {
         .replace(/^\* (.*$)/gim, '<li>$1</li>')
         .replace(/^\d+\. (.*$)/gim, '<li>$1</li>')
         .replace(/\n/gim, '<br>')
-      
+
       // Process term reference patterns: [[tref: spec_name, term_id]], [[xref: spec_name, term_id]], and [[ref: term_id]]
       // We need to access terms.value to make this reactive
       const currentTerms = terms.value
-      
+
       // Handle tref patterns (external references)
       html = html.replace(/\[\[tref:\s*([^,\]]+),\s*([^\]]+)\]\]/g, (match, specName, termId) => {
         const cleanSpecName = specName.trim()
@@ -506,11 +466,11 @@ export default {
           }
         }
       })
-      
+
       // Handle ref patterns (local references)
       html = html.replace(/\[\[ref:\s*([^\]]+)\]\]/g, (match, termId) => {
         const cleanTermId = termId.trim()
-        
+
         // Try to find the term definition from current terms
         const termDef = currentTerms.find(t => {
           // For local specs, match by term id
@@ -519,7 +479,7 @@ export default {
           }
           return false
         })
-        
+
         if (termDef) {
           const definition = termDef.definition || termDef.definitionText || 'No definition available'
           return `<div class="term-reference">
@@ -544,24 +504,24 @@ export default {
           }
         }
       })
-      
+
       // Handle def patterns (term definitions) [[def: term-id, alias1, alias2, ...]]
       html = html.replace(/\[\[def:\s*([^,\]]+)(?:,\s*([^\]]+))?\]\]/g, (match, termId, aliases) => {
         const cleanTermId = termId.trim()
         const cleanAliases = aliases ? aliases.split(',').map(a => a.trim()).filter(a => a.length > 0) : []
-        
+
         return `<h2 class="term-definition-marker">
           <span class="definition-term-name">${cleanTermId}</span>
           ${cleanAliases.length > 0 ? `<div class="definition-aliases">Aliases: ${cleanAliases.join(', ')}</div>` : ''}
         </h2>`
       })
-      
+
       // Wrap consecutive list items in ul tags
       html = html.replace(/(<li>.*<\/li>)/gim, '<ul>$1</ul>')
-      
+
       return html
     })
-    
+
     const loadFileContent = async () => {
       try {
         const token = localStorage.getItem('github_token')
@@ -571,16 +531,16 @@ export default {
             'Accept': 'application/vnd.github.v3+json'
           }
         }
-        
+
         const response = await axios.get(
           `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${decodedPath.value}?ref=${props.branch}`,
           config
         )
-        
+
         fileSha.value = response.data.sha
         content.value = atob(response.data.content)
         originalContent.value = content.value
-        
+
       } catch (err) {
         console.error('Error loading file:', err)
         if (checkAuthAndRedirect(err)) {
@@ -591,66 +551,66 @@ export default {
         loading.value = false
       }
     }
-    
+
     const handleContentChange = () => {
       error.value = ''
       success.value = ''
     }
-    
+
     const insertText = (before, after = '') => {
       const textarea = editor.value
       if (!textarea) return
-      
+
       const start = textarea.selectionStart
       const end = textarea.selectionEnd
       const selectedText = content.value.substring(start, end)
-      
+
       const replacement = before + selectedText + after
       content.value = content.value.substring(0, start) + replacement + content.value.substring(end)
-      
+
       nextTick(() => {
         textarea.focus()
         textarea.setSelectionRange(start + before.length, start + before.length + selectedText.length)
       })
     }
-    
+
     const insertHeading = () => {
       insertText('## ', '')
     }
-    
+
     const insertList = () => {
       const textarea = editor.value
       if (!textarea) return
-      
+
       const start = textarea.selectionStart
       const lineStart = content.value.lastIndexOf('\n', start - 1) + 1
       content.value = content.value.substring(0, lineStart) + '* ' + content.value.substring(lineStart)
-      
+
       nextTick(() => {
         textarea.focus()
         textarea.setSelectionRange(start + 2, start + 2)
       })
     }
-    
+
     const saveFile = () => {
       if (!hasChanges.value) return
-      
+
       commitMessage.value = `Update ${filename.value}`
       // Show modal (you'll need to include Bootstrap JS for this to work)
       const modal = new bootstrap.Modal(document.getElementById('commitModal'))
       modal.show()
     }
-    
+
     const commitChanges = async () => {
       if (!commitMessage.value.trim()) {
         error.value = 'Please enter a commit message.'
         return
       }
-      
+
       saving.value = true
       error.value = ''
       success.value = ''
-      
+
       try {
         const token = localStorage.getItem('github_token')
         const config = {
@@ -660,28 +620,28 @@ export default {
             'Content-Type': 'application/json'
           }
         }
-        
+
         const data = {
           message: commitMessage.value,
           content: btoa(content.value),
           sha: fileSha.value,
           branch: props.branch
         }
-        
+
         const response = await axios.put(
           `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${decodedPath.value}`,
           data,
           config
         )
-        
+
         fileSha.value = response.data.content.sha
         originalContent.value = content.value
         success.value = 'File saved and committed successfully!'
-        
+
         // Hide modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('commitModal'))
         modal.hide()
-        
+
       } catch (err) {
         console.error('Error saving file:', err)
         if (checkAuthAndRedirect(err)) {
@@ -692,7 +652,7 @@ export default {
         saving.value = false
       }
     }
-    
+
     // Terms functionality methods
     const loadSpecsConfig = async () => {
       try {
@@ -726,7 +686,7 @@ export default {
         }
       }
     }
-    
+
     const loadTermsFromStorage = () => {
       const storageKey = `terms_${props.owner}_${props.repo}_${props.branch}`
       const stored = localStorage.getItem(storageKey)
@@ -745,7 +705,7 @@ export default {
       }
       return false
     }
-    
+
     const saveTermsToStorage = (termsData) => {
       const storageKey = `terms_${props.owner}_${props.repo}_${props.branch}`
       const data = {
@@ -754,7 +714,7 @@ export default {
       }
       localStorage.setItem(storageKey, JSON.stringify(data))
     }
-    
+
     const extractTermsFromFile = async (filePath) => {
       try {
         const token = localStorage.getItem('github_token')
@@ -764,15 +724,15 @@ export default {
             'Accept': 'application/vnd.github.v3+json'
           }
         }
-        
+
         const response = await axios.get(
           `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${filePath}?ref=${props.branch}`,
           config
         )
-        
+
         const content = atob(response.data.content)
         const lines = content.split('\n')
-        
+
         // Find the first non-empty line and check if it contains a term definition
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i].trim()
@@ -782,10 +742,10 @@ export default {
             if (termMatch) {
               const termId = termMatch[1].trim()
               const aliasesStr = termMatch[2]
-              const aliases = aliasesStr ? 
-                aliasesStr.split(',').map(a => a.trim()).filter(a => a.length > 0) : 
+              const aliases = aliasesStr ?
+                aliasesStr.split(',').map(a => a.trim()).filter(a => a.length > 0) :
                 []
-              
+
               // Extract definition lines that start with ~ after the term definition
               const definitionLines = []
               for (let j = i + 1; j < lines.length; j++) {
@@ -801,12 +761,12 @@ export default {
                   break
                 }
               }
-              
+
               // Convert definition lines to HTML <dl> format
-              const definitionHtml = definitionLines.length > 0 
+              const definitionHtml = definitionLines.length > 0
                 ? `<dl>${definitionLines.map(def => `<dd>${def}</dd>`).join('')}</dl>`
                 : ''
-              
+
               // Validate term ID (should not be empty)
               if (termId) {
                 return {
@@ -829,22 +789,22 @@ export default {
       }
       return null
     }
-    
+
     const loadTermsFromRepository = async () => {
       loadingTerms.value = true
       termsError.value = ''
-      
+
       try {
         // Load specs config if not already loaded
         if (!specsConfig.value) {
           specsConfig.value = await loadSpecsConfig()
         }
-        
+
         const config = specsConfig.value.specs[0]
         const specDir = config.spec_directory.replace('./', '')
         const termsDir = config.spec_terms_directory
         const fullTermsPath = `${specDir}/${termsDir}`
-        
+
         const token = localStorage.getItem('github_token')
         const requestConfig = {
           headers: {
@@ -857,16 +817,16 @@ export default {
           `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${fullTermsPath}?ref=${props.branch}`,
           requestConfig
         )
-        const files = response.data.filter(item => 
-          item.type === 'file' && 
-          (item.name.toLowerCase().endsWith('.md') || 
-           item.name.toLowerCase().endsWith('.txt') ||
-           item.name.toLowerCase().endsWith('.rst') ||
-           item.name.toLowerCase().endsWith('.adoc'))
+        const files = response.data.filter(item =>
+          item.type === 'file' &&
+          (item.name.toLowerCase().endsWith('.md') ||
+            item.name.toLowerCase().endsWith('.txt') ||
+            item.name.toLowerCase().endsWith('.rst') ||
+            item.name.toLowerCase().endsWith('.adoc'))
         )
-        
+
         const termsData = []
-        
+
         // Process local files in parallel but limit concurrency to avoid rate limits
         const batchSize = 5
         for (let i = 0; i < files.length; i += batchSize) {
@@ -880,20 +840,20 @@ export default {
             }
           })
         }
-        
+
         // Load external specs if they exist
         if (config.external_specs && Array.isArray(config.external_specs)) {
           const externalTerms = await loadExternalSpecs(config.external_specs)
           termsData.push(...externalTerms)
         }
-        
+
         termsData.sort((a, b) => a.id.localeCompare(b.id))
         terms.value = termsData
         filteredTerms.value = termsData
-        
+
         // Save to local storage
         saveTermsToStorage(termsData)
-        
+
       } catch (err) {
         console.error('Error loading terms:', err)
         if (checkAuthAndRedirect(err)) {
@@ -908,10 +868,10 @@ export default {
         loadingTerms.value = false
       }
     }
-    
+
     const loadExternalSpecs = async (externalSpecs) => {
       const externalTerms = []
-      
+
       // Define multiple CORS proxy options, with local PHP proxy first
       // Use VITE_BASE_PATH for proxy path if available
       const basePath = import.meta.env.VITE_BASE_PATH || '/';
@@ -923,17 +883,17 @@ export default {
         'https://api.codetabs.com/v1/proxy?quest=',
         'https://thingproxy.freeboard.io/fetch/'
       ]
-      
+
       for (const spec of externalSpecs) {
         let success = false
-        
+
         for (let proxyIndex = 0; proxyIndex < corsProxies.length && !success; proxyIndex++) {
           try {
             const proxyUrl = corsProxies[proxyIndex]
-            const targetUrl = proxyUrl === 'https://thingproxy.freeboard.io/fetch/' 
-              ? spec.gh_page 
+            const targetUrl = proxyUrl === 'https://thingproxy.freeboard.io/fetch/'
+              ? spec.gh_page
               : encodeURIComponent(spec.gh_page)
-            
+
             // Check if first proxy (our PHP proxy) is responsive
             if (proxyIndex === 0) {
               try {
@@ -948,36 +908,36 @@ export default {
                 console.warn(`⚠️ Proxy status check failed for ${spec.external_spec}, proceeding anyway`)
               }
             }
-            
+
             console.log(`Loading external spec: ${spec.external_spec} from ${spec.gh_page} (proxy ${proxyIndex + 1}/${corsProxies.length})`)
-            
+
             const response = await axios.get(`${proxyUrl}${targetUrl}`, {
               headers: {
                 'Accept': 'text/html'
               },
               timeout: 15000 // Increased timeout to 15 seconds
             })
-            
+
             // Parse the HTML to extract terms from the dl.terms-and-definitions-list
             const parser = new DOMParser()
             const doc = parser.parseFromString(response.data, 'text/html')
             const termsList = doc.querySelector('dl.terms-and-definitions-list')
-            
+
             if (termsList) {
               const dtElements = termsList.querySelectorAll('dt')
-              
+
               dtElements.forEach(dt => {
                 const termId = dt.textContent?.trim()
                 if (termId) {
                   // Collect all dd elements that follow this dt until the next dt
                   const ddElements = []
                   let nextElement = dt.nextElementSibling
-                  
+
                   while (nextElement && nextElement.tagName.toLowerCase() === 'dd') {
                     ddElements.push(nextElement.outerHTML)
                     nextElement = nextElement.nextElementSibling
                   }
-                  
+
                   if (ddElements.length > 0) {
                     const definitionHtml = `<dl>${ddElements.join('')}</dl>`
                     const definitionText = ddElements
@@ -988,7 +948,7 @@ export default {
                       })
                       .join(' ')
                       .trim()
-                    
+
                     externalTerms.push({
                       id: termId,
                       aliases: [],
@@ -1002,7 +962,7 @@ export default {
                   }
                 }
               })
-              
+
               console.log(`✅ Successfully loaded ${dtElements.length} terms from ${spec.external_spec} using proxy ${proxyIndex + 1}`)
               success = true
             } else {
@@ -1011,22 +971,22 @@ export default {
             }
           } catch (err) {
             console.warn(`❌ Proxy ${proxyIndex + 1} failed for ${spec.external_spec}:`, err.message)
-            
+
             // If this is the last proxy, log final failure
             if (proxyIndex === corsProxies.length - 1) {
               console.error(`🔴 All proxies failed for external spec ${spec.external_spec}. Skipping.`)
             }
           }
         }
-        
+
         if (!success) {
           console.error(`🔴 Unable to load external spec ${spec.external_spec} from ${spec.gh_page} - all proxy methods failed`)
         }
       }
-      
+
       return externalTerms
     }
-    
+
     const showTermsModal = async () => {
       // Show modal immediately with loading spinner
       loadingTerms.value = true
@@ -1045,13 +1005,13 @@ export default {
       }
       filteredTerms.value = terms.value
     }
-    
+
     const filterTerms = () => {
       const filter = termFilter.value.toLowerCase()
       if (!filter) {
         filteredTerms.value = terms.value
       } else {
-        filteredTerms.value = terms.value.filter(term => 
+        filteredTerms.value = terms.value.filter(term =>
           term.id.toLowerCase().includes(filter) ||
           term.aliases.some(alias => alias.toLowerCase().includes(filter)) ||
           (term.definitionText && term.definitionText.toLowerCase().includes(filter)) ||
@@ -1059,16 +1019,16 @@ export default {
         )
       }
     }
-    
+
     const insertTermReference = (term) => {
       const textarea = editor.value
       if (!textarea) return
-      
+
       const start = textarea.selectionStart
       const end = textarea.selectionEnd
-      
+
       let refText
-      
+
       // Determine reference format based on user selection
       switch (referenceType.value) {
         case 'ref':
@@ -1105,30 +1065,30 @@ export default {
           }
           break
       }
-      
+
       content.value = content.value.substring(0, start) + refText + content.value.substring(end)
-      
+
       // Hide modal
       const modal = bootstrap.Modal.getInstance(document.getElementById('termsModal'))
       modal.hide()
-      
+
       nextTick(() => {
         textarea.focus()
         const newPosition = start + refText.length
         textarea.setSelectionRange(newPosition, newPosition)
       })
     }
-    
+
     const refreshTerms = async () => {
       // Clear storage cache
       const storageKey = `terms_${props.owner}_${props.repo}_${props.branch}`
       localStorage.removeItem(storageKey)
-      
+
       // Reload from repository
       await loadTermsFromRepository()
       filterTerms()
     }
-    
+
     // Add Term functionality
     const showAddTermModal = () => {
       // Reset form
@@ -1137,11 +1097,11 @@ export default {
         aliases: ['']
       }
       addTermError.value = ''
-      
+
       const modal = new bootstrap.Modal(document.getElementById('addTermModal'))
       modal.show()
     }
-    
+
     const onTermNameChange = () => {
       addTermError.value = ''
       // If term name exists and we only have an empty alias, keep one empty alias ready
@@ -1149,7 +1109,7 @@ export default {
         // Keep the empty alias for user to fill
       }
     }
-    
+
     const onAliasChange = (index) => {
       addTermError.value = ''
       // If this is the last alias and it's been filled, add a new empty one
@@ -1157,59 +1117,59 @@ export default {
         newTerm.value.aliases.push('')
       }
     }
-    
+
     const addAlias = () => {
       newTerm.value.aliases.push('')
     }
-    
+
     const removeAlias = (index) => {
       if (newTerm.value.aliases.length > 1) {
         newTerm.value.aliases.splice(index, 1)
       }
     }
-    
+
     const generateTermDefinition = () => {
       if (!newTerm.value.name.trim()) return ''
-      
+
       const term = newTerm.value.name.trim()
       const validAliases = newTerm.value.aliases
         .map(alias => alias.trim())
         .filter(alias => alias.length > 0)
-      
+
       if (validAliases.length === 0) {
         return `[[def: ${term}]]`
       } else {
         return `[[def: ${term}, ${validAliases.join(', ')}]]`
       }
     }
-    
+
     const insertNewTerm = () => {
       if (!newTerm.value.name.trim()) {
         addTermError.value = 'Please enter a term name'
         return
       }
-      
+
       const textarea = editor.value
       if (!textarea) return
-      
+
       const start = textarea.selectionStart
       const end = textarea.selectionEnd
-      
+
       const termDefinition = generateTermDefinition()
-      
+
       content.value = content.value.substring(0, start) + termDefinition + content.value.substring(end)
-      
+
       // Hide modal
       const modal = bootstrap.Modal.getInstance(document.getElementById('addTermModal'))
       modal.hide()
-      
+
       nextTick(() => {
         textarea.focus()
         const newPosition = start + termDefinition.length
         textarea.setSelectionRange(newPosition, newPosition)
       })
     }
-    
+
     // Helper functions for tref processing
     const loadTermDefinitionAsync = async (specName, termId) => {
       // If terms are not loaded yet, load them
@@ -1222,18 +1182,18 @@ export default {
         // The computed property will automatically re-render when terms.value changes
       }
     }
-    
+
     const goBack = () => {
       router.push(`/files/${props.owner}/${props.repo}/${props.branch}`)
     }
-    
+
     onMounted(() => {
       // Add this repository to visited history
       addToVisitedRepos(props.owner, props.repo, props.branch)
-      
+
       loadFileContent()
     })
-    
+
     return {
       loading,
       saving,

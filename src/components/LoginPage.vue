@@ -4,42 +4,37 @@
       <div class="card">
         <div class="card-body">
           <div class="text-center mb-3">
-            <img src="/assets/logo.svg" alt="Logo" style="max-width: 120px; width: 60%; height: auto; margin-bottom: 0.5rem;" />
+            <img src="/assets/logo.svg" alt="Logo"
+              style="max-width: 120px; width: 60%; height: auto; margin-bottom: 0.5rem;" />
           </div>
           <h2 class="card-title text-center mb-4">
             <i class="bi bi-github"></i>
             Login to GitHub
           </h2>
-          
+
           <div v-if="error" class="alert alert-danger" role="alert">
             {{ error }}
           </div>
-          
+
           <div v-if="loading" class="text-center">
             <div class="spinner-border" role="status">
               <span class="visually-hidden">Loading...</span>
             </div>
             <p class="mt-2">Authenticating with GitHub...</p>
           </div>
-          
+
           <div v-else>
             <div class="mb-4 text-center">
               <p class="text-muted">
                 Authenticate with GitHub to access and edit repository files.
               </p>
             </div>
-            
+
             <form @submit.prevent="handleLogin">
               <div class="mb-3">
                 <label for="token" class="form-label">GitHub Personal Access Token</label>
-                <input
-                  type="password"
-                  id="token"
-                  v-model="token"
-                  class="form-control"
-                  placeholder="Enter your GitHub token"
-                  required
-                >
+                <input type="password" id="token" v-model="token" class="form-control"
+                  placeholder="Enter your GitHub token" required>
                 <div class="form-text">
                   <small>
                     <a href="https://github.com/settings/tokens" target="_blank" class="text-decoration-none">
@@ -50,7 +45,7 @@
                   </small>
                 </div>
               </div>
-              
+
               <div class="d-grid">
                 <button type="submit" class="btn btn-dark" :disabled="!token">
                   <i class="bi bi-box-arrow-in-right"></i>
@@ -58,7 +53,7 @@
                 </button>
               </div>
             </form>
-            
+
             <div class="mt-4">
               <h6>Required Token Permissions:</h6>
               <ul class="text-muted small">
@@ -86,16 +81,16 @@ export default {
     const token = ref('')
     const loading = ref(false)
     const error = ref('')
-    
+
     const handleLogin = async () => {
       if (!token.value.trim()) {
         error.value = 'Please enter your GitHub token'
         return
       }
-      
+
       loading.value = true
       error.value = ''
-      
+
       try {
         // Configure axios with the token
         const config = {
@@ -104,17 +99,17 @@ export default {
             'Accept': 'application/vnd.github.v3+json'
           }
         }
-        
+
         // Test the token by getting user info
         const response = await axios.get('https://api.github.com/user', config)
-        
+
         const userData = {
           ...response.data,
           token: token.value
         }
-        
+
         emit('login', userData)
-        
+
         // Check if there's an intended redirect URL
         const intendedRedirect = localStorage.getItem('intended_redirect')
         if (intendedRedirect) {
@@ -123,7 +118,7 @@ export default {
         } else {
           router.push('/home')
         }
-        
+
       } catch (err) {
         console.error('Login error:', err)
         if (err.response?.status === 401) {
@@ -135,7 +130,7 @@ export default {
         loading.value = false
       }
     }
-    
+
     return {
       token,
       loading,

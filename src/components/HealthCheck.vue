@@ -40,12 +40,7 @@
           <div class="d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Health Check Results</h5>
             <div class="form-check form-switch">
-              <input 
-                class="form-check-input" 
-                type="checkbox" 
-                id="togglePassingChecks" 
-                v-model="showPassing"
-              >
+              <input class="form-check-input" type="checkbox" id="togglePassingChecks" v-model="showPassing">
               <label class="form-check-label" for="togglePassingChecks">
                 Show passing checks
               </label>
@@ -130,7 +125,7 @@ export default {
       if (showPassing.value) {
         return results.value
       }
-      
+
       return results.value.map(section => ({
         ...section,
         results: section.results.filter(result => !result.success || result.success === 'partial')
@@ -180,7 +175,7 @@ export default {
     const getSectionHeaderClass = (section) => {
       const hasErrors = section.results.some(r => !r.success && r.status !== 'warning')
       const hasWarnings = section.results.some(r => r.status === 'warning' || r.success === 'partial')
-      
+
       if (hasErrors) return 'bg-danger text-white'
       if (hasWarnings) return 'bg-warning text-dark'
       return 'bg-light'
@@ -221,9 +216,9 @@ export default {
         if (url.includes('github.com')) {
           return await checkGitHubUrl(url)
         }
-        
+
         // For other URLs, try a GET request with a shorter timeout
-        const response = await axios.get(url, { 
+        const response = await axios.get(url, {
           timeout: 5000,
           validateStatus: (status) => status < 500 // Accept any status < 500 as "accessible"
         })
@@ -243,9 +238,9 @@ export default {
         // Parse GitHub URL to extract owner and repo
         const match = url.match(/github\.com\/([^\/]+)\/([^\/]+)/);
         if (!match) return false;
-        
+
         const [, owner, repo] = match;
-        
+
         // Use GitHub API to check if repository exists
         const response = await axios.get(
           `https://api.github.com/repos/${owner}/${repo}`,
@@ -257,7 +252,7 @@ export default {
             timeout: 10000
           }
         );
-        
+
         return response.status === 200;
       } catch (error) {
         // If 404, repo doesn't exist or is private
@@ -288,10 +283,10 @@ export default {
     // Health check functions
     const checkSpecsConfiguration = async () => {
       const results = []
-      
+
       try {
         const specsContent = await fetchFileContent('specs.json')
-        
+
         if (!specsContent) {
           results.push({
             name: 'specs.json exists',
@@ -341,7 +336,7 @@ export default {
           // Check first spec configuration
           if (specs.specs.length > 0) {
             const spec = specs.specs[0]
-            
+
             // Check required fields
             const requiredFields = ['spec_directory', 'output_path', 'markdown_paths']
             requiredFields.forEach(field => {
@@ -395,10 +390,10 @@ export default {
 
     const checkExternalSpecs = async () => {
       const results = []
-      
+
       try {
         const specsContent = await fetchFileContent('specs.json')
-        
+
         if (!specsContent) {
           results.push({
             name: 'External specs check',
@@ -409,7 +404,7 @@ export default {
         }
 
         const specs = JSON.parse(specsContent)
-        
+
         // Check if specs array exists and has at least one item
         if (!specs.specs || !Array.isArray(specs.specs) || specs.specs.length === 0) {
           results.push({
@@ -421,7 +416,7 @@ export default {
         }
 
         const firstSpec = specs.specs[0]
-        
+
         if (firstSpec.external_specs && Array.isArray(firstSpec.external_specs)) {
           if (firstSpec.external_specs.length === 0) {
             results.push({
@@ -441,7 +436,7 @@ export default {
               if (spec.url) {
                 const urlExists = await checkUrlExists(spec.url)
                 let urlStatus, urlDetails
-                
+
                 if (urlExists === true) {
                   urlStatus = true
                   urlDetails = `URL: ${spec.url} - Accessible`
@@ -452,7 +447,7 @@ export default {
                   urlStatus = false
                   urlDetails = `URL: ${spec.url} - Not accessible or not found`
                 }
-                
+
                 results.push({
                   name: `External spec ${index + 1} URL accessible`,
                   success: urlStatus,
@@ -484,7 +479,7 @@ export default {
               if (spec.gh_page) {
                 const ghPageExists = await checkUrlExists(spec.gh_page)
                 let ghStatus, ghDetails
-                
+
                 if (ghPageExists === true) {
                   ghStatus = true
                   ghDetails = `GitHub page: ${spec.gh_page} - Accessible`
@@ -495,7 +490,7 @@ export default {
                   ghStatus = false
                   ghDetails = `GitHub page: ${spec.gh_page} - Not accessible or not found`
                 }
-                
+
                 results.push({
                   name: `External spec ${index + 1} GitHub page accessible`,
                   success: ghStatus,
@@ -545,7 +540,7 @@ export default {
 
     const checkTermsIntroFile = async () => {
       const results = []
-      
+
       try {
         // Try common paths for terms intro file
         const possiblePaths = [
@@ -556,7 +551,7 @@ export default {
 
         let found = false
         let content = ''
-        
+
         for (const path of possiblePaths) {
           const fileContent = await fetchFileContent(path)
           if (fileContent) {
@@ -617,10 +612,10 @@ export default {
 
     const checkGitignore = async () => {
       const results = []
-      
+
       try {
         const gitignoreContent = await fetchFileContent('.gitignore')
-        
+
         if (!gitignoreContent) {
           results.push({
             name: '.gitignore exists',
@@ -666,7 +661,7 @@ export default {
 
     const checkRepositoryInfo = async () => {
       const results = []
-      
+
       try {
         // Check if repository is accessible
         const repoResponse = await axios.get(
@@ -718,12 +713,12 @@ export default {
 
     const checkSpecDirectory = async () => {
       const results = []
-      
+
       try {
         // First, get the spec directory from specs.json
         const specsContent = await fetchFileContent('specs.json')
         let specDirectory = 'spec' // default
-        
+
         if (specsContent) {
           try {
             const specs = JSON.parse(specsContent)
@@ -737,7 +732,7 @@ export default {
 
         // Check if spec directory exists
         const dirContents = await getDirectoryContents(specDirectory)
-        
+
         if (!dirContents) {
           results.push({
             name: 'Spec directory exists',
@@ -754,7 +749,7 @@ export default {
         })
 
         // Check for markdown files
-        const markdownFiles = dirContents.filter(item => 
+        const markdownFiles = dirContents.filter(item =>
           item.type === 'file' && item.name.toLowerCase().endsWith('.md')
         )
 
@@ -781,7 +776,7 @@ export default {
               // Count term references like [[term]]
               const termRefs = (content.match(/\[\[([^\]]+)\]\]/g) || []).length
               totalTermRefs += termRefs
-              
+
               if (termRefs > 0) {
                 results.push({
                   name: `${file.name} contains term references`,
@@ -825,12 +820,12 @@ export default {
 
     const checkTrefTermReferences = async () => {
       const results = []
-      
+
       try {
         // First, get the spec directory from specs.json
         const specsContent = await fetchFileContent('specs.json')
         let specDirectory = 'spec' // default
-        
+
         if (specsContent) {
           try {
             const specs = JSON.parse(specsContent)
@@ -844,7 +839,7 @@ export default {
 
         // Get all markdown files in the spec directory
         const dirContents = await getDirectoryContents(specDirectory)
-        
+
         if (!dirContents) {
           results.push({
             name: 'Term reference check',
@@ -854,7 +849,7 @@ export default {
           return results
         }
 
-        const markdownFiles = dirContents.filter(item => 
+        const markdownFiles = dirContents.filter(item =>
           item.type === 'file' && item.name.toLowerCase().endsWith('.md')
         )
 
@@ -872,7 +867,7 @@ export default {
         const allTermRefs = new Set()
         const allTermDefs = new Set()
         const fileTermRefs = new Map()
-        
+
         // First pass: collect all term references [[term]] and definitions
         for (const file of markdownFiles) {
           const content = await fetchFileContent(file.path)
@@ -880,13 +875,13 @@ export default {
             // Find all [[term]] references
             const termRefs = content.match(/\[\[([^\]]+)\]\]/g) || []
             const termsInFile = []
-            
+
             termRefs.forEach(ref => {
               const term = ref.replace(/\[\[|\]\]/g, '').trim().toLowerCase()
               allTermRefs.add(term)
               termsInFile.push(term)
             })
-            
+
             if (termsInFile.length > 0) {
               fileTermRefs.set(file.name, termsInFile)
             }
@@ -896,21 +891,21 @@ export default {
             const lines = content.split('\n')
             lines.forEach(line => {
               const trimmedLine = line.trim()
-              
+
               // Check for header definitions like "## Term Name"
               const headerMatch = trimmedLine.match(/^#+\s*(.+)$/)
               if (headerMatch) {
                 const term = headerMatch[1].trim().toLowerCase()
                 allTermDefs.add(term)
               }
-              
+
               // Check for bold definitions like "**Term Name**:"
               const boldMatch = trimmedLine.match(/^\*\*([^*]+)\*\*\s*:/)
               if (boldMatch) {
                 const term = boldMatch[1].trim().toLowerCase()
                 allTermDefs.add(term)
               }
-              
+
               // Check for simple definitions like "Term Name:"
               const simpleMatch = trimmedLine.match(/^([^:]+):\s*$/)
               if (simpleMatch && simpleMatch[1].length < 50) { // Avoid matching long sentences
@@ -948,8 +943,8 @@ export default {
           name: 'Term references found',
           success: allTermRefs.size > 0,
           status: allTermRefs.size === 0 ? 'warning' : undefined,
-          details: allTermRefs.size === 0 ? 
-            'No term references ([[term]]) found in markdown files' : 
+          details: allTermRefs.size === 0 ?
+            'No term references ([[term]]) found in markdown files' :
             `Found ${allTermRefs.size} unique term reference(s): ${Array.from(allTermRefs).slice(0, 10).join(', ')}${allTermRefs.size > 10 ? '...' : ''}`
         })
 
@@ -957,8 +952,8 @@ export default {
           name: 'Term definitions found',
           success: allTermDefs.size > 0,
           status: allTermDefs.size === 0 ? 'warning' : undefined,
-          details: allTermDefs.size === 0 ? 
-            'No term definitions found in markdown files' : 
+          details: allTermDefs.size === 0 ?
+            'No term definitions found in markdown files' :
             `Found ${allTermDefs.size} potential term definition(s)`
         })
 

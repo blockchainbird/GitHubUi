@@ -12,18 +12,18 @@
         </button>
       </div>
     </div>
-    
+
     <div v-if="error" class="alert alert-danger" role="alert">
       {{ error }}
     </div>
-    
+
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border" role="status">
         <span class="visually-hidden">Loading...</span>
       </div>
       <p class="mt-2">Loading spec files...</p>
     </div>
-    
+
     <div v-else-if="specDirectory">
       <div class="card">
         <div class="card-header">
@@ -32,16 +32,12 @@
               <i class="bi bi-folder-fill"></i>
               Spec Directory: {{ currentDirectory }}
             </h5>
-            <button 
-              @click="showCreateModal" 
-              class="btn btn-success btn-sm"
-              title="Create New File"
-            >
+            <button @click="showCreateModal" class="btn btn-success btn-sm" title="Create New File">
               <i class="bi bi-plus-circle"></i>
               New File
             </button>
           </div>
-          
+
           <!-- Filter/Search Bar -->
           <div class="row g-2">
             <div class="col">
@@ -49,46 +45,28 @@
                 <span class="input-group-text">
                   <i class="bi bi-search"></i>
                 </span>
-                <input
-                  v-model="filterText"
-                  type="text"
-                  class="form-control"
-                  placeholder="Filter files and folders..."
-                  @input="applyFilter"
-                  @keydown.escape="clearFilterCompletely"
-                >
-                <button 
-                  v-if="filterText"
-                  @click="clearFilterCompletely"
-                  class="btn btn-outline-secondary"
-                  type="button"
-                  title="Clear filter"
-                >
+                <input v-model="filterText" type="text" class="form-control" placeholder="Filter files and folders..."
+                  @input="applyFilter" @keydown.escape="clearFilterCompletely">
+                <button v-if="filterText" @click="clearFilterCompletely" class="btn btn-outline-secondary" type="button"
+                  title="Clear filter">
                   <i class="bi bi-x"></i>
                 </button>
               </div>
             </div>
             <div class="col-auto">
               <div class="dropdown">
-                <button 
-                  ref="dropdownButton"
-                  class="btn btn-outline-secondary dropdown-toggle" 
-                  type="button" 
-                  @click="toggleDropdown"
-                  title="Filter options"
-                >
+                <button ref="dropdownButton" class="btn btn-outline-secondary dropdown-toggle" type="button"
+                  @click="toggleDropdown" title="Filter options">
                   <i class="bi bi-funnel"></i>
                   {{ selectedFilter }}
                 </button>
-                <ul 
-                  ref="dropdownMenu"
-                  class="dropdown-menu"
-                  :class="{ show: dropdownOpen }"
-                >
+                <ul ref="dropdownMenu" class="dropdown-menu" :class="{ show: dropdownOpen }">
                   <li><a class="dropdown-item" href="#" @click.prevent="selectFilter('All')">All</a></li>
                   <li><a class="dropdown-item" href="#" @click.prevent="selectFilter('Files')">Files Only</a></li>
                   <li><a class="dropdown-item" href="#" @click.prevent="selectFilter('Folders')">Folders Only</a></li>
-                  <li><hr class="dropdown-divider"></li>
+                  <li>
+                    <hr class="dropdown-divider">
+                  </li>
                   <li><a class="dropdown-item" href="#" @click.prevent="selectFilter('.md')">.md Files</a></li>
                   <li><a class="dropdown-item" href="#" @click.prevent="selectFilter('.txt')">.txt Files</a></li>
                   <li><a class="dropdown-item" href="#" @click.prevent="selectFilter('.html')">.html Files</a></li>
@@ -96,7 +74,7 @@
               </div>
             </div>
           </div>
-          
+
           <!-- Results info -->
           <div v-if="filterText || selectedFilter !== 'All'" class="mt-2">
             <small class="text-muted">
@@ -124,15 +102,11 @@
               </span>
             </p>
           </div>
-          
+
           <div v-else class="list-group list-group-flush">
             <!-- Show filtered folders first -->
-            <button
-              v-for="folder in filteredFolders"
-              :key="folder.path"
-              @click="openFolder(folder)"
-              class="list-group-item list-group-item-action d-flex align-items-center"
-            >
+            <button v-for="folder in filteredFolders" :key="folder.path" @click="openFolder(folder)"
+              class="list-group-item list-group-item-action d-flex align-items-center">
               <i class="bi bi-folder-fill me-3" style="color: #ffc107;"></i>
               <div class="flex-grow-1">
                 <div class="fw-medium">{{ folder.name }}</div>
@@ -141,13 +115,9 @@
               <i class="bi bi-chevron-right"></i>
             </button>
             <!-- Then show filtered files -->
-            <button
-              v-for="file in filteredFiles"
-              :key="file.path"
-              @click="openFile(file)"
+            <button v-for="file in filteredFiles" :key="file.path" @click="openFile(file)"
               class="list-group-item list-group-item-action d-flex align-items-center"
-              :class="{ 'recently-created': file.name === recentlyCreatedFile }"
-            >
+              :class="{ 'recently-created': file.name === recentlyCreatedFile }">
               <i class="bi bi-file-text me-3" style="color: #0d6efd;"></i>
               <div class="flex-grow-1">
                 <div class="fw-medium">
@@ -163,9 +133,11 @@
         </div>
       </div>
     </div>
-    
+
     <!-- Create New File Modal -->
-    <div v-if="showCreateFileModal" class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @click.self="closeCreateFileModal" @keyup.escape="closeCreateFileModal">
+    <div v-if="showCreateFileModal" class="modal fade show d-block" tabindex="-1"
+      style="background-color: rgba(0,0,0,0.5);" @click.self="closeCreateFileModal"
+      @keyup.escape="closeCreateFileModal">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
@@ -179,59 +151,35 @@
             <div v-if="createFileError" class="alert alert-danger" role="alert">
               {{ createFileError }}
             </div>
-            
+
             <div class="mb-3">
               <label for="fileName" class="form-label">File Name</label>
-              <input
-                v-model="newFileName"
-                ref="fileNameInput"
-                type="text"
-                class="form-control"
-                id="fileName"
-                placeholder="example.md"
-                @keyup.enter="createNewFile"
-                @input="updateDefaultContent"
-              >
+              <input v-model="newFileName" ref="fileNameInput" type="text" class="form-control" id="fileName"
+                placeholder="example.md" @keyup.enter="createNewFile" @input="updateDefaultContent">
               <div class="form-text">
                 Supported extensions: .md, .txt, .rst, .adoc, .html
               </div>
             </div>
-            
+
             <div class="mb-3">
               <label for="fileContent" class="form-label">Initial Content (Optional)</label>
-              <textarea
-                v-model="newFileContent"
-                class="form-control"
-                id="fileContent"
-                rows="6"
-                placeholder="Enter initial content for the file..."
-                @keydown.ctrl.enter="createNewFile"
-              ></textarea>
+              <textarea v-model="newFileContent" class="form-control" id="fileContent" rows="6"
+                placeholder="Enter initial content for the file..." @keydown.ctrl.enter="createNewFile"></textarea>
               <div class="form-text">
                 Press Ctrl+Enter to create the file quickly
               </div>
             </div>
-            
+
             <div class="mb-3">
               <label for="commitMsg" class="form-label">Commit Message</label>
-              <input
-                v-model="newFileCommitMessage"
-                type="text"
-                class="form-control"
-                id="commitMsg"
-                placeholder="Add new file"
-                @keydown.ctrl.enter="createNewFile"
-              >
+              <input v-model="newFileCommitMessage" type="text" class="form-control" id="commitMsg"
+                placeholder="Add new file" @keydown.ctrl.enter="createNewFile">
             </div>
           </div>
           <div class="modal-footer">
             <button @click="closeCreateFileModal" type="button" class="btn btn-secondary">Cancel</button>
-            <button 
-              @click="createNewFile" 
-              type="button" 
-              class="btn btn-success"
-              :disabled="!newFileName.trim() || creatingFile"
-            >
+            <button @click="createNewFile" type="button" class="btn btn-success"
+              :disabled="!newFileName.trim() || creatingFile">
               <span v-if="creatingFile">
                 <span class="spinner-border spinner-border-sm me-2" role="status"></span>
                 Creating...
@@ -327,7 +275,7 @@ export default {
     const files = ref([])
     const folders = ref([])
     const currentDirectory = ref('')
-    
+
     // Filter state
     const filterText = ref('')
     const selectedFilter = ref('All')
@@ -335,7 +283,7 @@ export default {
     const dropdownButton = ref(null)
     const dropdownMenu = ref(null)
     const recentlyCreatedFile = ref('')
-    
+
     // Create file modal state
     const showCreateFileModal = ref(false)
     const newFileName = ref('')
@@ -344,56 +292,56 @@ export default {
     const creatingFile = ref(false)
     const createFileError = ref('')
     const fileNameInput = ref(null)
-    
+
     // Computed properties for filtered results
     const filteredFiles = computed(() => {
       let result = files.value
-      
+
       // Apply filter type
       if (selectedFilter.value === 'Folders') {
         result = []
       } else if (selectedFilter.value.startsWith('.')) {
-        result = result.filter(file => 
+        result = result.filter(file =>
           file.name.toLowerCase().endsWith(selectedFilter.value) ||
           // Always include recently created file
           file.name === recentlyCreatedFile.value
         )
       }
-      
+
       // Apply text filter
       if (filterText.value) {
         const searchTerm = filterText.value.toLowerCase()
-        result = result.filter(file => 
+        result = result.filter(file =>
           file.name.toLowerCase().includes(searchTerm) ||
           file.path.toLowerCase().includes(searchTerm) ||
           // Always include recently created file even if it doesn't match filter
           file.name === recentlyCreatedFile.value
         )
       }
-            
+
       return result
     })
-    
+
     const filteredFolders = computed(() => {
       let result = folders.value
-      
+
       // Apply filter type
       if (selectedFilter.value === 'Files' || selectedFilter.value.startsWith('.')) {
         result = []
       }
-      
+
       // Apply text filter
       if (filterText.value) {
         const searchTerm = filterText.value.toLowerCase()
-        result = result.filter(folder => 
+        result = result.filter(folder =>
           folder.name.toLowerCase().includes(searchTerm) ||
           folder.path.toLowerCase().includes(searchTerm)
         )
       }
-      
+
       return result
     })
-    
+
     // Helper function to check authentication and redirect if needed
     const checkAuthAndRedirect = (error) => {
       if (error.response && (error.response.status === 401 || error.response.status === 403)) {
@@ -405,7 +353,7 @@ export default {
       }
       return false
     }
-    
+
     const loadSpecsConfig = async () => {
       try {
         const token = localStorage.getItem('github_token')
@@ -448,7 +396,7 @@ export default {
         }
       }
     }
-    
+
     // Function to check if a file contains external references in the first line
     const checkForExternalReferences = async (downloadUrl, config) => {
       try {
@@ -465,19 +413,19 @@ export default {
           // If range doesn't work, get the full file
           response = await axios.get(downloadUrl)
         }
-        
+
         // Check if first line contains [[tref:
         const content = response.data
         const firstLine = content.split('\n')[0] || ''
         const hasExternalRef = firstLine.includes('[[tref:')
-        
+
         return hasExternalRef
       } catch (err) {
         console.warn('Could not check external references for file:', downloadUrl, err)
         return false
       }
     }
-    
+
     const loadSpecFiles = async (directory) => {
       try {
         loading.value = true
@@ -506,12 +454,12 @@ export default {
         const filteredFiles = response.data
           .filter(file => file.type === 'file')
           .filter(file => textFileExtensions.some(ext => file.name.toLowerCase().endsWith(ext)))
-        
+
         // Check each file for external references and add hasExternalRefs property
         // Process files in batches to avoid overwhelming the API
         const batchSize = 5
         const filesWithExternalCheck = []
-        
+
         for (let i = 0; i < filteredFiles.length; i += batchSize) {
           const batch = filteredFiles.slice(i, i + batchSize)
           const batchResults = await Promise.all(
@@ -528,7 +476,7 @@ export default {
           )
           filesWithExternalCheck.push(...batchResults)
         }
-        
+
         files.value = filesWithExternalCheck
         currentDirectory.value = directory
       } catch (err) {
@@ -545,7 +493,7 @@ export default {
         loading.value = false
       }
     }
-    
+
     const openFile = (file) => {
       const encodedPath = encodeURIComponent(file.path)
       router.push(`/editor/${props.owner}/${props.repo}/${props.branch}/${encodedPath}`)
@@ -556,7 +504,7 @@ export default {
       localStorage.removeItem('recentlyCreatedFile') // Also clear from localStorage
       loadSpecFiles(folder.path)
     }
-    
+
     const showCreateModal = async () => {
       showCreateFileModal.value = true
       await nextTick()
@@ -564,7 +512,7 @@ export default {
         fileNameInput.value.focus()
       }
     }
-    
+
     const closeCreateFileModal = () => {
       showCreateFileModal.value = false
       newFileName.value = ''
@@ -572,7 +520,7 @@ export default {
       newFileCommitMessage.value = 'Add new file'
       createFileError.value = ''
     }
-    
+
     const updateDefaultContent = () => {
       const fileName = newFileName.value.toLowerCase()
       if (fileName.endsWith('.md') && !newFileContent.value) {
@@ -580,28 +528,28 @@ export default {
         newFileContent.value = `# ${baseName}\n\n## Overview\n\nDescription of this specification.\n\n## Details\n\nDetailed content goes here.\n`
       }
     }
-    
+
     const createNewFile = async () => {
       if (!newFileName.value.trim()) {
         createFileError.value = 'Please enter a file name'
         return
       }
-      
+
       // Validate file extension
       const allowedExtensions = ['.md', '.txt', '.rst', '.adoc', '.html']
-      const hasValidExtension = allowedExtensions.some(ext => 
+      const hasValidExtension = allowedExtensions.some(ext =>
         newFileName.value.toLowerCase().endsWith(ext)
       )
-      
+
       if (!hasValidExtension) {
         createFileError.value = 'File must have one of these extensions: ' + allowedExtensions.join(', ')
         return
       }
-      
+
       try {
         creatingFile.value = true
         createFileError.value = ''
-        
+
         const token = localStorage.getItem('github_token')
         const config = {
           headers: {
@@ -609,46 +557,46 @@ export default {
             'Accept': 'application/vnd.github.v3+json'
           }
         }
-        
+
         // Construct the file path
-        const filePath = currentDirectory.value ? 
-          `${currentDirectory.value}/${newFileName.value}` : 
+        const filePath = currentDirectory.value ?
+          `${currentDirectory.value}/${newFileName.value}` :
           `${specDirectory.value}/${newFileName.value}`
-        
+
         // Create the file via GitHub API
         const createData = {
           message: newFileCommitMessage.value || 'Add new file',
           content: btoa(newFileContent.value || ''), // Base64 encode the content
           branch: props.branch
         }
-        
+
         await axios.put(
           `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${filePath}`,
           createData,
           config
         )
-        
+
         // Close modal and refresh file list
         closeCreateFileModal()
-        
+
         // Store the newly created file name for filtering purposes
         recentlyCreatedFile.value = newFileName.value
         // Also store in localStorage to persist across navigation
         localStorage.setItem('recentlyCreatedFile', newFileName.value)
-        
+
         // Don't clear filters - let the computed properties handle showing the new file
         await loadSpecFiles(currentDirectory.value || specDirectory.value)
-        
+
         // Auto-clear the recently created indicator after 10 seconds
         setTimeout(() => {
           recentlyCreatedFile.value = ''
           localStorage.removeItem('recentlyCreatedFile')
         }, 10000)
-        
+
         // Navigate to the new file for editing
         const encodedPath = encodeURIComponent(filePath)
         router.push(`/editor/${props.owner}/${props.repo}/${props.branch}/${encodedPath}`)
-        
+
       } catch (err) {
         console.error('Error creating file:', err)
         if (checkAuthAndRedirect(err)) {
@@ -663,34 +611,34 @@ export default {
         creatingFile.value = false
       }
     }
-    
+
     // Filter methods
     const toggleDropdown = () => {
       dropdownOpen.value = !dropdownOpen.value
     }
-    
+
     const selectFilter = (filterType) => {
       selectedFilter.value = filterType
       dropdownOpen.value = false
     }
-    
+
     const setFilter = (filterType) => {
       selectedFilter.value = filterType
     }
-    
+
     const clearFilter = () => {
       filterText.value = ''
       selectedFilter.value = 'All'
       // Don't clear recentlyCreatedFile here - let it remain for tracking
     }
-    
+
     const clearFilterCompletely = () => {
       filterText.value = ''
       selectedFilter.value = 'All'
       recentlyCreatedFile.value = '' // Clear recently created file tracking when user manually clears
       localStorage.removeItem('recentlyCreatedFile') // Also clear from localStorage
     }
-    
+
     const applyFilter = () => {
       // Clear recently created file indicator when user starts filtering
       if (filterText.value && recentlyCreatedFile.value) {
@@ -701,7 +649,7 @@ export default {
         }, 2000)
       }
     }
-    
+
     // Close dropdown when clicking outside
     const handleClickOutside = (event) => {
       if (dropdownButton.value && dropdownMenu.value) {
@@ -710,7 +658,7 @@ export default {
         }
       }
     }
-    
+
     // Function to refresh file list when returning to the page
     const handleVisibilityChange = () => {
       if (!document.hidden && route.path.includes('/files/') && (currentDirectory.value || specDirectory.value)) {
@@ -723,15 +671,15 @@ export default {
         }
       }
     }
-    
+
     onMounted(() => {
       // Add this repository to visited history
       addToVisitedRepos(props.owner, props.repo, props.branch)
-      
+
       loadSpecsConfig()
       document.addEventListener('click', handleClickOutside)
       document.addEventListener('visibilitychange', handleVisibilityChange)
-      
+
       // Check if we have a recently created file in localStorage
       const storedRecentFile = localStorage.getItem('recentlyCreatedFile')
       if (storedRecentFile) {
@@ -743,7 +691,7 @@ export default {
         }, 30000)
       }
     })
-    
+
     // Watch for when user navigates back to this component  
     watch(() => route.path, (newPath, oldPath) => {
       // If we're on the file explorer route and the path changed
@@ -757,13 +705,13 @@ export default {
         }, 200)
       }
     })
-    
+
     // Clean up event listener
     onUnmounted(() => {
       document.removeEventListener('click', handleClickOutside)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     })
-    
+
     // Go Up directory function (never go above root specDirectory)
     const goUpDirectory = () => {
       const current = normalizeDir(currentDirectory.value);

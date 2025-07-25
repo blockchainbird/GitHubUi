@@ -30,13 +30,8 @@
               <template #body>
                 <div style="max-height: 60vh; overflow-y: auto; min-width: 300px;">
                   <div class="mb-3">
-                    <input 
-                      type="text" 
-                      v-model="repoFilter" 
-                      class="form-control" 
-                      placeholder="Filter repositories..." 
-                      @input="filterRepos"
-                    >
+                    <input type="text" v-model="repoFilter" class="form-control" placeholder="Filter repositories..."
+                      @input="filterRepos">
                   </div>
                   <div v-if="repoLoading" class="text-center my-3">
                     <span class="spinner-border spinner-border-sm me-2"></span> Loading repositories...
@@ -66,13 +61,8 @@
               <template #body>
                 <div style="max-height: 60vh; overflow-y: auto; min-width: 300px;">
                   <div class="mb-3">
-                    <input 
-                      type="text" 
-                      v-model="branchFilter" 
-                      class="form-control" 
-                      placeholder="Filter branches..." 
-                      @input="filterBranches"
-                    >
+                    <input type="text" v-model="branchFilter" class="form-control" placeholder="Filter branches..."
+                      @input="filterBranches">
                   </div>
                   <div v-if="branchLoading" class="text-center my-3">
                     <span class="spinner-border spinner-border-sm me-2"></span> Loading branches...
@@ -81,8 +71,9 @@
                     No branches found.
                   </div>
                   <ul v-else class="list-group">
-                    <li v-for="item in filteredBranchList" :key="item.name" class="list-group-item list-group-item-action"
-                      style="cursor:pointer" @click="selectBranch(item.name)">
+                    <li v-for="item in filteredBranchList" :key="item.name"
+                      class="list-group-item list-group-item-action" style="cursor:pointer"
+                      @click="selectBranch(item.name)">
                       <i class="bi bi-git"></i> {{ item.name }}
                     </li>
                   </ul>
@@ -227,7 +218,7 @@ export default {
       if (!filter) {
         filteredRepoList.value = [...repoList.value]
       } else {
-        filteredRepoList.value = repoList.value.filter(repo => 
+        filteredRepoList.value = repoList.value.filter(repo =>
           repo.name.toLowerCase().includes(filter) ||
           (repo.description && repo.description.toLowerCase().includes(filter))
         )
@@ -240,7 +231,7 @@ export default {
       if (!filter) {
         filteredBranchList.value = [...branchList.value]
       } else {
-        filteredBranchList.value = branchList.value.filter(branch => 
+        filteredBranchList.value = branchList.value.filter(branch =>
           branch.name.toLowerCase().includes(filter)
         )
       }

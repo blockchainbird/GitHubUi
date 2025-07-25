@@ -18,7 +18,7 @@
               </button>
             </div>
           </div>
-          
+
           <div class="card-body">
             <!-- Loading State -->
             <div v-if="loading" class="text-center py-4">
@@ -62,26 +62,17 @@
                     <tbody>
                       <tr v-for="(spec, index) in externalSpecs" :key="index">
                         <td>
-                          <input 
-                            v-model="spec.external_spec" 
-                            class="form-control form-control-sm"
-                            placeholder="e.g., toip1"
-                            @input="markAsChanged"
-                            :class="{ 'is-invalid': !spec.external_spec }"
-                          >
+                          <input v-model="spec.external_spec" class="form-control form-control-sm"
+                            placeholder="e.g., toip1" @input="markAsChanged"
+                            :class="{ 'is-invalid': !spec.external_spec }">
                           <div v-if="!spec.external_spec" class="invalid-feedback">
                             Spec ID is required
                           </div>
                         </td>
                         <td>
-                          <input 
-                            v-model="spec.gh_page" 
-                            type="url"
-                            class="form-control form-control-sm"
-                            placeholder="https://example.github.io/spec/"
-                            @input="markAsChanged"
-                            :class="{ 'is-invalid': !spec.gh_page || !isValidUrl(spec.gh_page) }"
-                          >
+                          <input v-model="spec.gh_page" type="url" class="form-control form-control-sm"
+                            placeholder="https://example.github.io/spec/" @input="markAsChanged"
+                            :class="{ 'is-invalid': !spec.gh_page || !isValidUrl(spec.gh_page) }">
                           <div v-if="!spec.gh_page" class="invalid-feedback">
                             GitHub Page URL is required
                           </div>
@@ -90,14 +81,9 @@
                           </div>
                         </td>
                         <td>
-                          <input 
-                            v-model="spec.url" 
-                            type="url"
-                            class="form-control form-control-sm"
-                            placeholder="https://github.com/user/repo"
-                            @input="markAsChanged"
-                            :class="{ 'is-invalid': !spec.url || !isValidUrl(spec.url) }"
-                          >
+                          <input v-model="spec.url" type="url" class="form-control form-control-sm"
+                            placeholder="https://github.com/user/repo" @input="markAsChanged"
+                            :class="{ 'is-invalid': !spec.url || !isValidUrl(spec.url) }">
                           <div v-if="!spec.url" class="invalid-feedback">
                             Repository URL is required
                           </div>
@@ -106,23 +92,15 @@
                           </div>
                         </td>
                         <td>
-                          <input 
-                            v-model="spec.terms_dir" 
-                            class="form-control form-control-sm"
-                            placeholder="spec/terms-definitions"
-                            @input="markAsChanged"
-                            :class="{ 'is-invalid': !spec.terms_dir }"
-                          >
+                          <input v-model="spec.terms_dir" class="form-control form-control-sm"
+                            placeholder="spec/terms-definitions" @input="markAsChanged"
+                            :class="{ 'is-invalid': !spec.terms_dir }">
                           <div v-if="!spec.terms_dir" class="invalid-feedback">
                             Terms directory is required
                           </div>
                         </td>
                         <td>
-                          <button 
-                            @click="removeSpec(index)" 
-                            class="btn btn-danger btn-sm"
-                            title="Remove specification"
-                          >
+                          <button @click="removeSpec(index)" class="btn btn-danger btn-sm" title="Remove specification">
                             <i class="bi bi-trash"></i>
                           </button>
                         </td>
@@ -142,48 +120,26 @@
                     <div class="row">
                       <div class="col-md-6 mb-3">
                         <label for="newSpecId" class="form-label">Specification ID</label>
-                        <input 
-                          id="newSpecId"
-                          v-model="newSpec.external_spec" 
-                          class="form-control"
-                          placeholder="e.g., toip1, keri1"
-                          required
-                        >
+                        <input id="newSpecId" v-model="newSpec.external_spec" class="form-control"
+                          placeholder="e.g., toip1, keri1" required>
                         <div class="form-text">Unique identifier for this external specification</div>
                       </div>
                       <div class="col-md-6 mb-3">
                         <label for="newSpecGhPage" class="form-label">GitHub Page URL</label>
-                        <input 
-                          id="newSpecGhPage"
-                          v-model="newSpec.gh_page" 
-                          type="url"
-                          class="form-control"
-                          placeholder="https://example.github.io/spec/"
-                          required
-                        >
+                        <input id="newSpecGhPage" v-model="newSpec.gh_page" type="url" class="form-control"
+                          placeholder="https://example.github.io/spec/" required>
                         <div class="form-text">The GitHub Pages URL where the spec is hosted</div>
                       </div>
                       <div class="col-md-6 mb-3">
                         <label for="newSpecUrl" class="form-label">Repository URL</label>
-                        <input 
-                          id="newSpecUrl"
-                          v-model="newSpec.url" 
-                          type="url"
-                          class="form-control"
-                          placeholder="https://github.com/user/repo"
-                          required
-                        >
+                        <input id="newSpecUrl" v-model="newSpec.url" type="url" class="form-control"
+                          placeholder="https://github.com/user/repo" required>
                         <div class="form-text">The GitHub repository URL</div>
                       </div>
                       <div class="col-md-6 mb-3">
                         <label for="newSpecTermsDir" class="form-label">Terms Directory</label>
-                        <input 
-                          id="newSpecTermsDir"
-                          v-model="newSpec.terms_dir" 
-                          class="form-control"
-                          placeholder="spec/terms-definitions"
-                          required
-                        >
+                        <input id="newSpecTermsDir" v-model="newSpec.terms_dir" class="form-control"
+                          placeholder="spec/terms-definitions" required>
                         <div class="form-text">Path to the terms definitions directory</div>
                       </div>
                     </div>
@@ -223,12 +179,12 @@ export default {
   setup() {
     const router = useRouter()
     const route = useRoute()
-    
+
     // Props from route
     const owner = ref(route.params.owner)
     const repo = ref(route.params.repo)
     const branch = ref(route.params.branch)
-    
+
     // State
     const loading = ref(true)
     const saving = ref(false)
@@ -236,7 +192,7 @@ export default {
     const externalSpecs = ref([])
     const originalSpecsJson = ref(null)
     const hasChanges = ref(false)
-    
+
     // Helper function to check authentication and redirect if needed
     const checkAuthAndRedirect = (error) => {
       if (error.response && (error.response.status === 401 || error.response.status === 403)) {
@@ -248,7 +204,7 @@ export default {
       }
       return false
     }
-    
+
     // New spec form
     const newSpec = ref({
       external_spec: '',
@@ -256,7 +212,7 @@ export default {
       url: '',
       terms_dir: 'spec/terms-definitions'
     })
-    
+
     const resetNewSpec = () => {
       newSpec.value = {
         external_spec: '',
@@ -265,11 +221,11 @@ export default {
         terms_dir: 'spec/terms-definitions'
       }
     }
-    
+
     const markAsChanged = () => {
       hasChanges.value = true
     }
-    
+
     const isValidUrl = (url) => {
       try {
         new URL(url)
@@ -278,17 +234,17 @@ export default {
         return false
       }
     }
-    
+
     const loadSpecs = async () => {
       try {
         loading.value = true
         error.value = ''
-        
+
         const token = localStorage.getItem('github_token')
         if (!token) {
           throw new Error('No GitHub token found')
         }
-        
+
         // Fetch specs.json
         const response = await fetch(
           `https://api.github.com/repos/${owner.value}/${repo.value}/contents/specs.json?ref=${branch.value}`,
@@ -299,27 +255,27 @@ export default {
             }
           }
         )
-        
+
         if (!response.ok) {
           throw new Error(`Failed to load specs.json: ${response.statusText}`)
         }
-        
+
         const data = await response.json()
         const content = JSON.parse(atob(data.content))
-        
+
         // Store original for saving later
         originalSpecsJson.value = {
           content: content,
           sha: data.sha
         }
-        
+
         // Extract external_specs from the first spec (assuming single spec structure)
         if (content.specs && content.specs.length > 0 && content.specs[0].external_specs) {
           externalSpecs.value = [...content.specs[0].external_specs]
         } else {
           externalSpecs.value = []
         }
-        
+
       } catch (err) {
         console.error('Error loading specs:', err)
         if (checkAuthAndRedirect(err)) {
@@ -330,53 +286,53 @@ export default {
         loading.value = false
       }
     }
-    
+
     const addNewSpec = () => {
       // Validate required fields
-      if (!newSpec.value.external_spec || !newSpec.value.gh_page || 
-          !newSpec.value.url || !newSpec.value.terms_dir) {
+      if (!newSpec.value.external_spec || !newSpec.value.gh_page ||
+        !newSpec.value.url || !newSpec.value.terms_dir) {
         alert('Please fill in all required fields')
         return
       }
-      
+
       // Validate URLs
       if (!isValidUrl(newSpec.value.gh_page) || !isValidUrl(newSpec.value.url)) {
         alert('Please enter valid URLs for GitHub Page and Repository URL')
         return
       }
-      
+
       // Check for duplicate spec IDs
       if (externalSpecs.value.some(spec => spec.external_spec === newSpec.value.external_spec)) {
         alert('Specification ID already exists. Please choose a unique identifier.')
         return
       }
-      
+
       // Add new spec
       externalSpecs.value.push({ ...newSpec.value })
       resetNewSpec()
       markAsChanged()
     }
-    
+
     const removeSpec = (index) => {
       if (confirm('Are you sure you want to remove this external specification?')) {
         externalSpecs.value.splice(index, 1)
         markAsChanged()
       }
     }
-    
+
     const saveSpecs = async () => {
       try {
         // Validate all external specs before saving
-        const invalidSpecs = externalSpecs.value.filter(spec => 
+        const invalidSpecs = externalSpecs.value.filter(spec =>
           !spec.external_spec || !spec.gh_page || !spec.url || !spec.terms_dir ||
           !isValidUrl(spec.gh_page) || !isValidUrl(spec.url)
         )
-        
+
         if (invalidSpecs.length > 0) {
           alert('Please fix validation errors before saving. All fields are required and URLs must be valid.')
           return
         }
-        
+
         // Check for duplicate spec IDs
         const specIds = externalSpecs.value.map(spec => spec.external_spec)
         const duplicates = specIds.filter((id, index) => specIds.indexOf(id) !== index)
@@ -384,21 +340,21 @@ export default {
           alert(`Duplicate specification IDs found: ${duplicates.join(', ')}. Please ensure all spec IDs are unique.`)
           return
         }
-        
+
         saving.value = true
         error.value = ''
-        
+
         const token = localStorage.getItem('github_token')
         if (!token) {
           throw new Error('No GitHub token found')
         }
-        
+
         // Prepare updated content
         const updatedContent = { ...originalSpecsJson.value.content }
         if (updatedContent.specs && updatedContent.specs.length > 0) {
           updatedContent.specs[0].external_specs = externalSpecs.value
         }
-        
+
         // Commit changes
         const response = await fetch(
           `https://api.github.com/repos/${owner.value}/${repo.value}/contents/specs.json`,
@@ -416,17 +372,17 @@ export default {
             })
           }
         )
-        
+
         if (!response.ok) {
           throw new Error(`Failed to save specs.json: ${response.statusText}`)
         }
-        
+
         const result = await response.json()
         originalSpecsJson.value.sha = result.content.sha
         hasChanges.value = false
-        
+
         alert('External specifications saved successfully!')
-        
+
       } catch (err) {
         console.error('Error saving specs:', err)
         if (checkAuthAndRedirect(err)) {
@@ -437,7 +393,7 @@ export default {
         saving.value = false
       }
     }
-    
+
     const goBack = () => {
       if (hasChanges.value) {
         if (confirm('You have unsaved changes. Are you sure you want to go back?')) {
@@ -447,14 +403,14 @@ export default {
         router.push(`/files/${owner.value}/${repo.value}/${branch.value}`)
       }
     }
-    
+
     onMounted(() => {
       // Add this repository to visited history
       addToVisitedRepos(owner.value, repo.value, branch.value)
-      
+
       loadSpecs()
     })
-    
+
     return {
       owner,
       repo,
