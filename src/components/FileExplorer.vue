@@ -7,14 +7,6 @@
       </h2>
       <div>
         <button 
-          @click="$router.push(`/health-check/${owner}/${repo}/${branch}`)" 
-          class="btn btn-outline-success me-2"
-          title="Run Health Check"
-        >
-          <i class="bi bi-heart-pulse"></i>
-          Health Check
-        </button>
-        <button 
           @click="$router.push(`/external-specs/${owner}/${repo}/${branch}`)" 
           class="btn btn-outline-primary me-2"
           title="Manage External Specifications"

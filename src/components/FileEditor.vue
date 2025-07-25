@@ -6,14 +6,6 @@
         Editing: {{ filename }}
       </h2>
       <div>
-        <button 
-          @click="$router.push(`/health-check/${owner}/${repo}/${branch}`)" 
-          class="btn btn-outline-success me-2"
-          title="Run Health Check"
-        >
-          <i class="bi bi-heart-pulse"></i>
-          Health Check
-        </button>
         <button @click="goBack" class="btn btn-outline-secondary me-2">
           Close
         </button>
