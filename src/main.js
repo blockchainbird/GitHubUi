@@ -8,9 +8,12 @@ import FileEditor from './components/FileEditor.vue'
 import ExternalSpecsManager from './components/ExternalSpecsManager.vue'
 import HealthCheck from './components/HealthCheck.vue'
 
-import 'bootstrap'
+import * as bootstrap from 'bootstrap/dist/js/bootstrap.bundle.min.js'
 import 'bootstrap-icons/font/bootstrap-icons.css'
 import './styles/custom-bootstrap.scss'
+
+// Make Bootstrap available globally
+window.bootstrap = bootstrap
 
 // Import Google Analytics
 import googleAnalytics from './utils/googleAnalytics.js'
