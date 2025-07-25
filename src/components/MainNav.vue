@@ -19,6 +19,12 @@
       External Specs
     </button>
 
+    <a v-if="showRepoRelatedButtons" :href="githubRepoUrl" target="_blank" rel="noopener"
+      class="ms-3 btn btn-outline-info" title="View Repository on GitHub">
+      <i class="bi bi-github"></i>
+      View on GitHub
+    </a>
+
     <button v-if="showRepoRelatedButtons" @click="navigateToHealthCheck" class="ms-3 btn btn-outline-success"
       title="Run Health Check">
       <i class="bi bi-heart-pulse"></i>
@@ -79,6 +85,13 @@ export default {
       return route.params.owner && route.params.repo && route.params.branch;
     });
 
+    const githubRepoUrl = computed(() => {
+      if (route.params.owner && route.params.repo && route.params.branch) {
+        return `https://github.com/${route.params.owner}/${route.params.repo}/tree/${route.params.branch}`;
+      }
+      return '';
+    });
+
     const navigateToHealthCheck = () => {
       if (route.params.owner && route.params.repo && route.params.branch) {
         router.push(`/health-check/${route.params.owner}/${route.params.repo}/${route.params.branch}`);
@@ -91,6 +104,7 @@ export default {
     return {
       route,
       showRepoRelatedButtons,
+      githubRepoUrl,
       navigateToHealthCheck,
       buildInfo
     };
