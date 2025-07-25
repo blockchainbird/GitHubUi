@@ -29,10 +29,19 @@
       </template>
       <template #body>
         <p>
-          Spec-Up-T is an extension of DIF's Spec-Up tool, designed for creating rich technical specification documents
-          using enhanced markdown. It adds features for terminology management and other improvements, tailored for the
-          Trust-over-IP (ToIP) community, while staying in sync with the original Spec-Up project.
+Editor for Spec-Up-T is a web-based tool designed to help users create and manage specifications in a user-friendly manner. It provides an intuitive interface for editing, validating, and visualizing specifications, making it easier for teams to collaborate and maintain their documentation.
         </p>
+        <ul style="font-size: 0.95em; margin-bottom: 0.5em;">
+          <li>
+            <a href="https://github.com/blockchainbird/GitHubUi" target="_blank" rel="noopener">Repository for this web-app</a>
+          </li>
+          <li>
+            <a href="https://github.com/blockchainbird/spec-up-t" target="_blank" rel="noopener">Repository for Spec-Up-T</a>
+          </li>
+          <li>
+            <a href="https://blockchainbird.github.io/spec-up-t-website/" target="_blank" rel="noopener">Spec-Up-T documentation website</a>
+          </li>
+        </ul>
         <p style="font-size: 0.9em; color: #888;">
           <a href="https://blockchainbird.github.io/spec-up-t-website/docs/introduction/how-it-came-to-be/"
             target="_blank" rel="noopener">Read more</a>
