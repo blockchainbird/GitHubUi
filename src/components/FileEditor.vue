@@ -1376,7 +1376,7 @@ textarea:focus {
 /* Term reference styles */
 .term-reference {
   margin: 1rem 0;
-  padding: 0.75rem;
+  padding: 0.15rem;
   border: 1px solid #e9ecef;
   border-radius: 0.375rem;
   background-color: #94c3f1;
