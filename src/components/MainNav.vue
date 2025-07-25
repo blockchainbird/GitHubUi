@@ -12,7 +12,8 @@
       <i class="bi bi-box-arrow-up-right"></i>
       Documentation
     </a>
-    <button v-if="showRepoRelatedButtons" @click="$router.push(`/external-specs/${route.params.owner}/${route.params.repo}/${route.params.branch}`)"
+    <button v-if="showRepoRelatedButtons"
+      @click="$router.push(`/external-specs/${route.params.owner}/${route.params.repo}/${route.params.branch}`)"
       class="ms-3 btn btn-outline-primary me-2" title="Manage External Specifications">
       <i class="bi bi-link-45deg"></i>
       External Specs
@@ -29,17 +30,22 @@
       </template>
       <template #body>
         <p>
-Editor for Spec-Up-T is a web-based tool designed to help users create and manage specifications in a user-friendly manner. It provides an intuitive interface for editing, validating, and visualizing specifications, making it easier for teams to collaborate and maintain their documentation.
+          Editor for Spec-Up-T is a web-based tool designed to help users create and manage specifications in a
+          user-friendly manner. It provides an intuitive interface for editing, validating, and visualizing
+          specifications, making it easier for teams to collaborate and maintain their documentation.
         </p>
         <ul style="font-size: 0.95em; margin-bottom: 0.5em;">
           <li>
-            <a href="https://github.com/blockchainbird/GitHubUi" target="_blank" rel="noopener">Repository for this web-app</a>
+            <a href="https://github.com/blockchainbird/GitHubUi" target="_blank" rel="noopener">Repository for this
+              web-app</a>
           </li>
           <li>
-            <a href="https://github.com/blockchainbird/spec-up-t" target="_blank" rel="noopener">Repository for Spec-Up-T</a>
+            <a href="https://github.com/blockchainbird/spec-up-t" target="_blank" rel="noopener">Repository for
+              Spec-Up-T</a>
           </li>
           <li>
-            <a href="https://blockchainbird.github.io/spec-up-t-website/" target="_blank" rel="noopener">Spec-Up-T documentation website</a>
+            <a href="https://blockchainbird.github.io/spec-up-t-website/" target="_blank" rel="noopener">Spec-Up-T
+              documentation website</a>
           </li>
         </ul>
         <p style="font-size: 0.9em; color: #888;">
