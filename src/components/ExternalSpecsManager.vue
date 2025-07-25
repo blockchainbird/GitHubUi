@@ -111,48 +111,157 @@
               </div>
 
               <!-- Add New Spec Form -->
-              <div class="card">
+              <div class="card mb-4">
                 <div class="card-header">
-                  <h6 class="mb-0">Add New External Specification</h6>
+                  <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Add External Specifications</h6>
+                    <div class="btn-group btn-group-sm" role="group">
+                      <input type="radio" class="btn-check" name="addMode" id="singleMode" value="single" v-model="addMode">
+                      <label class="btn btn-outline-primary" for="singleMode">Single</label>
+                      
+                      <input type="radio" class="btn-check" name="addMode" id="bulkMode" value="bulk" v-model="addMode">
+                      <label class="btn btn-outline-primary" for="bulkMode">Bulk Import</label>
+                    </div>
+                  </div>
                 </div>
                 <div class="card-body">
-                  <form @submit.prevent="addNewSpec">
-                    <div class="row">
-                      <div class="col-md-6 mb-3">
-                        <label for="newSpecId" class="form-label">Specification ID</label>
-                        <input id="newSpecId" v-model="newSpec.external_spec" class="form-control"
-                          placeholder="e.g., toip1, keri1" required>
-                        <div class="form-text">Unique identifier for this external specification</div>
+                  <!-- Single Spec Mode -->
+                  <div v-if="addMode === 'single'">
+                    <form @submit.prevent="addNewSpec">
+                      <div class="row">
+                        <div class="col-md-6 mb-3">
+                          <label for="newSpecId" class="form-label">Specification ID</label>
+                          <input id="newSpecId" v-model="newSpec.external_spec" class="form-control"
+                            placeholder="e.g., toip1, keri1" required>
+                          <div class="form-text">Unique identifier for this external specification</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                          <label for="newSpecGhPage" class="form-label">GitHub Page URL</label>
+                          <input id="newSpecGhPage" v-model="newSpec.gh_page" type="url" class="form-control"
+                            placeholder="https://example.github.io/spec/" required>
+                          <div class="form-text">The GitHub Pages URL where the spec is hosted</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                          <label for="newSpecUrl" class="form-label">Repository URL</label>
+                          <input id="newSpecUrl" v-model="newSpec.url" type="url" class="form-control"
+                            placeholder="https://github.com/user/repo" required>
+                          <div class="form-text">The GitHub repository URL</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                          <label for="newSpecTermsDir" class="form-label">Terms Directory</label>
+                          <input id="newSpecTermsDir" v-model="newSpec.terms_dir" class="form-control"
+                            placeholder="spec/terms-definitions" required>
+                          <div class="form-text">Path to the terms definitions directory</div>
+                        </div>
                       </div>
-                      <div class="col-md-6 mb-3">
-                        <label for="newSpecGhPage" class="form-label">GitHub Page URL</label>
-                        <input id="newSpecGhPage" v-model="newSpec.gh_page" type="url" class="form-control"
-                          placeholder="https://example.github.io/spec/" required>
-                        <div class="form-text">The GitHub Pages URL where the spec is hosted</div>
+                      <div class="d-flex justify-content-end">
+                        <button type="button" @click="resetNewSpec" class="btn btn-outline-secondary me-2">
+                          Clear
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                          <i class="bi bi-plus-circle"></i>
+                          Add Specification
+                        </button>
                       </div>
-                      <div class="col-md-6 mb-3">
-                        <label for="newSpecUrl" class="form-label">Repository URL</label>
-                        <input id="newSpecUrl" v-model="newSpec.url" type="url" class="form-control"
-                          placeholder="https://github.com/user/repo" required>
-                        <div class="form-text">The GitHub repository URL</div>
-                      </div>
-                      <div class="col-md-6 mb-3">
-                        <label for="newSpecTermsDir" class="form-label">Terms Directory</label>
-                        <input id="newSpecTermsDir" v-model="newSpec.terms_dir" class="form-control"
-                          placeholder="spec/terms-definitions" required>
-                        <div class="form-text">Path to the terms definitions directory</div>
+                    </form>
+                  </div>
+
+                  <!-- Bulk Import Mode -->
+                  <div v-else-if="addMode === 'bulk'">
+                    <div class="mb-4">
+                      <div class="nav nav-tabs" role="tablist">
+                        <button class="nav-link" :class="{ active: bulkImportMode === 'json' }" 
+                          @click="bulkImportMode = 'json'" type="button">
+                          <i class="bi bi-code"></i> JSON Input
+                        </button>
+                        <button class="nav-link" :class="{ active: bulkImportMode === 'url' }" 
+                          @click="bulkImportMode = 'url'" type="button">
+                          <i class="bi bi-link-45deg"></i> GitHub URL
+                        </button>
                       </div>
                     </div>
-                    <div class="d-flex justify-content-end">
-                      <button type="button" @click="resetNewSpec" class="btn btn-outline-secondary me-2">
+
+                    <!-- JSON Input Tab -->
+                    <div v-if="bulkImportMode === 'json'" class="mb-4">
+                      <label for="jsonInput" class="form-label">External Specs JSON</label>
+                      <textarea id="jsonInput" v-model="jsonInput" class="form-control font-monospace" 
+                        rows="8" placeholder='[
+  {
+    "external_spec": "toip1",
+    "gh_page": "https://example.github.io/spec/",
+    "url": "https://github.com/user/repo",
+    "terms_dir": "spec/terms-definitions"
+  }
+]'></textarea>
+                      <div class="form-text">Paste a JSON array of external specifications</div>
+                      <div v-if="jsonError" class="text-danger small mt-1">{{ jsonError }}</div>
+                    </div>
+
+                    <!-- GitHub URL Tab -->
+                    <div v-if="bulkImportMode === 'url'" class="mb-4">
+                      <label for="githubUrl" class="form-label">GitHub JSON File URL</label>
+                      <input id="githubUrl" v-model="githubUrlInput" type="url" class="form-control"
+                        placeholder="https://github.com/user/repo/blob/main/external-specs.json">
+                      <div class="form-text">URL to a GitHub JSON file containing external specifications</div>
+                      <div v-if="urlError" class="text-danger small mt-1">{{ urlError }}</div>
+                    </div>
+
+                    <!-- Import Actions -->
+                    <div class="d-flex justify-content-end gap-2">
+                      <button type="button" @click="resetBulkImport" class="btn btn-outline-secondary">
                         Clear
                       </button>
-                      <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i>
-                        Add Specification
+                      <button type="button" @click="previewBulkImport" class="btn btn-outline-primary" 
+                        :disabled="bulkImportLoading">
+                        <i class="bi bi-eye"></i>
+                        {{ bulkImportLoading ? 'Loading...' : 'Preview' }}
+                      </button>
+                      <button type="button" @click="importBulkSpecs" class="btn btn-success" 
+                        :disabled="!bulkPreviewData.length || bulkImportLoading">
+                        <i class="bi bi-upload"></i>
+                        Import {{ bulkPreviewData.length }} Specs
                       </button>
                     </div>
-                  </form>
+
+                    <!-- Preview Section -->
+                    <div v-if="bulkPreviewData.length > 0" class="mt-4">
+                      <h6>Preview ({{ bulkPreviewData.length }} specifications)</h6>
+                      <div class="table-responsive">
+                        <table class="table table-sm table-striped">
+                          <thead>
+                            <tr>
+                              <th>Spec ID</th>
+                              <th>GitHub Page</th>
+                              <th>Repository URL</th>
+                              <th>Terms Directory</th>
+                              <th>Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr v-for="(spec, index) in bulkPreviewData" :key="index"
+                              :class="{ 'table-warning': spec._isDuplicate }">
+                              <td>
+                                <span v-if="!spec._isDuplicate">{{ spec.external_spec }}</span>
+                                <input v-else v-model="spec.external_spec" class="form-control form-control-sm" 
+                                  placeholder="Enter new unique ID">
+                              </td>
+                              <td class="text-truncate" style="max-width: 200px;">{{ spec.gh_page }}</td>
+                              <td class="text-truncate" style="max-width: 200px;">{{ spec.url }}</td>
+                              <td>{{ spec.terms_dir }}</td>
+                              <td>
+                                <span v-if="spec._isDuplicate" class="badge bg-warning text-dark">
+                                  <i class="bi bi-exclamation-triangle"></i> Duplicate
+                                </span>
+                                <span v-else class="badge bg-success">
+                                  <i class="bi bi-check-circle"></i> Ready
+                                </span>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -213,6 +322,16 @@ export default {
       terms_dir: 'spec/terms-definitions'
     })
 
+    // Bulk import state
+    const addMode = ref('single')
+    const bulkImportMode = ref('json')
+    const jsonInput = ref('')
+    const githubUrlInput = ref('')
+    const jsonError = ref('')
+    const urlError = ref('')
+    const bulkImportLoading = ref(false)
+    const bulkPreviewData = ref([])
+
     const resetNewSpec = () => {
       newSpec.value = {
         external_spec: '',
@@ -220,6 +339,14 @@ export default {
         url: '',
         terms_dir: 'spec/terms-definitions'
       }
+    }
+
+    const resetBulkImport = () => {
+      jsonInput.value = ''
+      githubUrlInput.value = ''
+      jsonError.value = ''
+      urlError.value = ''
+      bulkPreviewData.value = []
     }
 
     const markAsChanged = () => {
@@ -318,6 +445,162 @@ export default {
         externalSpecs.value.splice(index, 1)
         markAsChanged()
       }
+    }
+
+    const convertGithubUrlToRaw = (url) => {
+      try {
+        const urlObj = new URL(url)
+        if (urlObj.hostname === 'github.com' && urlObj.pathname.includes('/blob/')) {
+          return url.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/')
+        }
+        return url
+      } catch {
+        return url
+      }
+    }
+
+    const validateExternalSpec = (spec) => {
+      return spec &&
+        typeof spec === 'object' &&
+        spec.external_spec &&
+        spec.gh_page &&
+        spec.url &&
+        spec.terms_dir &&
+        isValidUrl(spec.gh_page) &&
+        isValidUrl(spec.url)
+    }
+
+    const checkForDuplicates = (specs) => {
+      const existingIds = externalSpecs.value.map(spec => spec.external_spec)
+      return specs.map(spec => ({
+        ...spec,
+        _isDuplicate: existingIds.includes(spec.external_spec)
+      }))
+    }
+
+    const previewBulkImport = async () => {
+      bulkImportLoading.value = true
+      jsonError.value = ''
+      urlError.value = ''
+      bulkPreviewData.value = []
+
+      try {
+        let specsData = []
+
+        if (bulkImportMode.value === 'json') {
+          if (!jsonInput.value.trim()) {
+            jsonError.value = 'Please enter JSON data'
+            return
+          }
+
+          try {
+            specsData = JSON.parse(jsonInput.value)
+          } catch (err) {
+            jsonError.value = 'Invalid JSON format'
+            return
+          }
+        } else if (bulkImportMode.value === 'url') {
+          if (!githubUrlInput.value.trim()) {
+            urlError.value = 'Please enter a GitHub URL'
+            return
+          }
+
+          if (!isValidUrl(githubUrlInput.value)) {
+            urlError.value = 'Please enter a valid URL'
+            return
+          }
+
+          const rawUrl = convertGithubUrlToRaw(githubUrlInput.value)
+          
+          try {
+            const response = await fetch(rawUrl)
+            if (!response.ok) {
+              throw new Error(`Failed to fetch: ${response.statusText}`)
+            }
+            specsData = await response.json()
+          } catch (err) {
+            urlError.value = `Error fetching URL: ${err.message}`
+            return
+          }
+        }
+
+        if (!Array.isArray(specsData)) {
+          const errorMsg = 'Data must be an array of external specifications'
+          if (bulkImportMode.value === 'json') {
+            jsonError.value = errorMsg
+          } else {
+            urlError.value = errorMsg
+          }
+          return
+        }
+
+        const validSpecs = specsData.filter(spec => {
+          if (!validateExternalSpec(spec)) {
+            console.warn('Invalid spec found:', spec)
+            return false
+          }
+          return true
+        })
+
+        if (validSpecs.length === 0) {
+          const errorMsg = 'No valid external specifications found'
+          if (bulkImportMode.value === 'json') {
+            jsonError.value = errorMsg
+          } else {
+            urlError.value = errorMsg
+          }
+          return
+        }
+
+        bulkPreviewData.value = checkForDuplicates(validSpecs)
+
+      } catch (err) {
+        console.error('Preview error:', err)
+        const errorMsg = `Error processing data: ${err.message}`
+        if (bulkImportMode.value === 'json') {
+          jsonError.value = errorMsg
+        } else {
+          urlError.value = errorMsg
+        }
+      } finally {
+        bulkImportLoading.value = false
+      }
+    }
+
+    const importBulkSpecs = () => {
+      // Check for any remaining duplicates
+      const duplicates = bulkPreviewData.value.filter(spec => spec._isDuplicate)
+      if (duplicates.length > 0) {
+        // Check if duplicates have new IDs
+        const unresolved = duplicates.filter(spec => !spec.external_spec || 
+          externalSpecs.value.some(existing => existing.external_spec === spec.external_spec))
+        
+        if (unresolved.length > 0) {
+          alert('Please resolve all duplicate specification IDs before importing')
+          return
+        }
+      }
+
+      // Final validation
+      const invalidSpecs = bulkPreviewData.value.filter(spec => !validateExternalSpec(spec))
+      if (invalidSpecs.length > 0) {
+        alert('Some specifications are invalid. Please check all required fields.')
+        return
+      }
+
+      // Add specs to main list
+      bulkPreviewData.value.forEach(spec => {
+        const cleanSpec = { ...spec }
+        delete cleanSpec._isDuplicate
+        externalSpecs.value.push(cleanSpec)
+      })
+
+      // Reset bulk import
+      resetBulkImport()
+      addMode.value = 'single'
+      markAsChanged()
+
+      alert(`Successfully imported ${bulkPreviewData.value.length} external specifications!`)
     }
 
     const saveSpecs = async () => {
@@ -421,11 +704,22 @@ export default {
       externalSpecs,
       newSpec,
       hasChanges,
+      addMode,
+      bulkImportMode,
+      jsonInput,
+      githubUrlInput,
+      jsonError,
+      urlError,
+      bulkImportLoading,
+      bulkPreviewData,
       resetNewSpec,
+      resetBulkImport,
       markAsChanged,
       isValidUrl,
       addNewSpec,
       removeSpec,
+      previewBulkImport,
+      importBulkSpecs,
       saveSpecs,
       goBack
     }
@@ -470,5 +764,31 @@ export default {
 .btn-sm {
   padding: 0.25rem 0.5rem;
   font-size: 0.75rem;
+}
+
+.nav-tabs .nav-link {
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-bottom-color: #dee2e6;
+}
+
+.nav-tabs .nav-link.active {
+  color: #495057;
+  background-color: #fff;
+  border-color: #dee2e6 #dee2e6 #fff;
+}
+
+.font-monospace {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+}
+
+.text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gap-2 {
+  gap: 0.5rem;
 }
 </style>
