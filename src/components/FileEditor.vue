@@ -646,6 +646,9 @@ export default {
       const replacement = before + selectedText + after
       content.value = content.value.substring(0, start) + replacement + content.value.substring(end)
 
+      // Trigger validation after content change
+      validateContent()
+
       nextTick(() => {
         textarea.focus()
         textarea.setSelectionRange(start + before.length, start + before.length + selectedText.length)
@@ -663,6 +666,9 @@ export default {
       const start = textarea.selectionStart
       const lineStart = content.value.lastIndexOf('\n', start - 1) + 1
       content.value = content.value.substring(0, lineStart) + '* ' + content.value.substring(lineStart)
+
+      // Trigger validation after content change
+      validateContent()
 
       nextTick(() => {
         textarea.focus()
@@ -1149,6 +1155,9 @@ export default {
 
       content.value = content.value.substring(0, start) + refText + content.value.substring(end)
 
+      // Trigger validation after content change
+      validateContent()
+
       // Hide modal
       const modal = bootstrap.Modal.getInstance(document.getElementById('termsModal'))
       modal.hide()
@@ -1239,6 +1248,9 @@ export default {
       const termDefinition = generateTermDefinition()
 
       content.value = content.value.substring(0, start) + termDefinition + content.value.substring(end)
+
+      // Trigger validation after content change
+      validateContent()
 
       // Hide modal
       const modal = bootstrap.Modal.getInstance(document.getElementById('addTermModal'))
