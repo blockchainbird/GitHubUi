@@ -37,6 +37,11 @@
           <a href="https://blockchainbird.github.io/spec-up-t-website/docs/introduction/how-it-came-to-be/"
             target="_blank" rel="noopener">Read more</a>
         </p>
+        <div class="build-info mt-3 pt-3 border-top">
+          <small class="text-muted">
+            <strong>Build Date:</strong> {{ buildInfo.buildDate }}
+          </small>
+        </div>
       </template>
     </Modal>
   </nav>
@@ -65,10 +70,14 @@ export default {
       }
     };
 
+    // Get build info from Vite's define
+    const buildInfo = __BUILD_INFO__;
+
     return {
       route,
       showRepoRelatedButtons,
-      navigateToHealthCheck
+      navigateToHealthCheck,
+      buildInfo
     };
   },
   data() {
