@@ -26,7 +26,7 @@
     </button>
     <Modal v-if="showModal" @close="showModal = false">
       <template #header>
-        <h2>About Spec-Up-T</h2>
+        <h2>About Spec-Up-T Editor</h2>
       </template>
       <template #body>
         <p>
