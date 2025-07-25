@@ -30,6 +30,18 @@
       {{ success }}
     </div>
 
+    <div v-if="showValidationWarnings" class="alert alert-warning" role="alert">
+      <div class="d-flex align-items-start">
+        <i class="bi bi-exclamation-triangle-fill me-2 flex-shrink-0 mt-1"></i>
+        <div>
+          <strong>Content Validation Issues:</strong>
+          <ul class="mb-0 mt-2">
+            <li v-for="warning in validationWarnings" :key="warning">{{ warning }}</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border" role="status">
         <span class="visually-hidden">Loading...</span>
@@ -338,6 +350,10 @@ export default {
     })
     const addTermError = ref('')
 
+    // Content validation state
+    const validationWarnings = ref([])
+    const showValidationWarnings = ref(false)
+
     // Helper function to check authentication and redirect if needed
     const checkAuthAndRedirect = (error) => {
       if (error.response && (error.response.status === 401 || error.response.status === 403)) {
@@ -549,6 +565,9 @@ export default {
         content.value = atob(response.data.content)
         originalContent.value = content.value
         
+        // Validate content after loading
+        validateContent()
+        
         // Track file view
         trackFileOperation('view', getFileExtension(decodedPath.value))
 
@@ -563,9 +582,57 @@ export default {
       }
     }
 
+    const validateContent = () => {
+      const warnings = []
+      
+      if (!content.value.trim()) {
+        showValidationWarnings.value = false
+        validationWarnings.value = []
+        return
+      }
+
+      const lines = content.value.split('\n')
+      const firstLine = lines[0]?.trim() || ''
+      
+      // Rule 1: First line must start with [[def: or [[tref:
+      if (firstLine && !firstLine.startsWith('[[def:') && !firstLine.startsWith('[[tref:')) {
+        warnings.push('First line must start with [[def: or [[tref:')
+      }
+      
+      // Rule 2: [[def: and [[tref: can only exist on the first line
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i]?.trim() || ''
+        if (line.includes('[[def:') || line.includes('[[tref:')) {
+          warnings.push(`[[def: and [[tref: can only exist on the first line (found on line ${i + 1})`)
+          break // Only show this warning once
+        }
+      }
+      
+      // Rule 3: [[ref: and [[xref: cannot exist on the first line
+      if (firstLine && (firstLine.includes('[[ref:') || firstLine.includes('[[xref:'))) {
+        warnings.push('[[ref: and [[xref: cannot exist on the first line')
+      }
+      
+      // Rule 4: Every line after the first line must start with ~
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i]
+        // Skip empty lines
+        if (line.trim() === '') continue
+        
+        if (!line.startsWith('~')) {
+          warnings.push(`Line ${i + 1} must start with ~ (content lines after the first line must start with ~)`)
+          break // Only show this warning for the first violation
+        }
+      }
+      
+      validationWarnings.value = warnings
+      showValidationWarnings.value = warnings.length > 0
+    }
+
     const handleContentChange = () => {
       error.value = ''
       success.value = ''
+      validateContent()
     }
 
     const insertText = (before, after = '') => {
@@ -1213,6 +1280,8 @@ export default {
       saving,
       error,
       success,
+      validationWarnings,
+      showValidationWarnings,
       content,
       editMode,
       commitMessage,
@@ -1406,6 +1475,19 @@ textarea:focus {
   color: #6c757d;
   font-size: 0.9em;
   font-style: italic;
+}
+
+/* Validation warnings styles */
+.alert-warning ul {
+  padding-left: 1.2rem;
+}
+
+.alert-warning li {
+  margin-bottom: 0.25rem;
+}
+
+.alert-warning li:last-child {
+  margin-bottom: 0;
 }
 </style>
 
