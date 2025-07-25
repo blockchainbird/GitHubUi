@@ -377,6 +377,12 @@ export default {
 
     // Help modal content
     const helpContent = ref(`
+
+<div class="alert alert-info">
+  <strong>Tip:</strong>The editor will help you insert these definitions and references.
+</div>
+
+
 <h6><i class="bi bi-info-circle"></i> Term Definition</h6>
 
 <p>This is how the content of the file for a Term Definition should look like:</p>
@@ -388,10 +394,6 @@ export default {
 
 ~ Second paragraph with an external reference: [[xref: spec_name, term_id]]
 </pre></code>
-
-<div class="alert alert-info">
-  <strong>Tip:</strong>The editor will help you insert these definitions and references.
-</div>
 
 <h6><i class="bi bi-info-circle"></i> External Term Definition</h6>
 
