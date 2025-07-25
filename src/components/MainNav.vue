@@ -12,7 +12,7 @@
       <i class="bi bi-box-arrow-up-right"></i>
       Documentation
     </a>
-    <button @click="$router.push(`/external-specs/${owner}/${repo}/${branch}`)"
+    <button @click="$router.push(`/external-specs/${route.params.owner}/${route.params.repo}/${route.params.branch}`)"
       class="ms-3 btn btn-outline-primary me-2" title="Manage External Specifications">
       <i class="bi bi-link-45deg"></i>
       External Specs
@@ -66,6 +66,7 @@ export default {
     };
 
     return {
+      route,
       showHealthCheckButton,
       navigateToHealthCheck
     };
