@@ -1,13 +1,9 @@
 <template>
   <Teleport to="body">
     <Transition name="fade">
-      <button 
-        v-if="showButton"
-        @click="scrollToTop"
-        class="back-to-top-btn"
-        title="Back to top"
-        aria-label="Scroll back to top"
-      >
+      <button v-if="showButton" @click="scrollToTop" type="button" 
+      class="btn btn-primary back-to-top-btn"
+        title="Back to top" aria-label="Scroll back to top">
         <i class="bi bi-arrow-up"></i>
       </button>
     </Transition>
@@ -68,71 +64,15 @@ export default {
   height: 3rem;
   border: none;
   border-radius: 50%;
-  background: #0d6efd;
   color: white;
   font-size: 1.2rem;
   cursor: pointer;
-  z-index: 1050; /* Above Bootstrap modals */
+  z-index: 1050;
+  /* Above Bootstrap modals */
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.back-to-top-btn:hover {
-  background: #0b5ed7;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-}
-
-.back-to-top-btn:active {
-  transform: translateY(0);
-}
-
-.back-to-top-btn:focus {
-  outline: 2px solid #fff;
-  outline-offset: 2px;
-}
-
-/* Vue transition */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .back-to-top-btn {
-    bottom: 1.5rem;
-    right: 1.5rem;
-    width: 2.5rem;
-    height: 2.5rem;
-    font-size: 1rem;
-  }
-}
-
-/* High contrast mode support */
-@media (prefers-contrast: high) {
-  .back-to-top-btn {
-    border: 2px solid white;
-  }
-}
-
-/* Reduced motion support */
-@media (prefers-reduced-motion: reduce) {
-  .back-to-top-btn {
-    transition: none;
-  }
-  
-  .fade-enter-active,
-  .fade-leave-active {
-    transition: none;
-  }
 }
 </style>
