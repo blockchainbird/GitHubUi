@@ -8,6 +8,10 @@ import FileEditor from './components/FileEditor.vue'
 import ExternalSpecsManager from './components/ExternalSpecsManager.vue'
 import HealthCheck from './components/HealthCheck.vue'
 
+import 'bootstrap'
+import 'bootstrap-icons/font/bootstrap-icons.css'
+import './styles/custom-bootstrap.scss'
+
 const routes = [
   { path: '/', redirect: '/login' },
   { path: '/login', component: LoginPage },
@@ -27,7 +31,7 @@ const router = createRouter({
 
 // Global navigation guard to check authentication
 router.beforeEach((to, from, next) => {
-  const publicPages = ['/login'];
+  const publicPages = ['/login', '/color-demo'];
   const authRequired = !publicPages.includes(to.path);
   const user = localStorage.getItem('github_user');
   const token = localStorage.getItem('github_token');

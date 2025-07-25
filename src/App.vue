@@ -96,10 +96,6 @@ export default {
 <style>
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f8f9fa;
-  background-image: url('data:image/svg+xml;utf8,<svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg"><g stroke="%23d1d5db" stroke-width="1"><circle cx="10" cy="10" r="3" fill="%23e9ecef"/><circle cx="50" cy="10" r="3" fill="%23e9ecef"/><circle cx="30" cy="30" r="3" fill="%23e9ecef"/><circle cx="10" cy="50" r="3" fill="%23e9ecef"/><circle cx="50" cy="50" r="3" fill="%23e9ecef"/><line x1="10" y1="10" x2="30" y2="30"/><line x1="50" y1="10" x2="30" y2="30"/><line x1="10" y1="50" x2="30" y2="30"/><line x1="50" y1="50" x2="30" y2="30"/></g></svg>');
-  background-size: 60px 60px;
-  background-repeat: repeat;
 }
 
 .navbar-brand {
