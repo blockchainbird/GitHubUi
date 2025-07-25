@@ -123,6 +123,7 @@
                 <div class="fw-medium">
                   {{ file.name }}
                   <span v-if="file.name === recentlyCreatedFile" class="badge bg-primary ms-2">New</span>
+                  <span v-if="file.name.startsWith('_')" class="badge bg-warning text-dark ms-2">Draft</span>
                   <span v-if="file.hasExternalRefs" class="badge bg-success ms-2">External</span>
                 </div>
                 <small class="text-muted">{{ file.path }}</small>
@@ -253,6 +254,10 @@
 }
 
 .badge.bg-primary {
+  font-size: 0.7em;
+}
+
+.badge.bg-warning {
   font-size: 0.7em;
 }
 </style>

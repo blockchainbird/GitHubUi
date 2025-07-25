@@ -4,10 +4,20 @@
       <h2>
         <i class="bi bi-pencil-square"></i>
         Editing: {{ filename }}
+        <span v-if="isDraft" class="badge bg-warning text-dark ms-2">
+          <i class="bi bi-file-earmark-text"></i>
+          Draft
+        </span>
       </h2>
       <div>
         <button @click="goBack" class="btn btn-outline-secondary me-2">
           Close
+        </button>
+        <button @click="togglePublishStatus" class="btn me-2" 
+                :class="isDraft ? 'btn-success' : 'btn-warning'"
+                :disabled="saving">
+          <i class="bi" :class="isDraft ? 'bi-eye' : 'bi-eye-slash'"></i>
+          {{ isDraft ? 'Publish' : 'Unpublish' }}
         </button>
         <button @click="saveFile" class="btn btn-success" :disabled="saving || !hasChanges">
           <span v-if="saving">
@@ -335,7 +345,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { addToVisitedRepos } from '../utils/visitedRepos.js'
@@ -432,6 +442,10 @@ export default {
 
     const decodedPath = computed(() => {
       return props.path ? decodeURIComponent(props.path) : ''
+    })
+
+    const isDraft = computed(() => {
+      return filename.value.startsWith('_')
     })
 
     const isMarkdown = computed(() => {
@@ -795,6 +809,94 @@ export default {
           return
         }
         error.value = 'Failed to save file. Please try again.'
+      } finally {
+        saving.value = false
+      }
+    }
+
+    const togglePublishStatus = async () => {
+      saving.value = true
+      error.value = ''
+      success.value = ''
+
+      try {
+        const token = localStorage.getItem('github_token')
+        const config = {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+          }
+        }
+
+        const currentPath = decodedPath.value
+        const pathParts = currentPath.split('/')
+        const currentFilename = pathParts[pathParts.length - 1]
+        
+        // Toggle the underscore prefix
+        let newFilename
+        if (currentFilename.startsWith('_')) {
+          newFilename = currentFilename.substring(1) // Remove underscore
+        } else {
+          newFilename = '_' + currentFilename // Add underscore
+        }
+        
+        const newPath = pathParts.slice(0, -1).concat(newFilename).join('/')
+        const action = currentFilename.startsWith('_') ? 'Published' : 'Unpublished'
+        const commitMsg = `${action} ${currentFilename} -> ${newFilename}`
+
+        // First, create the file with the new name
+        const createData = {
+          message: commitMsg,
+          content: btoa(content.value),
+          branch: props.branch
+        }
+
+        const createResponse = await axios.put(
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${newPath}`,
+          createData,
+          config
+        )
+
+        // Then delete the old file
+        const deleteData = {
+          message: commitMsg,
+          sha: fileSha.value,
+          branch: props.branch
+        }
+
+        await axios.delete(
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${currentPath}`,
+          {
+            ...config,
+            data: deleteData
+          }
+        )
+
+        // Update the file SHA to the new file's SHA
+        fileSha.value = createResponse.data.content.sha
+        
+        success.value = `File ${action.toLowerCase()} successfully!`
+        
+        // Track the operation
+        trackFileOperation(action.toLowerCase(), getFileExtension(newPath))
+
+        // Navigate to the new file path using correct route and encoding
+        const encodedNewPath = encodeURIComponent(newPath)
+        const newRoute = `/editor/${props.owner}/${props.repo}/${props.branch}/${encodedNewPath}`
+        
+        console.log('Navigating to new route:', newRoute)
+        console.log('New path:', newPath)
+        console.log('Encoded new path:', encodedNewPath)
+        
+        await router.push(newRoute)
+
+      } catch (err) {
+        console.error('Error toggling publish status:', err)
+        if (checkAuthAndRedirect(err)) {
+          return
+        }
+        error.value = 'Failed to change publish status. Please try again.'
       } finally {
         saving.value = false
       }
@@ -1353,6 +1455,17 @@ export default {
       loadFileContent()
     })
 
+    // Watch for path changes (when navigating after publish/unpublish)
+    watch(() => props.path, (newPath, oldPath) => {
+      if (newPath && newPath !== oldPath) {
+        // Reset state and reload content
+        loading.value = true
+        error.value = ''
+        success.value = ''
+        loadFileContent()
+      }
+    })
+
     return {
       loading,
       saving,
@@ -1365,6 +1478,7 @@ export default {
       commitMessage,
       filename,
       path: decodedPath,
+      isDraft,
       isMarkdown,
       hasChanges,
       renderedContent,
@@ -1375,6 +1489,7 @@ export default {
       insertList,
       saveFile,
       commitChanges,
+      togglePublishStatus,
       goBack,
       // Terms functionality
       terms,
