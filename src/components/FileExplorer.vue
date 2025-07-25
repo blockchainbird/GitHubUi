@@ -21,7 +21,7 @@
       <div class="spinner-border" role="status">
         <span class="visually-hidden">Loading...</span>
       </div>
-      <p class="mt-2">Loading spec files...</p>
+      <p class="mt-2">Loading files: {{ loadingMessage }}</p>
     </div>
 
     <div v-else-if="specDirectory">
@@ -270,6 +270,7 @@ export default {
     const router = useRouter()
     const route = useRoute()
     const loading = ref(true)
+    const loadingMessage = ref('')
     const error = ref('')
     const specDirectory = ref('')
     const files = ref([])
@@ -356,6 +357,7 @@ export default {
 
     const loadSpecsConfig = async () => {
       try {
+        loadingMessage.value = 'Loading repository configuration...'
         const token = localStorage.getItem('github_token')
         const config = {
           headers: {
@@ -429,6 +431,7 @@ export default {
     const loadSpecFiles = async (directory) => {
       try {
         loading.value = true
+        loadingMessage.value = 'Loading directory contents...'
         error.value = ''
         const token = localStorage.getItem('github_token')
         const config = {
@@ -450,7 +453,7 @@ export default {
             path: folder.path
           }))
         // Files
-        const textFileExtensions = ['.md', '.txt', '.rst', '.adoc', '.html']
+        const textFileExtensions = ['.md']
         const filteredFiles = response.data
           .filter(file => file.type === 'file')
           .filter(file => textFileExtensions.some(ext => file.name.toLowerCase().endsWith(ext)))
@@ -460,11 +463,19 @@ export default {
         const batchSize = 5
         const filesWithExternalCheck = []
 
+        loadingMessage.value = `Analyzing ${filteredFiles.length} files for external references...`
+
         for (let i = 0; i < filteredFiles.length; i += batchSize) {
           const batch = filteredFiles.slice(i, i + batchSize)
+          const currentBatch = Math.floor(i / batchSize) + 1
+          const totalBatches = Math.ceil(filteredFiles.length / batchSize)
+          
+          loadingMessage.value = `Checking batch ${currentBatch} of ${totalBatches} (${Math.min(i + batchSize, filteredFiles.length)}/${filteredFiles.length} files)...`
+          
           const batchResults = await Promise.all(
             batch.map(async (file) => {
               const hasExternalRefs = await checkForExternalReferences(file.download_url, config)
+              
               return {
                 name: file.name,
                 path: file.path,
@@ -745,6 +756,7 @@ export default {
 
     return {
       loading,
+      loadingMessage,
       error,
       specDirectory,
       files,
