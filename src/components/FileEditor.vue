@@ -15,8 +15,7 @@
           Health Check
         </button>
         <button @click="goBack" class="btn btn-outline-secondary me-2">
-          <i class="bi bi-arrow-left"></i>
-          Back to Files
+          Close
         </button>
         <button @click="saveFile" class="btn btn-success" :disabled="saving || !hasChanges">
           <span v-if="saving">
