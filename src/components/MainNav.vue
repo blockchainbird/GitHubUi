@@ -30,7 +30,7 @@
       </template>
       <template #body>
         <p>
-          Editor for Spec-Up-T is a web-based tool designed to help users create and manage specifications in a
+          <strong>Spec-Up-T Editor</strong> is a web-based tool designed to help users create and manage specifications in a
           user-friendly manner. It provides an intuitive interface for editing, validating, and visualizing
           specifications, making it easier for teams to collaborate and maintain their documentation.
         </p>
