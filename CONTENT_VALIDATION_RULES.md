@@ -61,6 +61,9 @@ Content validation occurs:
 
 - When the file is initially loaded
 - Every time the content is modified (on input change)
+- When inserting content using toolbar buttons (Bold, Italic, Code, Link, Heading, List)
+- When inserting term references via the "Insert Term Reference" modal
+- When adding new terms via the "Add New Term" modal
 - Warnings are displayed immediately and update in real-time
 
 ## Technical Implementation
