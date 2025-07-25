@@ -194,8 +194,8 @@
                 <input type="radio" class="btn-check" id="refType-tref" v-model="referenceType" value="tref" autocomplete="off">
                 <label class="btn btn-outline-primary" for="refType-tref">[[tref:]]</label>
                 
-                <input type="radio" class="btn-check" id="refType-def" v-model="referenceType" value="def" autocomplete="off">
-                <label class="btn btn-outline-success" for="refType-def">[[def:]]</label>
+                <!-- <input type="radio" class="btn-check" id="refType-def" v-model="referenceType" value="def" autocomplete="off">
+                <label class="btn btn-outline-success" for="refType-def">[[def:]]</label> -->
               </div>
               <div class="form-text">
                 Auto: Uses the appropriate format based on term type (ref for local, xref for external). Use [[def:]] to create term definitions.
@@ -1097,14 +1097,14 @@ export default {
             refText = `[[tref: local, ${term.id}]]`
           }
           break
-        case 'def':
-          // For def, include aliases if available
-          if (term.aliases && term.aliases.length > 0) {
-            refText = `[[def: ${term.id}, ${term.aliases.join(', ')}]]`
-          } else {
-            refText = `[[def: ${term.id}]]`
-          }
-          break
+        // case 'def':
+        //   // For def, include aliases if available
+        //   if (term.aliases && term.aliases.length > 0) {
+        //     refText = `[[def: ${term.id}, ${term.aliases.join(', ')}]]`
+        //   } else {
+        //     refText = `[[def: ${term.id}]]`
+        //   }
+        //   break
         case 'auto':
         default:
           if (term.external) {
