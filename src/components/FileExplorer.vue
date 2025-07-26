@@ -32,10 +32,16 @@
               <i class="bi bi-folder-fill"></i>
               Spec Directory: {{ currentDirectory }}
             </h5>
-            <button @click="showCreateModal" class="btn btn-success btn-sm" title="Create New File">
-              <i class="bi bi-plus-circle"></i>
-              New File
-            </button>
+            <div class="d-flex gap-2">
+              <button v-if="isRootDirectory && hasUnsavedChanges" @click="saveOrder" class="btn btn-primary btn-sm" title="Save Order">
+                <i class="bi bi-save"></i>
+                Save Order
+              </button>
+              <button @click="showCreateModal" class="btn btn-success btn-sm" title="Create New File">
+                <i class="bi bi-plus-circle"></i>
+                New File
+              </button>
+            </div>
           </div>
 
           <!-- Filter/Search Bar -->
@@ -78,7 +84,7 @@
           <!-- Results info -->
           <div v-if="filterText || selectedFilter !== 'All'" class="mt-2">
             <small class="text-muted">
-              Showing {{ filteredFolders.length + filteredFiles.length }} results
+              Showing {{ orderedItems.length }} results
               <span v-if="filterText">(filtered by: "{{ filterText }}")</span>
               <span v-if="selectedFilter !== 'All'">({{ selectedFilter }})</span>
             </small>
@@ -91,7 +97,7 @@
               <i class="bi bi-arrow-up"></i> Go Up
             </button>
           </div>
-          <div v-if="filteredFiles.length === 0 && filteredFolders.length === 0" class="text-center py-4">
+          <div v-if="orderedItems.length === 0" class="text-center py-4">
             <i class="bi bi-folder2-open" style="font-size: 3rem; color: #6c757d;"></i>
             <p class="mt-2 text-muted">
               <span v-if="filterText || selectedFilter !== 'All'">
@@ -104,30 +110,34 @@
           </div>
 
           <div v-else class="list-group list-group-flush">
-            <!-- Show filtered folders first -->
-            <button v-for="folder in filteredFolders" :key="folder.path" @click="openFolder(folder)"
-              class="list-group-item list-group-item-action d-flex align-items-center">
-              <i class="bi bi-folder-fill me-3" style="color: #ffc107;"></i>
-              <div class="flex-grow-1">
-                <div class="fw-medium">{{ folder.name }}</div>
-                <small class="text-muted">{{ folder.path }}</small>
-              </div>
-              <i class="bi bi-chevron-right"></i>
-            </button>
-            <!-- Then show filtered files -->
-            <button v-for="file in filteredFiles" :key="file.path" @click="openFile(file)"
+            <!-- Show items in their dragged order -->
+            <button v-for="(item, index) in orderedItems" :key="item.path" 
+              @click="item.type === 'folder' ? openFolder(item) : openFile(item)"
               class="list-group-item list-group-item-action d-flex align-items-center"
-              :class="{ 'recently-created': file.name === recentlyCreatedFile }">
-              <i class="bi bi-file-text me-3" style="color: #0d6efd;"></i>
+              :class="{ 
+                'recently-created': item.type === 'file' && item.name === recentlyCreatedFile, 
+                'draggable': isRootDirectory 
+              }"
+              :draggable="isRootDirectory"
+              @dragstart="onDragStart($event, item, item.type, index)"
+              @dragover="onDragOver($event, index, item.type)"
+              @drop="onDrop($event, index, item.type)"
+              @dragend="onDragEnd">
+              <i v-if="isRootDirectory" class="bi bi-grip-vertical me-2 drag-handle"></i>
+              <i v-if="item.type === 'folder'" class="bi bi-folder-fill me-3" style="color: #ffc107;"></i>
+              <i v-else class="bi bi-file-text me-3" style="color: #0d6efd;"></i>
               <div class="flex-grow-1">
                 <div class="fw-medium">
-                  {{ file.name }}
-                  <span v-if="file.name === recentlyCreatedFile" class="badge bg-primary ms-2">New</span>
-                  <span title="If a file has an underscore at the beginning of the file name, it is a draft version."
-                    v-if="file.name.startsWith('_')" class="badge bg-warning text-dark ms-2">Draft</span>
-                  <span title="This file has an external reference." v-if="file.hasExternalRefs" class="badge bg-success ms-2">External</span>
+                  {{ item.name }}
+                  <span v-if="item.type === 'file' && item.name === recentlyCreatedFile" class="badge bg-primary ms-2">New</span>
+                  <span v-if="item.type === 'file' && item.name.startsWith('_')" 
+                    title="If a file has an underscore at the beginning of the file name, it is a draft version."
+                    class="badge bg-warning text-dark ms-2">Draft</span>
+                  <span v-if="item.type === 'file' && item.hasExternalRefs" 
+                    title="This file has an external reference." 
+                    class="badge bg-success ms-2">External</span>
                 </div>
-                <small class="text-muted">{{ file.path }}</small>
+                <small class="text-muted">{{ item.path }}</small>
               </div>
               <i class="bi bi-chevron-right"></i>
             </button>
@@ -217,6 +227,15 @@ export default {
     const files = ref([])
     const folders = ref([])
     const currentDirectory = ref('')
+    const specsConfig = ref(null)
+    const specTermsDirectory = ref('')
+
+    // Drag and drop state
+    const isDragMode = ref(false)
+    const hasUnsavedChanges = ref(false)
+    const draggedItems = ref([])
+    const originalOrder = ref([])
+    const isDragging = ref(false)
 
     // Filter state
     const filterText = ref('')
@@ -284,6 +303,69 @@ export default {
       return result
     })
 
+    // Combined items in drag order (only used in root directory)
+    const orderedItems = computed(() => {
+      if (!isRootDirectory.value) {
+        // If not in root, use default order (folders first, then files)
+        const items = []
+        
+        // Add filtered folders first
+        filteredFolders.value.forEach(folder => {
+          items.push({ ...folder, type: 'folder' })
+        })
+        
+        // Then add filtered files
+        filteredFiles.value.forEach(file => {
+          items.push({ ...file, type: 'file' })
+        })
+        
+        return items
+      }
+
+      // In root directory, use dragged order if available, otherwise initialize with current data
+      if (draggedItems.value.length > 0) {
+        const filtered = draggedItems.value.filter(item => {
+          if (item.type === 'folder') {
+            return filteredFolders.value.some(f => f.name === item.name)
+          } else {
+            return filteredFiles.value.some(f => f.name === item.name)
+          }
+        })
+        
+        return filtered;
+      } else {
+        // Initialize with default order - but only when files/folders are actually loaded
+        if (files.value.length === 0 && folders.value.length === 0) {
+          return [];
+        }
+        
+        const items = []
+        
+        // Add filtered folders first  
+        filteredFolders.value.forEach(folder => {
+          items.push({ ...folder, type: 'folder' })
+        })
+        
+        // Then add filtered files
+        filteredFiles.value.forEach(file => {
+          items.push({ ...file, type: 'file' })
+        })
+        
+        // Set this as the initial drag items - but don't modify during computed execution
+        // Use nextTick to avoid infinite loops
+        if (isRootDirectory.value && items.length > 0) {
+          nextTick(() => {
+            if (draggedItems.value.length === 0) {
+              draggedItems.value = [...items];
+              originalOrder.value = [...items];
+            }
+          });
+        }
+        
+        return items
+      }
+    })
+
     // Helper function to check authentication and redirect if needed
     const checkAuthAndRedirect = (error) => {
       if (error.response && (error.response.status === 401 || error.response.status === 403)) {
@@ -315,11 +397,14 @@ export default {
 
         // Decode base64 content
         const content = JSON.parse(atob(response.data.content))
+        specsConfig.value = content
         // Get spec_directory from the first item in specs array
         if (Array.isArray(content.specs) && content.specs.length > 0) {
           specDirectory.value = content.specs[0].spec_directory || 'spec'
+          specTermsDirectory.value = content.specs[0].spec_terms_directory || 'terms-definitions'
         } else {
           specDirectory.value = 'spec'
+          specTermsDirectory.value = 'terms-definitions'
         }
         currentDirectory.value = specDirectory.value
         await loadSpecFiles(currentDirectory.value)
@@ -332,6 +417,7 @@ export default {
         if (err.response?.status === 404) {
           error.value = 'specs.json file not found in repository root. Using default "specs" directory.'
           specDirectory.value = 'specs'
+          specTermsDirectory.value = 'terms-definitions'
           currentDirectory.value = specDirectory.value
           await loadSpecFiles(currentDirectory.value)
         } else {
@@ -431,6 +517,11 @@ export default {
 
         files.value = filesWithExternalCheck
         currentDirectory.value = directory
+        
+        // If we're in root directory and have specs config, apply saved order from markdown_paths
+        if (isRootDirectory.value && specsConfig.value) {
+          applySavedOrder();
+        }
       } catch (err) {
         console.error('Error loading spec files:', err)
         if (checkAuthAndRedirect(err)) {
@@ -447,13 +538,21 @@ export default {
     }
 
     const openFile = (file) => {
+      // Don't navigate if we're in the middle of a drag operation
+      if (isDragging.value) return;
+      
       const encodedPath = encodeURIComponent(file.path)
       router.push(`/editor/${props.owner}/${props.repo}/${props.branch}/${encodedPath}`)
     }
 
     const openFolder = (folder) => {
+      // Don't navigate if we're in the middle of a drag operation
+      if (isDragging.value) return;
+      
       recentlyCreatedFile.value = '' // Clear when navigating to different folder
       localStorage.removeItem('recentlyCreatedFile') // Also clear from localStorage
+      hasUnsavedChanges.value = false // Reset unsaved changes when navigating away from root
+      draggedItems.value = [] // Reset drag items when leaving root
       loadSpecFiles(folder.path)
     }
 
@@ -662,6 +761,16 @@ export default {
       }
     })
 
+    // Watch for directory changes to reset drag state when navigating
+    watch(currentDirectory, (newDir, oldDir) => {
+      // Only reset drag items when actually changing directories, not when files/folders update
+      if (newDir !== oldDir) {
+        console.log('Directory changed from', oldDir, 'to', newDir, '- resetting drag items');
+        draggedItems.value = [];
+        hasUnsavedChanges.value = false;
+      }
+    })
+
     // Clean up event listener
     onUnmounted(() => {
       document.removeEventListener('click', handleClickOutside)
@@ -679,11 +788,17 @@ export default {
         const parent = parts.join('/') || root;
         // Prevent going above root
         if (normalizeDir(parent).startsWith(root)) {
+          hasUnsavedChanges.value = false; // Reset unsaved changes when navigating
+          draggedItems.value = []; // Reset drag items when navigating
           loadSpecFiles(parent);
         } else {
+          hasUnsavedChanges.value = false; // Reset unsaved changes when navigating
+          draggedItems.value = []; // Reset drag items when navigating
           loadSpecFiles(root);
         }
       } else {
+        hasUnsavedChanges.value = false; // Reset unsaved changes when navigating
+        draggedItems.value = []; // Reset drag items when navigating
         loadSpecFiles(root);
       }
     };
@@ -699,6 +814,214 @@ export default {
       return normalizeDir(currentDirectory.value) !== normalizeDir(specDirectory.value);
     });
 
+    // Check if we're in the root directory
+    const isRootDirectory = computed(() => {
+      return normalizeDir(currentDirectory.value) === normalizeDir(specDirectory.value);
+    });
+
+    // Drag and drop methods
+    const onDragStart = (event, item, type, index) => {
+      if (!isRootDirectory.value) return;
+      
+      isDragging.value = true;
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', JSON.stringify({ 
+        item, 
+        type, 
+        originalIndex: index
+      }));
+      event.target.style.opacity = '0.5';
+    };
+
+    const onDragOver = (event, index, type) => {
+      if (!isRootDirectory.value) return;
+      
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+    };
+
+    const onDrop = (event, dropIndex, dropType) => {
+      if (!isRootDirectory.value) return;
+      
+      event.preventDefault();
+      
+      const dragData = JSON.parse(event.dataTransfer.getData('text/plain'));
+      const draggedItem = dragData.item;
+      const draggedType = dragData.type;
+      const originalIndex = dragData.originalIndex;
+      
+      if (originalIndex !== dropIndex) {
+        // Reorder the items
+        const newItems = [...draggedItems.value];
+        const [movedItem] = newItems.splice(originalIndex, 1);
+        
+        // Adjust target index if we removed an item before it
+        let targetIndex = dropIndex;
+        if (originalIndex < dropIndex) {
+          targetIndex--;
+        }
+        
+        newItems.splice(targetIndex, 0, movedItem);
+        
+        draggedItems.value = newItems;
+        
+        // Update files and folders arrays to maintain consistency
+        const newFolders = [];
+        const newFiles = [];
+        
+        draggedItems.value.forEach(item => {
+          if (item.type === 'folder') {
+            newFolders.push({ name: item.name, path: item.path });
+          } else {
+            const { type, ...fileItem } = item;
+            newFiles.push(fileItem);
+          }
+        });
+        
+        folders.value = newFolders;
+        files.value = newFiles;
+        
+        hasUnsavedChanges.value = true;
+      }
+    };
+
+    const onDragEnd = (event) => {
+      event.target.style.opacity = '1';
+      // Small delay to prevent click event from firing immediately after drag
+      setTimeout(() => {
+        isDragging.value = false;
+      }, 100);
+    };
+
+    const saveOrder = async () => {
+      if (!isRootDirectory.value || !hasUnsavedChanges.value) return;
+      
+      try {
+        loading.value = true;
+        loadingMessage.value = 'Saving file order...';
+        
+        const token = localStorage.getItem('github_token');
+        const config = {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        };
+        
+        // Get current specs.json
+        const response = await axios.get(
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/specs.json?ref=${props.branch}`,
+          config
+        );
+        
+        const currentContent = JSON.parse(atob(response.data.content));
+        
+        // Build markdown_paths array
+        const markdownPaths = [];
+        
+        draggedItems.value.forEach(item => {
+          if (item.type === 'folder') {
+            // Special handling for spec_terms_directory
+            if (item.name === specTermsDirectory.value) {
+              markdownPaths.push('terms-and-definitions-intro.md');
+            } else {
+              markdownPaths.push(item.name);
+            }
+          } else {
+            // Only add files that are NOT "terms-and-definitions-intro.md" 
+            // since that filename is reserved for representing the terms directory
+            if (item.name !== 'terms-and-definitions-intro.md') {
+              markdownPaths.push(item.name);
+            }
+          }
+        });
+        
+        // Update the specs configuration
+        if (currentContent.specs && currentContent.specs.length > 0) {
+          currentContent.specs[0].markdown_paths = markdownPaths;
+        }
+        
+        // Save back to GitHub
+        const updateData = {
+          message: `Update file order in markdown_paths`,
+          content: btoa(JSON.stringify(currentContent, null, 2)),
+          branch: props.branch,
+          sha: response.data.sha
+        };
+        
+        await axios.put(
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/specs.json`,
+          updateData,
+          config
+        );
+        
+        hasUnsavedChanges.value = false;
+        originalOrder.value = [...draggedItems.value];
+        
+      } catch (err) {
+        console.error('Error saving file order:', err);
+        if (checkAuthAndRedirect(err)) {
+          return;
+        }
+        error.value = 'Failed to save file order. Please try again.';
+      } finally {
+        loading.value = false;
+      }
+    };
+
+    // Apply saved order from specs.json markdown_paths
+    const applySavedOrder = () => {
+      if (!specsConfig.value?.specs?.[0]?.markdown_paths) {
+        return; // No saved order, use default
+      }
+      
+      const savedPaths = specsConfig.value.specs[0].markdown_paths;
+      const orderedItems = [];
+      
+      // Process each item in the saved order
+      savedPaths.forEach(path => {
+        if (path === 'terms-and-definitions-intro.md') {
+          // This represents the terms directory
+          const termsFolder = folders.value.find(f => f.name === specTermsDirectory.value);
+          if (termsFolder) {
+            orderedItems.push({ ...termsFolder, type: 'folder' });
+          }
+        } else {
+          // Check if it's a folder
+          const folder = folders.value.find(f => f.name === path);
+          if (folder) {
+            orderedItems.push({ ...folder, type: 'folder' });
+          } else {
+            // It's a file
+            const file = files.value.find(f => f.name === path);
+            if (file) {
+              orderedItems.push({ ...file, type: 'file' });
+            }
+          }
+        }
+      });
+      
+      // Add any items not in the saved order at the end
+      folders.value.forEach(folder => {
+        if (!orderedItems.find(item => item.type === 'folder' && item.name === folder.name)) {
+          orderedItems.push({ ...folder, type: 'folder' });
+        }
+      });
+      
+      files.value.forEach(file => {
+        if (!orderedItems.find(item => item.type === 'file' && item.name === file.name)) {
+          orderedItems.push({ ...file, type: 'file' });
+        }
+      });
+      
+      // Set the ordered items
+      if (orderedItems.length > 0) {
+        draggedItems.value = orderedItems;
+        originalOrder.value = [...orderedItems];
+        console.log('Applied saved order:', orderedItems.map(item => `${item.name} (${item.type})`));
+      }
+    };
+
     return {
       loading,
       loadingMessage,
@@ -708,6 +1031,7 @@ export default {
       folders,
       filteredFiles,
       filteredFolders,
+      orderedItems,
       filterText,
       selectedFilter,
       dropdownOpen,
@@ -735,7 +1059,15 @@ export default {
       clearFilterCompletely,
       applyFilter,
       goUpDirectory,
-      showGoUpButton
+      showGoUpButton,
+      isRootDirectory,
+      hasUnsavedChanges,
+      isDragging,
+      onDragStart,
+      onDragOver,
+      onDrop,
+      onDragEnd,
+      saveOrder
     }
   }
 }
@@ -803,5 +1135,28 @@ export default {
 
 .badge.bg-warning {
   font-size: 0.7em;
+}
+
+/* Drag and drop styles */
+.draggable {
+  cursor: move;
+}
+
+.drag-handle {
+  color: #6c757d;
+  cursor: grab;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.list-group-item.draggable:hover .drag-handle {
+  color: #495057;
+}
+
+.list-group-item[draggable="true"]:hover {
+  background-color: #f8f9fa;
+  border-color: #0d6efd;
 }
 </style>
