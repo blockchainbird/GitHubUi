@@ -640,7 +640,7 @@ export default {
         originalContent.value = content.value
         
         // Validate content after loading
-        validateContent()
+        await validateContent()
         
         // Track file view
         trackFileOperation('view', getFileExtension(decodedPath.value))
@@ -656,10 +656,49 @@ export default {
       }
     }
 
-    const validateContent = () => {
+    const checkIfInTermsDirectory = async () => {
+      try {
+        // Load specs config if not already loaded
+        if (!specsConfig.value) {
+          specsConfig.value = await loadSpecsConfig()
+        }
+
+        if (!specsConfig.value || !specsConfig.value.specs || specsConfig.value.specs.length === 0) {
+          return false
+        }
+
+        const config = specsConfig.value.specs[0]
+        const specDir = config.spec_directory?.replace('./', '') || 'spec'
+        const termsDir = config.spec_terms_directory || 'terms-definitions'
+        const fullTermsPath = `${specDir}/${termsDir}`
+
+        // Normalize paths for comparison (remove leading/trailing slashes)
+        const normalizedTermsPath = fullTermsPath.replace(/^\/+|\/+$/g, '')
+        const normalizedFilePath = decodedPath.value.replace(/^\/+|\/+$/g, '')
+
+        // Check if the current file path starts with the terms directory path
+        return normalizedFilePath.startsWith(normalizedTermsPath + '/') || 
+               normalizedFilePath === normalizedTermsPath
+      } catch (err) {
+        console.error('Error checking if file is in terms directory:', err)
+        // If we can't determine, default to not validating to avoid false positives
+        return false
+      }
+    }
+
+    const validateContent = async () => {
       const warnings = []
       
       if (!content.value.trim()) {
+        showValidationWarnings.value = false
+        validationWarnings.value = []
+        return
+      }
+
+      // Check if the current file is in the spec_terms_directory
+      const isInTermsDirectory = await checkIfInTermsDirectory()
+      if (!isInTermsDirectory) {
+        // File is not in terms directory, skip validation
         showValidationWarnings.value = false
         validationWarnings.value = []
         return
@@ -703,13 +742,13 @@ export default {
       showValidationWarnings.value = warnings.length > 0
     }
 
-    const handleContentChange = () => {
+    const handleContentChange = async () => {
       error.value = ''
       success.value = ''
-      validateContent()
+      await validateContent()
     }
 
-    const insertText = (before, after = '') => {
+    const insertText = async (before, after = '') => {
       const textarea = editor.value
       if (!textarea) return
 
@@ -721,7 +760,7 @@ export default {
       content.value = content.value.substring(0, start) + replacement + content.value.substring(end)
 
       // Trigger validation after content change
-      validateContent()
+      await validateContent()
 
       nextTick(() => {
         textarea.focus()
@@ -733,7 +772,7 @@ export default {
       insertText('## ', '')
     }
 
-    const insertList = () => {
+    const insertList = async () => {
       const textarea = editor.value
       if (!textarea) return
 
@@ -742,7 +781,7 @@ export default {
       content.value = content.value.substring(0, lineStart) + '* ' + content.value.substring(lineStart)
 
       // Trigger validation after content change
-      validateContent()
+      await validateContent()
 
       nextTick(() => {
         textarea.focus()
@@ -1269,7 +1308,7 @@ export default {
       }
     }
 
-    const insertTermReference = (term) => {
+    const insertTermReference = async (term) => {
       const textarea = editor.value
       if (!textarea) return
 
@@ -1318,7 +1357,7 @@ export default {
       content.value = content.value.substring(0, start) + refText + content.value.substring(end)
 
       // Trigger validation after content change
-      validateContent()
+      await validateContent()
 
       // Hide modal
       const modal = bootstrap.Modal.getInstance(document.getElementById('termsModal'))
@@ -1401,7 +1440,7 @@ export default {
       }
     }
 
-    const insertNewTerm = () => {
+    const insertNewTerm = async () => {
       if (!newTerm.value.name.trim()) {
         addTermError.value = 'Please enter a term name'
         return
@@ -1418,7 +1457,7 @@ export default {
       content.value = content.value.substring(0, start) + termDefinition + content.value.substring(end)
 
       // Trigger validation after content change
-      validateContent()
+      await validateContent()
 
       // Hide modal
       const modal = bootstrap.Modal.getInstance(document.getElementById('addTermModal'))
