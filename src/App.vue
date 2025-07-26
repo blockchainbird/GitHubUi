@@ -1,5 +1,5 @@
 <template>
-  <div id="app">
+  <div>
     <MainNav />
     <nav class="navbar navbar-dark bg-dark">
       <div class="container-fluid">
