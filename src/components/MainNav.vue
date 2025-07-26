@@ -4,6 +4,10 @@
       <i class="bi bi-house"></i>
       Home
     </button>
+    <button v-if="showRepoRelatedButtons" @click="navigateToAdmin" class="ms-3 btn btn-outline-warning">
+      <i class="bi bi-gear"></i>
+      Admin
+    </button>
     <button @click="showModal = true" class="ms-3 btn btn-outline-secondary">
       <i class="bi bi-info-circle"></i>
       About</button>
@@ -98,6 +102,12 @@ export default {
       }
     };
 
+    const navigateToAdmin = () => {
+      if (route.params.owner && route.params.repo && route.params.branch) {
+        router.push(`/admin/${route.params.owner}/${route.params.repo}/${route.params.branch}`);
+      }
+    };
+
     // Get build info from Vite's define
     const buildInfo = __BUILD_INFO__;
 
@@ -106,6 +116,7 @@ export default {
       showRepoRelatedButtons,
       githubRepoUrl,
       navigateToHealthCheck,
+      navigateToAdmin,
       buildInfo
     };
   },
