@@ -123,8 +123,9 @@
                 <div class="fw-medium">
                   {{ file.name }}
                   <span v-if="file.name === recentlyCreatedFile" class="badge bg-primary ms-2">New</span>
-                  <span v-if="file.name.startsWith('_')" class="badge bg-warning text-dark ms-2">Draft</span>
-                  <span v-if="file.hasExternalRefs" class="badge bg-success ms-2">External</span>
+                  <span title="If a file has an underscore at the beginning of the file name, it is a draft version."
+                    v-if="file.name.startsWith('_')" class="badge bg-warning text-dark ms-2">Draft</span>
+                  <span title="This file has an external reference." v-if="file.hasExternalRefs" class="badge bg-success ms-2">External</span>
                 </div>
                 <small class="text-muted">{{ file.path }}</small>
               </div>

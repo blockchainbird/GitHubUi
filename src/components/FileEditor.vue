@@ -4,7 +4,8 @@
       <h2>
         <i class="bi bi-pencil-square"></i>
         Editing: {{ filename }}
-        <span v-if="isDraft" class="badge bg-warning text-dark ms-2">
+        <span title="If a file has an underscore at the beginning of the file name, it is a draft version."
+          v-if="isDraft" class="badge bg-warning text-dark ms-2">
           <i class="bi bi-file-earmark-text"></i>
           Draft
         </span>
@@ -13,9 +14,8 @@
         <button @click="goBack" class="btn btn-outline-secondary me-2">
           Close
         </button>
-        <button @click="togglePublishStatus" class="btn me-2" 
-                :class="isDraft ? 'btn-success' : 'btn-warning'"
-                :disabled="saving">
+        <button @click="togglePublishStatus" class="btn me-2" :class="isDraft ? 'btn-success' : 'btn-warning'"
+          :disabled="saving">
           <i class="bi" :class="isDraft ? 'bi-eye' : 'bi-eye-slash'"></i>
           {{ isDraft ? 'Publish' : 'Unpublish' }}
         </button>
