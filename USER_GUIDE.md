@@ -179,6 +179,56 @@ Use the filter buttons to show only specific types of files:
    - The file will be created and highlighted in the list
    - You can immediately click on it to start editing
 
+### Reordering Files and Folders
+
+The Spec-Up-T Editor allows you to customize the order in which files and folders appear in your specification. This is useful for organizing content in a logical reading sequence.
+
+#### When Reordering is Available
+
+- **Root Directory Only**: Drag and drop functionality is only available in the root spec directory
+- **Visual Indicators**: Look for grip handles (⋮⋮) next to file and folder names
+- **Automatic Detection**: The system automatically detects when you're in a reorderable directory
+
+#### How to Reorder Items
+
+1. **Locate the Grip Handle**
+   - Look for the vertical dots (⋮⋮) icon to the left of file and folder names
+   - This handle only appears in the root spec directory
+
+2. **Drag to Reorder**
+   - Click and hold the grip handle
+   - Drag the item to its new position in the list
+   - Files and folders can be mixed in any order you prefer
+
+3. **Visual Feedback**
+   - The item being dragged becomes semi-transparent
+   - You can drop the item at any position in the list
+
+4. **Save Your Changes**
+   - After reordering, a "Save Order" button will appear
+   - Click this button to save your preferred order
+   - The order is saved to your repository's `specs.json` file
+
+#### Understanding the Order System
+
+- **Unified Ordering**: Files and folders share the same ordering system
+- **Persistent Storage**: Your custom order is remembered between sessions
+- **Automatic Loading**: When you return to the repository, your saved order is restored
+- **Special Handling**: The terms directory has special handling in the ordering system
+
+#### Tips for Effective Ordering
+
+1. **Logical Flow**: Arrange files in the order readers should encounter them
+2. **Dependencies**: Place foundational documents before those that reference them
+3. **Sections**: Group related files together for better organization
+4. **Overview First**: Consider placing overview or introduction files at the top
+
+#### Troubleshooting Order Issues
+
+- **No Grip Handles**: Make sure you're in the root spec directory, not a subdirectory
+- **Order Not Saving**: Ensure you have write permissions to the repository
+- **Order Resets**: Check that the `specs.json` file in your repository is properly configured
+
 ## Editing Files
 
 ### Opening a File
@@ -383,6 +433,12 @@ Results are organized into categories, each with a color-coded status:
    - Store images and diagrams near the specifications that use them
    - Consider a `media` or `images` subfolder for each specification
 
+4. **Order Files Logically**
+   - Use the drag and drop feature to arrange files in reading order
+   - Place foundational documents before dependent ones
+   - Consider reader flow: overview → details → appendices
+   - Save your custom order to persist it across sessions
+
 ### Writing Effective Specifications
 
 1. **Use Descriptive Commit Messages**
@@ -469,13 +525,27 @@ Results are organized into categories, each with a color-coded status:
 6. **Use the commit history** (available in GitHub) to track changes
 7. **Run final health checks** before considering the specification complete
 
-### Workflow 5: Regular Maintenance
+### Workflow 5: Organizing Specification Files
+
+1. **Navigate to the root spec directory** where you can see all your specification files
+2. **Look for the grip handles** (⋮⋮) next to file and folder names
+3. **Plan your organization**:
+   - Put overview/introduction documents first
+   - Group related specifications together
+   - Place appendices and references at the end
+4. **Drag files and folders** to arrange them in logical reading order
+5. **Save the order** by clicking the "Save Order" button that appears
+6. **Test the organization** by reviewing how the files flow together
+7. **Make adjustments** as needed and save again
+
+### Workflow 6: Regular Maintenance
 
 1. **Monthly health checks** on all active repositories
 2. **Review and update external specifications** as needed
 3. **Clean up unused files** and outdated content
 4. **Update repository configuration** (specs.json) as your project evolves
-5. **Rotate access tokens** every 90 days for security
+5. **Review and adjust file ordering** as content evolves
+6. **Rotate access tokens** every 90 days for security
 
 ## Troubleshooting
 
