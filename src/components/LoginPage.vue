@@ -1,5 +1,5 @@
 <template>
-  <div class="row justify-content-center">
+  <div class="row justify-content-center login-bg">
     <div class="col-md-6 col-lg-4">
       <div class="card">
         <div class="card-body">
@@ -126,12 +126,12 @@ export default {
 
       } catch (err) {
         console.error('Login error:', err)
-        
+
         // Track login failure
         trackEvent('login_error', {
           error_type: err.response?.status === 401 ? 'invalid_token' : 'unknown'
         })
-        
+
         if (err.response?.status === 401) {
           error.value = 'Invalid token. Please check your GitHub Personal Access Token.'
         } else {
@@ -147,7 +147,18 @@ export default {
       loading,
       error,
       handleLogin
+
     }
   }
 }
 </script>
+
+<style scoped>
+.login-bg {
+  min-height: 100vh;
+  background-image: url('/assets/background.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+</style>
