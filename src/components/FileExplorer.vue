@@ -198,7 +198,7 @@
               </span>
               <span v-else>
                 <i class="bi bi-plus-circle"></i>
-                Create File
+                Create Draft
               </span>
             </button>
           </div>
