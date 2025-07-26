@@ -485,6 +485,11 @@ export default {
         return
       }
 
+      // Add underscore prefix if not already present
+      if (!newFileName.value.startsWith('_')) {
+        newFileName.value = '_' + newFileName.value
+      }
+
       // Validate file extension
       const allowedExtensions = ['.md']
       const hasValidExtension = allowedExtensions.some(ext =>
