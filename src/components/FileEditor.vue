@@ -133,7 +133,7 @@
                 </div>
               </div>
 
-              <textarea ref="editor" v-model="content" @input="handleContentChange" class="form-control border-0"
+              <textarea ref="editor" v-model="content" @input="handleContentChange" @keyup="handleContentChange" class="form-control border-0"
                 style="min-height: 600px; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; resize: vertical;"
                 placeholder="Start editing your content here..."></textarea>
             </div>
@@ -683,6 +683,12 @@ export default {
           trackFileOperation('create_start', getFileExtension(decodedPath.value))
           
           loading.value = false
+          
+          // Force validation after a short delay to ensure everything is set up
+          setTimeout(async () => {
+            await validateContent()
+          }, 100)
+          
           return
         }
 
@@ -762,8 +768,14 @@ export default {
 
       // Check if the current file is in the spec_terms_directory
       const isInTermsDirectory = await checkIfInTermsDirectory()
-      if (!isInTermsDirectory) {
-        // File is not in terms directory, skip validation
+      
+      // Also check if filename suggests it's a terms file (contains common terms patterns)
+      const isLikelyTermsFile = filename.value.toLowerCase().includes('term') || 
+                               content.value.includes('[[def:') || 
+                               content.value.includes('[[tref:')
+      
+      if (!isInTermsDirectory && !isLikelyTermsFile) {
+        // File is not in terms directory and doesn't look like a terms file, skip validation
         showValidationWarnings.value = false
         validationWarnings.value = []
         return
@@ -1639,6 +1651,13 @@ export default {
         loadFileContent()
       }
     })
+
+    // Watch for content changes to trigger validation
+    watch(content, async () => {
+      if (!loading.value) {
+        await validateContent()
+      }
+    }, { flush: 'post' })
 
     return {
       loading,
