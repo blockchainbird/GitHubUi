@@ -622,64 +622,25 @@ export default {
         creatingFile.value = true
         createFileError.value = ''
 
-        const token = localStorage.getItem('github_token')
-        const config = {
-          headers: {
-            'Authorization': `token ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          }
-        }
-
         // Construct the file path
         const filePath = currentDirectory.value ?
           `${currentDirectory.value}/${newFileName.value}` :
           `${specDirectory.value}/${newFileName.value}`
 
-        // Create the file via GitHub API
-        const createData = {
-          message: newFileCommitMessage.value || 'Add new file',
-          content: btoa(newFileContent.value || ''), // Base64 encode the content
-          branch: props.branch
-        }
-
-        await axios.put(
-          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${filePath}`,
-          createData,
-          config
-        )
-
-        // Close modal and refresh file list
+        // Close modal
         closeCreateFileModal()
 
-        // Store the newly created file name for filtering purposes
-        recentlyCreatedFile.value = newFileName.value
-        // Also store in localStorage to persist across navigation
-        localStorage.setItem('recentlyCreatedFile', newFileName.value)
-
-        // Don't clear filters - let the computed properties handle showing the new file
-        await loadSpecFiles(currentDirectory.value || specDirectory.value)
-
-        // Auto-clear the recently created indicator after 10 seconds
-        setTimeout(() => {
-          recentlyCreatedFile.value = ''
-          localStorage.removeItem('recentlyCreatedFile')
-        }, 10000)
-
-        // Navigate to the new file for editing
+        // Navigate to the editor with new file parameters
         const encodedPath = encodeURIComponent(filePath)
         const encodedDir = encodeURIComponent(currentDirectory.value || specDirectory.value)
-        router.push(`/editor/${props.owner}/${props.repo}/${props.branch}/${encodedPath}?dir=${encodedDir}`)
+        const encodedContent = encodeURIComponent(newFileContent.value || '')
+        const encodedCommitMessage = encodeURIComponent(newFileCommitMessage.value || 'Add new file')
+        
+        router.push(`/editor/${props.owner}/${props.repo}/${props.branch}/${encodedPath}?dir=${encodedDir}&new=true&content=${encodedContent}&commitMessage=${encodedCommitMessage}`)
 
       } catch (err) {
-        console.error('Error creating file:', err)
-        if (checkAuthAndRedirect(err)) {
-          return
-        }
-        if (err.response?.status === 422) {
-          createFileError.value = 'A file with this name already exists'
-        } else {
-          createFileError.value = 'Failed to create file. Please try again.'
-        }
+        console.error('Error navigating to new file editor:', err)
+        createFileError.value = 'Failed to open file editor. Please try again.'
       } finally {
         creatingFile.value = false
       }

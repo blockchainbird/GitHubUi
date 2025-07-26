@@ -2,12 +2,16 @@
   <div>
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h2>
-        <i class="bi bi-pencil-square"></i>
-        Editing: {{ filename }}
+        <i class="bi" :class="isNewFile ? 'bi-plus-circle' : 'bi-pencil-square'"></i>
+        {{ isNewFile ? 'Creating: ' : 'Editing: ' }}{{ filename }}
         <span title="If a file has an underscore at the beginning of the file name, it is a draft version."
           v-if="isDraft" class="badge bg-warning text-dark ms-2">
           <i class="bi bi-file-earmark-text"></i>
           Draft
+        </span>
+        <span v-if="isNewFile" class="badge bg-info text-white ms-2">
+          <i class="bi bi-asterisk"></i>
+          New File
         </span>
       </h2>
       <div>
@@ -15,7 +19,8 @@
           Close
         </button>
         <button @click="togglePublishStatus" class="btn me-2" :class="isDraft ? 'btn-success' : 'btn-warning'"
-          :disabled="saving">
+          :disabled="saving || isNewFile" 
+          :title="isNewFile ? 'Create the file first before publishing/unpublishing' : ''">
           <i class="bi" :class="isDraft ? 'bi-eye' : 'bi-eye-slash'"></i>
           {{ isDraft ? 'Publish' : 'Unpublish' }}
         </button>
@@ -25,8 +30,8 @@
             Saving...
           </span>
           <span v-else>
-            <i class="bi bi-save"></i>
-            Save & Commit
+            <i class="bi" :class="isNewFile ? 'bi-plus-circle' : 'bi-save'"></i>
+            {{ isNewFile ? 'Create & Commit' : 'Save & Commit' }}
           </span>
         </button>
       </div>
@@ -38,6 +43,16 @@
 
     <div v-if="success" class="alert alert-success" role="alert">
       {{ success }}
+    </div>
+
+    <div v-if="isNewFile" class="alert alert-info" role="alert">
+      <div class="d-flex align-items-start">
+        <i class="bi bi-info-circle-fill me-2 flex-shrink-0 mt-1"></i>
+        <div>
+          <strong>Creating New File:</strong>
+          This file doesn't exist yet. You can edit and use all toolbar functions. Click "Create & Commit" when you're ready to save it to the repository.
+        </div>
+      </div>
     </div>
 
     <div v-if="showValidationWarnings" class="alert alert-warning" role="alert">
@@ -56,7 +71,7 @@
       <div class="spinner-border" role="status">
         <span class="visually-hidden">Loading...</span>
       </div>
-      <p class="mt-2">Loading file content...</p>
+      <p class="mt-2">{{ isNewFile ? 'Setting up new file...' : 'Loading file content...' }}</p>
     </div>
 
     <div v-else class="row">
@@ -138,21 +153,21 @@
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Commit Changes</h5>
+            <h5 class="modal-title">{{ isNewFile ? 'Create File' : 'Commit Changes' }}</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
             <div class="mb-3">
               <label for="commitMessage" class="form-label">Commit Message</label>
               <textarea id="commitMessage" v-model="commitMessage" class="form-control" rows="3"
-                placeholder="Describe your changes..." required></textarea>
+                :placeholder="isNewFile ? 'Describe this new file...' : 'Describe your changes...'" required></textarea>
             </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
             <button type="button" @click="commitChanges" class="btn btn-primary">
-              <i class="bi bi-check-circle"></i>
-              Commit
+              <i class="bi" :class="isNewFile ? 'bi-plus-circle' : 'bi-check-circle'"></i>
+              {{ isNewFile ? 'Create' : 'Commit' }}
             </button>
           </div>
         </div>
@@ -345,7 +360,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import { addToVisitedRepos } from '../utils/visitedRepos.js'
@@ -368,6 +383,17 @@ export default {
     const editMode = ref('edit')
     const commitMessage = ref('')
     const editor = ref(null)
+
+    // New file mode state
+    // When isNewFile is true, the editor is in "creation mode" where:
+    // - No file exists in GitHub yet
+    // - Content can be edited freely using all toolbar functions
+    // - Only when "Create & Commit" is clicked will the file be created in GitHub
+    // - Publish/Unpublish is disabled until the file is created
+    // - Navigation guards prevent losing unsaved changes
+    const isNewFile = ref(false)
+    const newFileInitialContent = ref('')
+    const newFileCommitMessage = ref('')
 
     // Terms functionality
     const terms = ref([])
@@ -454,6 +480,11 @@ export default {
     })
 
     const hasChanges = computed(() => {
+      // For new files, consider any content as changes
+      if (isNewFile.value) {
+        return content.value.trim().length > 0
+      }
+      // For existing files, compare with original content
       return content.value !== originalContent.value
     })
     
@@ -623,6 +654,39 @@ export default {
 
     const loadFileContent = async () => {
       try {
+        // Check if this is a new file being created
+        if (route.query.new === 'true') {
+          isNewFile.value = true
+          
+          // Decode the initial content and commit message from query params
+          try {
+            newFileInitialContent.value = route.query.content ? decodeURIComponent(route.query.content) : ''
+            newFileCommitMessage.value = route.query.commitMessage ? decodeURIComponent(route.query.commitMessage) : 'Add new file'
+          } catch (decodeError) {
+            console.warn('Error decoding query parameters:', decodeError)
+            newFileInitialContent.value = ''
+            newFileCommitMessage.value = 'Add new file'
+          }
+          
+          // Set up the editor with initial content
+          content.value = newFileInitialContent.value
+          originalContent.value = '' // New file has no original content
+          commitMessage.value = newFileCommitMessage.value
+          
+          // No SHA for new file
+          fileSha.value = ''
+          
+          // Validate content after loading
+          await validateContent()
+          
+          // Track file creation start
+          trackFileOperation('create_start', getFileExtension(decodedPath.value))
+          
+          loading.value = false
+          return
+        }
+
+        // Regular file loading for existing files
         const token = localStorage.getItem('github_token')
         const config = {
           headers: {
@@ -822,8 +886,12 @@ export default {
         const data = {
           message: commitMessage.value,
           content: btoa(content.value),
-          sha: fileSha.value,
           branch: props.branch
+        }
+
+        // Add SHA only for existing files (updates)
+        if (!isNewFile.value && fileSha.value) {
+          data.sha = fileSha.value
         }
 
         const response = await axios.put(
@@ -834,10 +902,28 @@ export default {
 
         fileSha.value = response.data.content.sha
         originalContent.value = content.value
-        success.value = 'File saved and committed successfully!'
         
-        // Track file save
-        trackFileOperation('save', getFileExtension(decodedPath.value))
+        if (isNewFile.value) {
+          success.value = 'File created and committed successfully!'
+          isNewFile.value = false // Convert to regular file after successful creation
+          
+          // Track file creation completion
+          trackFileOperation('create_complete', getFileExtension(decodedPath.value))
+
+          // Update the URL to remove new file query parameters
+          const newRoute = `/editor/${props.owner}/${props.repo}/${props.branch}/${encodeURIComponent(decodedPath.value)}`
+          const queryParams = new URLSearchParams()
+          if (route.query.dir) {
+            queryParams.set('dir', route.query.dir)
+          }
+          const finalRoute = queryParams.toString() ? `${newRoute}?${queryParams.toString()}` : newRoute
+          await router.replace(finalRoute)
+        } else {
+          success.value = 'File saved and committed successfully!'
+          
+          // Track file save
+          trackFileOperation('save', getFileExtension(decodedPath.value))
+        }
 
         // Hide modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('commitModal'))
@@ -848,7 +934,11 @@ export default {
         if (checkAuthAndRedirect(err)) {
           return
         }
-        error.value = 'Failed to save file. Please try again.'
+        if (err.response?.status === 422 && isNewFile.value) {
+          error.value = 'A file with this name already exists. Please choose a different name.'
+        } else {
+          error.value = 'Failed to save file. Please try again.'
+        }
       } finally {
         saving.value = false
       }
@@ -1490,6 +1580,14 @@ export default {
     }
 
     const goBack = () => {
+      // Check if there are unsaved changes in a new file
+      if (isNewFile.value && hasChanges.value) {
+        const confirmLeave = confirm('You have unsaved changes in this new file. Are you sure you want to leave without creating it?')
+        if (!confirmLeave) {
+          return
+        }
+      }
+
       // Check if we have a directory parameter from the route query
       const sourceDir = route.query.dir
       if (sourceDir) {
@@ -1507,6 +1605,28 @@ export default {
       addToVisitedRepos(props.owner, props.repo, props.branch)
 
       loadFileContent()
+
+      // Add browser navigation guard for new files with unsaved changes
+      const handleBeforeUnload = (event) => {
+        if (isNewFile.value && hasChanges.value) {
+          event.preventDefault()
+          event.returnValue = ''
+          return ''
+        }
+      }
+
+      window.addEventListener('beforeunload', handleBeforeUnload)
+
+      // Store reference for cleanup
+      window.fileEditorBeforeUnload = handleBeforeUnload
+    })
+
+    onUnmounted(() => {
+      // Clean up the event listener
+      if (window.fileEditorBeforeUnload) {
+        window.removeEventListener('beforeunload', window.fileEditorBeforeUnload)
+        delete window.fileEditorBeforeUnload
+      }
     })
 
     // Watch for path changes (when navigating after publish/unpublish)
@@ -1537,6 +1657,8 @@ export default {
       hasChanges,
       renderedContent,
       editor,
+      // New file mode
+      isNewFile,
       handleContentChange,
       insertText,
       insertHeading,
