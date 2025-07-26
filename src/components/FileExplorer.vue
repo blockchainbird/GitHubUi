@@ -197,71 +197,6 @@
   </div>
 </template>
 
-<style scoped>
-.dropdown-menu.show {
-  display: block;
-}
-
-.input-group-text {
-  background-color: #f8f9fa;
-  border-color: #dee2e6;
-}
-
-.list-group-item:hover {
-  background-color: #f8f9fa;
-}
-
-.list-group-item.list-group-item-action {
-  border-left: none;
-  border-right: none;
-}
-
-.list-group-item.list-group-item-action:first-child {
-  border-top: none;
-}
-
-.list-group-item.list-group-item-action:last-child {
-  border-bottom: none;
-}
-
-/* Make filter section stand out slightly */
-.card-header {
-  background-color: #fff;
-  border-bottom: 2px solid #e9ecef;
-}
-
-/* Results counter styling */
-.text-muted small {
-  font-size: 0.875em;
-}
-
-/* Recently created file highlighting */
-.list-group-item.recently-created {
-  background-color: #d1edff;
-  border-color: #0d6efd;
-}
-
-.list-group-item.recently-created:hover {
-  background-color: #b8e0ff;
-}
-
-.badge.bg-success {
-  font-size: 0.7em;
-}
-
-.badge.bg-info {
-  font-size: 0.7em;
-}
-
-.badge.bg-primary {
-  font-size: 0.7em;
-}
-
-.badge.bg-warning {
-  font-size: 0.7em;
-}
-</style>
-
 <script>
 import { ref, onMounted, onUnmounted, nextTick, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -799,3 +734,68 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.dropdown-menu.show {
+  display: block;
+}
+
+.input-group-text {
+  background-color: #f8f9fa;
+  border-color: #dee2e6;
+}
+
+.list-group-item:hover {
+  background-color: #f8f9fa;
+}
+
+.list-group-item.list-group-item-action {
+  border-left: none;
+  border-right: none;
+}
+
+.list-group-item.list-group-item-action:first-child {
+  border-top: none;
+}
+
+.list-group-item.list-group-item-action:last-child {
+  border-bottom: none;
+}
+
+/* Make filter section stand out slightly */
+.card-header {
+  background-color: #fff;
+  border-bottom: 2px solid #e9ecef;
+}
+
+/* Results counter styling */
+.text-muted small {
+  font-size: 0.875em;
+}
+
+/* Recently created file highlighting */
+.list-group-item.recently-created {
+  background-color: #d1edff;
+  border-color: #0d6efd;
+}
+
+.list-group-item.recently-created:hover {
+  background-color: #b8e0ff;
+}
+
+.badge.bg-success {
+  font-size: 0.7em;
+}
+
+.badge.bg-info {
+  font-size: 0.7em;
+}
+
+.badge.bg-primary {
+  font-size: 0.7em;
+}
+
+.badge.bg-warning {
+  font-size: 0.7em;
+}
+</style>
