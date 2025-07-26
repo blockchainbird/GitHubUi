@@ -17,6 +17,10 @@
       {{ error }}
     </div>
 
+    <div v-if="success" class="alert alert-success" role="alert">
+      {{ success }}
+    </div>
+
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border" role="status">
         <span class="visually-hidden">Loading...</span>
@@ -36,6 +40,28 @@
               <button v-if="isRootDirectory && hasUnsavedChanges" @click="saveOrder" class="btn btn-primary btn-sm" title="Save Order">
                 <i class="bi bi-save"></i>
                 Save Order
+              </button>
+              <button @click="collectExternalReferences" class="btn btn-info btn-sm me-2" 
+                title="Collect External References" :disabled="collectingRefs">
+                <span v-if="collectingRefs">
+                  <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                  Collecting...
+                </span>
+                <span v-else>
+                  <i class="bi bi-collection"></i>
+                  Collect Refs
+                </span>
+              </button>
+              <button @click="renderSpecification" class="btn btn-secondary btn-sm me-2" 
+                title="Render Specification (Basic)" :disabled="rendering">
+                <span v-if="rendering">
+                  <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                  Rendering...
+                </span>
+                <span v-else>
+                  <i class="bi bi-file-earmark-code"></i>
+                  Basic Render
+                </span>
               </button>
               <button @click="showCreateModal" class="btn btn-success btn-sm" title="Create New File">
                 <i class="bi bi-plus-circle"></i>
@@ -223,6 +249,7 @@ export default {
     const loading = ref(true)
     const loadingMessage = ref('')
     const error = ref('')
+    const success = ref('')
     const specDirectory = ref('')
     const files = ref([])
     const folders = ref([])
@@ -253,6 +280,10 @@ export default {
     const creatingFile = ref(false)
     const createFileError = ref('')
     const fileNameInput = ref(null)
+
+    // External references collection state
+    const collectingRefs = ref(false)
+    const rendering = ref(false)
 
     // Computed properties for filtered results
     const filteredFiles = computed(() => {
@@ -684,6 +715,227 @@ export default {
       }
     }
 
+    // Collect external references from markdown files
+    const collectExternalReferences = async () => {
+      try {
+        collectingRefs.value = true
+        loadingMessage.value = 'Collecting external references...'
+        
+        const token = localStorage.getItem('github_token')
+        const config = {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        }
+
+        // Get all markdown files in spec directory and subdirectories
+        const allMarkdownFiles = []
+        await collectMarkdownFiles(specDirectory.value, allMarkdownFiles, config)
+        
+        // Process files to extract xref/tref patterns
+        const allXTrefs = { xtrefs: [] }
+        
+        for (const file of allMarkdownFiles) {
+          try {
+            const response = await axios.get(file.download_url)
+            const content = response.data
+            
+            // Extract xref and tref patterns
+            const xrefPattern = /\[\[(?:xref|tref):[^,\]]+,[^\]]+\]\]/g
+            const matches = content.match(xrefPattern) || []
+            
+            matches.forEach(match => {
+              const parts = match.replace(/\[\[(?:xref|tref):/, '').replace(/\]\]/, '').split(',')
+              if (parts.length >= 2) {
+                const externalSpec = parts[0].trim()
+                const term = parts[1].trim()
+                const alias = parts[2]?.trim()
+                
+                // Check if this xref already exists
+                const exists = allXTrefs.xtrefs.some(ref => 
+                  ref.externalSpec === externalSpec && ref.term === term)
+                
+                if (!exists) {
+                  const xtrefObj = { externalSpec, term }
+                  if (alias) xtrefObj.alias = alias
+                  allXTrefs.xtrefs.push(xtrefObj)
+                }
+              }
+            })
+          } catch (err) {
+            console.warn(`Could not process file ${file.path}:`, err)
+          }
+        }
+
+        // Extend xtrefs with repository information from specs.json
+        if (specsConfig.value?.specs?.[0]?.external_specs) {
+          allXTrefs.xtrefs.forEach(xtref => {
+            const externalSpec = specsConfig.value.specs[0].external_specs.find(
+              spec => spec.external_spec === xtref.externalSpec)
+            
+            if (externalSpec) {
+              xtref.repoUrl = externalSpec.url
+              xtref.terms_dir = externalSpec.terms_dir
+              xtref.ghPageUrl = externalSpec.gh_page
+              
+              const urlParts = new URL(xtref.repoUrl).pathname.split('/')
+              xtref.owner = urlParts[1]
+              xtref.repo = urlParts[2]
+            } else {
+              xtref.repoUrl = null
+              xtref.terms_dir = null
+              xtref.owner = null
+              xtref.repo = null
+            }
+          })
+        }
+
+        // Generate output files
+        const jsContent = `// External references data generated on ${new Date().toISOString()}
+const allXTrefs = ${JSON.stringify(allXTrefs, null, 2)};
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { allXTrefs };
+}`
+
+        const jsonContent = JSON.stringify(allXTrefs, null, 2)
+
+        // Save files to .cache directory
+        await saveFile('.cache/xtrefs-data.js', jsContent, config)
+        await saveFile('.cache/xtrefs-data.json', jsonContent, config)
+        
+        success.value = `✅ External references collected successfully! Found ${allXTrefs.xtrefs.length} references.`
+        setTimeout(() => success.value = '', 5000)
+        
+      } catch (err) {
+        console.error('Error collecting external references:', err)
+        if (checkAuthAndRedirect(err)) return
+        error.value = 'Failed to collect external references: ' + err.message
+      } finally {
+        collectingRefs.value = false
+        loadingMessage.value = ''
+      }
+    }
+
+    // Helper function to recursively collect markdown files
+    const collectMarkdownFiles = async (directory, allFiles, config) => {
+      try {
+        const response = await axios.get(
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${directory}?ref=${props.branch}`,
+          config
+        )
+        
+        for (const item of response.data) {
+          if (item.type === 'file' && item.name.toLowerCase().endsWith('.md')) {
+            allFiles.push(item)
+          } else if (item.type === 'dir') {
+            await collectMarkdownFiles(item.path, allFiles, config)
+          }
+        }
+      } catch (err) {
+        console.warn(`Could not read directory ${directory}:`, err)
+      }
+    }
+
+    // Helper function to save files via GitHub API
+    const saveFile = async (filePath, content, config) => {
+      try {
+        // Try to get existing file to get its SHA
+        let sha = null
+        try {
+          const existingResponse = await axios.get(
+            `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${filePath}?ref=${props.branch}`,
+            config
+          )
+          sha = existingResponse.data.sha
+        } catch (err) {
+          // File doesn't exist, which is fine for new files
+        }
+
+        const data = {
+          message: `Update ${filePath} - External references collection`,
+          content: btoa(content),
+          branch: props.branch
+        }
+
+        if (sha) {
+          data.sha = sha
+        }
+
+        await axios.put(
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${filePath}`,
+          data,
+          config
+        )
+      } catch (err) {
+        console.error(`Error saving ${filePath}:`, err)
+        throw err
+      }
+    }
+
+    // Basic specification rendering (Phase 2 - simplified implementation)
+    const renderSpecification = async () => {
+      try {
+        rendering.value = true
+        loadingMessage.value = 'Rendering specification...'
+        
+        // Placeholder for basic HTML generation
+        const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Specification - ${props.owner}/${props.repo}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+        h1, h2, h3 { color: #333; }
+        .spec-meta { background: #f5f5f5; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="spec-meta">
+        <h1>Specification: ${props.owner}/${props.repo}</h1>
+        <p>Generated on: ${new Date().toISOString()}</p>
+        <p><em>This is a basic HTML rendering. Full Spec-Up-T rendering features are not yet implemented.</em></p>
+    </div>
+    <div id="content">
+        <p>Specification content would be rendered here...</p>
+        <p>Future implementation will include:</p>
+        <ul>
+            <li>Markdown to HTML conversion</li>
+            <li>Cross-reference resolution</li>
+            <li>Term definition processing</li>
+            <li>External specification integration</li>
+        </ul>
+    </div>
+</body>
+</html>`
+
+        // Save the rendered HTML file
+        const token = localStorage.getItem('github_token')
+        const config = {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        }
+
+        await saveFile('index.html', htmlContent, config)
+        
+        success.value = '✅ Basic specification rendered to index.html (simplified version)'
+        setTimeout(() => success.value = '', 5000)
+        
+      } catch (err) {
+        console.error('Error rendering specification:', err)
+        if (checkAuthAndRedirect(err)) return
+        error.value = 'Failed to render specification: ' + err.message
+      } finally {
+        rendering.value = false
+        loadingMessage.value = ''
+      }
+    }
+
     // Close dropdown when clicking outside
     const handleClickOutside = (event) => {
       if (dropdownButton.value && dropdownMenu.value) {
@@ -1037,6 +1289,11 @@ export default {
       clearFilter,
       clearFilterCompletely,
       applyFilter,
+      collectExternalReferences,
+      collectingRefs,
+      renderSpecification,
+      rendering,
+      success,
       goUpDirectory,
       showGoUpButton,
       isRootDirectory,
