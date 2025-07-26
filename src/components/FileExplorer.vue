@@ -406,7 +406,15 @@ export default {
           specDirectory.value = 'spec'
           specTermsDirectory.value = 'terms-definitions'
         }
-        currentDirectory.value = specDirectory.value
+        
+        // Check if we have a directory query parameter to navigate to
+        const targetDir = route.query.dir
+        if (targetDir) {
+          currentDirectory.value = decodeURIComponent(targetDir)
+        } else {
+          currentDirectory.value = specDirectory.value
+        }
+        
         await loadSpecFiles(currentDirectory.value)
 
       } catch (err) {
@@ -418,7 +426,15 @@ export default {
           error.value = 'specs.json file not found in repository root. Using default "specs" directory.'
           specDirectory.value = 'specs'
           specTermsDirectory.value = 'terms-definitions'
-          currentDirectory.value = specDirectory.value
+          
+          // Check if we have a directory query parameter to navigate to
+          const targetDir = route.query.dir
+          if (targetDir) {
+            currentDirectory.value = decodeURIComponent(targetDir)
+          } else {
+            currentDirectory.value = specDirectory.value
+          }
+          
           await loadSpecFiles(currentDirectory.value)
         } else {
           error.value = 'Failed to load repository configuration.'
@@ -542,7 +558,8 @@ export default {
       if (isDragging.value) return;
       
       const encodedPath = encodeURIComponent(file.path)
-      router.push(`/editor/${props.owner}/${props.repo}/${props.branch}/${encodedPath}`)
+      const encodedDir = encodeURIComponent(currentDirectory.value)
+      router.push(`/editor/${props.owner}/${props.repo}/${props.branch}/${encodedPath}?dir=${encodedDir}`)
     }
 
     const openFolder = (folder) => {
@@ -650,7 +667,8 @@ export default {
 
         // Navigate to the new file for editing
         const encodedPath = encodeURIComponent(filePath)
-        router.push(`/editor/${props.owner}/${props.repo}/${props.branch}/${encodedPath}`)
+        const encodedDir = encodeURIComponent(currentDirectory.value || specDirectory.value)
+        router.push(`/editor/${props.owner}/${props.repo}/${props.branch}/${encodedPath}?dir=${encodedDir}`)
 
       } catch (err) {
         console.error('Error creating file:', err)

@@ -346,7 +346,7 @@
 
 <script>
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import { addToVisitedRepos } from '../utils/visitedRepos.js'
 import { useGoogleAnalytics } from '../composables/useGoogleAnalytics.js'
@@ -356,6 +356,7 @@ export default {
   props: ['owner', 'repo', 'branch', 'path'],
   setup(props) {
     const router = useRouter()
+    const route = useRoute()
     const { trackFileOperation } = useGoogleAnalytics()
     const loading = ref(true)
     const saving = ref(false)
@@ -922,7 +923,12 @@ export default {
 
         // Navigate to the new file path using correct route and encoding
         const encodedNewPath = encodeURIComponent(newPath)
-        const newRoute = `/editor/${props.owner}/${props.repo}/${props.branch}/${encodedNewPath}`
+        let newRoute = `/editor/${props.owner}/${props.repo}/${props.branch}/${encodedNewPath}`
+        
+        // Preserve directory parameter if it exists
+        if (route.query.dir) {
+          newRoute += `?dir=${encodeURIComponent(route.query.dir)}`
+        }
         
         console.log('Navigating to new route:', newRoute)
         console.log('New path:', newPath)
@@ -1484,7 +1490,16 @@ export default {
     }
 
     const goBack = () => {
-      router.push(`/files/${props.owner}/${props.repo}/${props.branch}`)
+      // Check if we have a directory parameter from the route query
+      const sourceDir = route.query.dir
+      if (sourceDir) {
+        // Navigate back to the specific directory
+        const encodedDir = encodeURIComponent(sourceDir)
+        router.push(`/files/${props.owner}/${props.repo}/${props.branch}?dir=${encodedDir}`)
+      } else {
+        // Fall back to root directory
+        router.push(`/files/${props.owner}/${props.repo}/${props.branch}`)
+      }
     }
 
     onMounted(() => {
