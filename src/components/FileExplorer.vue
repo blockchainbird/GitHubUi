@@ -63,6 +63,17 @@
                   Basic Render
                 </span>
               </button>
+              <button @click="triggerWorkflow" class="btn btn-warning btn-sm me-2" 
+                title="Trigger GitHub Actions Workflow" :disabled="triggeringWorkflow">
+                <span v-if="triggeringWorkflow">
+                  <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                  Triggering...
+                </span>
+                <span v-else>
+                  <i class="bi bi-play-circle"></i>
+                  Run Actions
+                </span>
+              </button>
               <button @click="showCreateModal" class="btn btn-success btn-sm" title="Create New File">
                 <i class="bi bi-plus-circle"></i>
                 New File
@@ -284,6 +295,7 @@ export default {
     // External references collection state
     const collectingRefs = ref(false)
     const rendering = ref(false)
+    const triggeringWorkflow = ref(false)
 
     // Computed properties for filtered results
     const filteredFiles = computed(() => {
@@ -936,6 +948,84 @@ if (typeof module !== 'undefined' && module.exports) {
       }
     }
 
+    // GitHub Actions Workflow Trigger
+    const triggerWorkflow = async () => {
+      try {
+        triggeringWorkflow.value = true
+        loadingMessage.value = 'Triggering GitHub Actions workflow...'
+        
+        const token = localStorage.getItem('github_token')
+        const config = {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+          }
+        }
+
+        // First, let's check what workflows are available
+        const workflowsResponse = await axios.get(
+          `https://api.github.com/repos/${props.owner}/${props.repo}/actions/workflows`,
+          config
+        )
+
+        const workflows = workflowsResponse.data.workflows
+        
+        if (workflows.length === 0) {
+          error.value = 'No GitHub Actions workflows found in this repository. Please add a workflow file to .github/workflows/ first.'
+          return
+        }
+
+        // Find a workflow that can be manually triggered (has workflow_dispatch)
+        const dispatchableWorkflows = workflows.filter(workflow => 
+          workflow.state === 'active' && 
+          (workflow.name.toLowerCase().includes('spec') || 
+           workflow.name.toLowerCase().includes('build') ||
+           workflow.name.toLowerCase().includes('deploy'))
+        )
+
+        let targetWorkflow = dispatchableWorkflows[0] || workflows[0]
+
+        // Trigger the workflow using workflow_dispatch
+        const dispatchData = {
+          ref: props.branch, // Trigger on current branch
+          inputs: {
+            // Add any inputs the workflow might expect
+            repository: `${props.owner}/${props.repo}`,
+            branch: props.branch,
+            triggered_by: 'GitHubUI'
+          }
+        }
+
+        await axios.post(
+          `https://api.github.com/repos/${props.owner}/${props.repo}/actions/workflows/${targetWorkflow.id}/dispatches`,
+          dispatchData,
+          config
+        )
+        
+        success.value = `✅ Successfully triggered workflow: "${targetWorkflow.name}" on branch ${props.branch}`
+        setTimeout(() => success.value = '', 8000)
+        
+        // Optionally provide a link to view the workflow runs
+        console.log(`View workflow runs: https://github.com/${props.owner}/${props.repo}/actions`)
+        
+      } catch (err) {
+        console.error('Error triggering workflow:', err)
+        if (checkAuthAndRedirect(err)) return
+        
+        if (err.response?.status === 404) {
+          error.value = 'Workflow not found or this repository has no GitHub Actions workflows set up.'
+        } else if (err.response?.status === 422) {
+          error.value = 'Cannot trigger workflow. The workflow may not support manual triggering (workflow_dispatch) or may be disabled.'
+        } else {
+          error.value = 'Failed to trigger workflow: ' + (err.response?.data?.message || err.message)
+        }
+      } finally {
+        triggeringWorkflow.value = false
+        loadingMessage.value = ''
+      }
+    }
+
     // Close dropdown when clicking outside
     const handleClickOutside = (event) => {
       if (dropdownButton.value && dropdownMenu.value) {
@@ -1293,6 +1383,8 @@ if (typeof module !== 'undefined' && module.exports) {
       collectingRefs,
       renderSpecification,
       rendering,
+      triggerWorkflow,
+      triggeringWorkflow,
       success,
       goUpDirectory,
       showGoUpButton,

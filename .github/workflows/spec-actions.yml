@@ -1,0 +1,296 @@
+name: Spec-Up-T Actions
+# This is a sample GitHub Actions workflow that can be triggered from the GitHubUI web app
+# Copy this file to your spec repository's .github/workflows/ directory to enable workflow triggers
+
+on:
+  # Allow manual triggering from the GitHub UI web app
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: 'Repository name'
+        required: true
+        type: string
+      branch:
+        description: 'Branch name'
+        required: true
+        type: string
+      triggered_by:
+        description: 'Who triggered this workflow'
+        required: false
+        default: 'manual'
+        type: string
+      action_type:
+        description: 'Type of action to perform'
+        required: false
+        default: 'render'
+        type: choice
+        options:
+        - render
+        - topdf
+        - todocx
+        - freeze
+        - custom-update
+        - collectExternalReferences
+
+  # Also trigger on pushes to main/master branches
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'spec/**'
+      - 'specs/**'
+      - '*.md'
+      - 'specs.json'
+
+  # And on pull requests
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'spec/**'
+      - 'specs/**'
+      - '*.md'
+      - 'specs.json'
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      action_type: ${{ steps.determine-action.outputs.action_type }}
+      spec_directory: ${{ steps.get-config.outputs.spec_directory }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Determine action type
+        id: determine-action
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "action_type=${{ inputs.action_type || 'render' }}" >> $GITHUB_OUTPUT
+          else
+            echo "action_type=render" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: Get specs configuration
+        id: get-config
+        run: |
+          if [ -f "specs.json" ]; then
+            SPEC_DIR=$(jq -r '.specs[0].spec_directory // "spec"' specs.json)
+            echo "spec_directory=$SPEC_DIR" >> $GITHUB_OUTPUT
+          else
+            echo "spec_directory=spec" >> $GITHUB_OUTPUT
+          fi
+
+  render:
+    needs: setup
+    runs-on: ubuntu-latest
+    if: needs.setup.outputs.action_type == 'render'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install Spec-Up-T
+        run: npm install -g spec-up-t
+        
+      - name: Render specification
+        run: |
+          echo "🚀 Rendering specification..."
+          echo "Repository: ${{ inputs.repository || github.repository }}"
+          echo "Branch: ${{ inputs.branch || github.ref_name }}"
+          echo "Triggered by: ${{ inputs.triggered_by || 'push' }}"
+          echo "Spec directory: ${{ needs.setup.outputs.spec_directory }}"
+          
+          # Run spec-up-t render
+          spec-up render
+          
+      - name: Upload rendered specification
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-specification
+          path: |
+            index.html
+            assets/
+            *.css
+            *.js
+          retention-days: 30
+
+  topdf:
+    needs: setup
+    runs-on: ubuntu-latest
+    if: needs.setup.outputs.action_type == 'topdf'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install Spec-Up-T
+        run: npm install -g spec-up-t
+        
+      - name: Generate PDF
+        run: |
+          echo "📄 Generating PDF..."
+          spec-up topdf
+          
+      - name: Upload PDF
+        uses: actions/upload-artifact@v4
+        with:
+          name: specification-pdf
+          path: "*.pdf"
+          retention-days: 30
+
+  todocx:
+    needs: setup
+    runs-on: ubuntu-latest
+    if: needs.setup.outputs.action_type == 'todocx'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install Spec-Up-T
+        run: npm install -g spec-up-t
+        
+      - name: Generate DOCX
+        run: |
+          echo "📝 Generating DOCX..."
+          spec-up todocx
+          
+      - name: Upload DOCX
+        uses: actions/upload-artifact@v4
+        with:
+          name: specification-docx
+          path: "*.docx"
+          retention-days: 30
+
+  freeze:
+    needs: setup
+    runs-on: ubuntu-latest
+    if: needs.setup.outputs.action_type == 'freeze'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install Spec-Up-T
+        run: npm install -g spec-up-t
+        
+      - name: Freeze specification
+        run: |
+          echo "🧊 Freezing specification..."
+          spec-up freeze
+          
+      - name: Commit frozen specification
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add -A
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Freeze specification - $(date)"
+            git push
+          fi
+
+  custom-update:
+    needs: setup
+    runs-on: ubuntu-latest
+    if: needs.setup.outputs.action_type == 'custom-update'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install Spec-Up-T
+        run: npm install -g spec-up-t
+        
+      - name: Custom update
+        run: |
+          echo "🔄 Running custom update..."
+          spec-up custom-update
+          
+      - name: Commit updates
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add -A
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Custom update - $(date)"
+            git push
+          fi
+
+  collect-external-references:
+    needs: setup
+    runs-on: ubuntu-latest
+    if: needs.setup.outputs.action_type == 'collectExternalReferences'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install Spec-Up-T
+        run: npm install -g spec-up-t
+        
+      - name: Collect external references
+        run: |
+          echo "🔗 Collecting external references..."
+          # Run the collect-external-references script
+          npx spec-up-t collect-external-references
+          
+      - name: Upload collected references
+        uses: actions/upload-artifact@v4
+        with:
+          name: external-references
+          path: |
+            external-*.json
+            collected-references.json
+          retention-days: 30
+
+  deploy:
+    needs: [setup, render]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && needs.setup.outputs.action_type == 'render'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download rendered specification
+        uses: actions/download-artifact@v4
+        with:
+          name: rendered-specification
+          
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./
+          publish_branch: gh-pages
+
+  notify:
+    needs: [setup, render, topdf, todocx, freeze, custom-update, collect-external-references]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Notify completion
+        run: |
+          echo "✅ Workflow completed!"
+          echo "Action type: ${{ needs.setup.outputs.action_type }}"
+          echo "Repository: ${{ inputs.repository || github.repository }}"
+          echo "Branch: ${{ inputs.branch || github.ref_name }}"
+          echo "Triggered by: ${{ inputs.triggered_by || github.event_name }}"
