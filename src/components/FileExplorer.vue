@@ -120,21 +120,35 @@
             </p>
           </div>
 
-          <div v-else class="list-group list-group-flush">
+          <div v-else class="list-group list-group-flush"
+            @dragover="onListDragOver"
+            @drop="onListDrop">
             <!-- Show items in their dragged order -->
-            <button v-for="(item, index) in orderedItems" :key="item.path" 
-              @click="item.type === 'folder' ? openFolder(item) : openFile(item)"
-              class="list-group-item list-group-item-action d-flex align-items-center"
-              :class="{ 
-                'recently-created': item.type === 'file' && item.name === recentlyCreatedFile, 
-                'draggable': isRootDirectory 
-              }"
-              :draggable="isRootDirectory"
-              @dragstart="onDragStart($event, item, item.type, index)"
-              @dragover="onDragOver($event, index, item.type)"
-              @drop="onDrop($event, index, item.type)"
-              @dragend="onDragEnd">
-              <i v-if="isRootDirectory" class="bi bi-grip-vertical me-2 drag-handle"></i>
+            <div v-for="(item, index) in orderedItems" :key="item.path" class="position-relative">
+              <!-- Drop zone indicator at the top -->
+              <div v-if="isRootDirectory && isDragging && dragOverIndex === index && dragPosition === 'before'"
+                class="drop-zone-indicator drop-zone-before">
+                <div class="drop-line"></div>
+                <span class="drop-text">Drop here</span>
+              </div>
+              
+              <button @click="item.type === 'folder' ? openFolder(item) : openFile(item)"
+                class="list-group-item list-group-item-action d-flex align-items-center"
+                :class="{ 
+                  'recently-created': item.type === 'file' && item.name === recentlyCreatedFile,
+                  'drag-over': isRootDirectory && isDragging && dragOverIndex === index && dragPosition === 'on',
+                  'being-dragged': isRootDirectory && isDragging && draggedIndex === index
+                }"
+                @dragover="onDragOver($event, index, item.type)"
+                @drop="onDrop($event, index, item.type)"
+                @dragenter="onDragEnter($event, index)"
+                @dragleave="onDragLeave($event)">
+                <i v-if="isRootDirectory" 
+                  class="bi bi-grip-vertical me-2 drag-handle"
+                  draggable="true"
+                  @dragstart="onDragStart($event, item, item.type, index)"
+                  @dragend="onDragEnd"
+                  @click.stop></i>
               <i v-if="item.type === 'folder'" class="bi bi-folder-fill me-3" style="color: #ffc107;"></i>
               <i v-else class="bi bi-file-text me-3" style="color: #0d6efd;"></i>
               <div class="flex-grow-1">
@@ -150,8 +164,29 @@
                 </div>
                 <small class="text-muted">{{ item.path }}</small>
               </div>
-              <i class="bi bi-chevron-right"></i>
+              <div v-if="item.type === 'file'" class="d-flex align-items-center gap-2">
+                <button @click.stop="showDeleteModal(item)" class="btn btn-outline-danger btn-sm" title="Delete File">
+                  <i class="bi bi-trash"></i>
+                </button>
+                <i class="bi bi-chevron-right"></i>
+              </div>
+              <i v-else class="bi bi-chevron-right"></i>
             </button>
+            
+            <!-- Drop zone indicator at the bottom of last item -->
+            <div v-if="isRootDirectory && isDragging && dragOverIndex === index && dragPosition === 'after'"
+              class="drop-zone-indicator drop-zone-after">
+              <div class="drop-line"></div>
+              <span class="drop-text">Drop here</span>
+            </div>
+          </div>
+          
+          <!-- Final drop zone at the very end of the list -->
+          <div v-if="isRootDirectory && isDragging && dragOverIndex === -2"
+            class="drop-zone-indicator drop-zone-after">
+            <div class="drop-line"></div>
+            <span class="drop-text">Drop at end</span>
+          </div>
           </div>
         </div>
       </div>
@@ -216,6 +251,56 @@
         </div>
       </div>
     </div>
+
+    <!-- Delete File Confirmation Modal -->
+    <div v-if="showDeleteFileModal" class="modal fade show d-block" tabindex="-1"
+      style="background-color: rgba(0,0,0,0.5);" @click.self="closeDeleteFileModal"
+      @keyup.escape="closeDeleteFileModal">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="bi bi-exclamation-triangle text-warning"></i>
+              Delete File
+            </h5>
+            <button @click="closeDeleteFileModal" type="button" class="btn-close"></button>
+          </div>
+          <div class="modal-body">
+            <div v-if="deleteFileError" class="alert alert-danger" role="alert">
+              {{ deleteFileError }}
+            </div>
+
+            <p class="mb-3">
+              Are you sure you want to delete the file <strong>{{ fileToDelete?.name }}</strong>?
+            </p>
+            <p class="text-danger mb-3">
+              <i class="bi bi-exclamation-circle"></i>
+              This action cannot be undone.
+            </p>
+
+            <div class="mb-3">
+              <label for="deleteCommitMsg" class="form-label">Commit Message</label>
+              <input v-model="deleteFileCommitMessage" type="text" class="form-control" id="deleteCommitMsg"
+                placeholder="Delete file" @keydown.enter="deleteFile">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button @click="closeDeleteFileModal" type="button" class="btn btn-secondary">Cancel</button>
+            <button @click="deleteFile" type="button" class="btn btn-danger"
+              :disabled="deletingFile">
+              <span v-if="deletingFile">
+                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                Deleting...
+              </span>
+              <span v-else>
+                <i class="bi bi-trash"></i>
+                Delete File
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -247,6 +332,9 @@ export default {
     const draggedItems = ref([])
     const originalOrder = ref([])
     const isDragging = ref(false)
+    const draggedIndex = ref(-1)
+    const dragOverIndex = ref(-1)
+    const dragPosition = ref('') // 'before', 'on', or 'after'
 
     // Filter state
     const filterText = ref('')
@@ -265,6 +353,13 @@ export default {
     const createFileError = ref('')
     const fileNameInput = ref(null)
     const triggeringWorkflow = ref(false)
+
+    // Delete file modal state
+    const showDeleteFileModal = ref(false)
+    const fileToDelete = ref(null)
+    const deleteFileCommitMessage = ref('Delete file')
+    const deletingFile = ref(false)
+    const deleteFileError = ref('')
 
     // Computed properties for filtered results
     const filteredFiles = computed(() => {
@@ -394,6 +489,9 @@ export default {
       try {
         loadingMessage.value = 'Loading repository configuration...'
         const token = localStorage.getItem('github_token')
+        console.log('GitHub token exists:', !!token)
+        console.log('Props:', { owner: props.owner, repo: props.repo, branch: props.branch })
+        
         const config = {
           headers: {
             'Authorization': `token ${token}`,
@@ -402,39 +500,58 @@ export default {
         }
 
         // Try to get specs.json from repository root, with branch
-        const response = await axios.get(
-          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/specs.json?ref=${props.branch}`,
-          config
-        )
+        const specsUrl = `https://api.github.com/repos/${props.owner}/${props.repo}/contents/specs.json?ref=${props.branch}`
+        console.log('Loading specs config from:', specsUrl)
+        
+        const response = await axios.get(specsUrl, config)
+        console.log('Specs config loaded successfully')
 
         // Decode base64 content
         const content = JSON.parse(atob(response.data.content))
         specsConfig.value = content
+        console.log('Specs config content:', content)
+        
         // Get spec_directory from the first item in specs array
         if (Array.isArray(content.specs) && content.specs.length > 0) {
-          specDirectory.value = content.specs[0].spec_directory || 'spec'
-          specTermsDirectory.value = content.specs[0].spec_terms_directory || 'terms-definitions'
+          // Remove leading ./ if present to normalize the path
+          const rawSpecDir = content.specs[0].spec_directory || 'spec'
+          specDirectory.value = rawSpecDir.replace(/^\.\//, '')
+          
+          const rawTermsDir = content.specs[0].spec_terms_directory || 'terms-definitions'
+          specTermsDirectory.value = rawTermsDir.replace(/^\.\//, '')
         } else {
           specDirectory.value = 'spec'
           specTermsDirectory.value = 'terms-definitions'
         }
         
+        console.log('Spec directory set to:', specDirectory.value)
+        console.log('Spec terms directory set to:', specTermsDirectory.value)
+        
         // Check if we have a directory query parameter to navigate to
         const targetDir = route.query.dir
         if (targetDir) {
           currentDirectory.value = decodeURIComponent(targetDir)
+          console.log('Using target directory from query:', currentDirectory.value)
         } else {
           currentDirectory.value = specDirectory.value
+          console.log('Using default spec directory:', currentDirectory.value)
         }
         
+        console.log('About to load spec files from:', currentDirectory.value)
         await loadSpecFiles(currentDirectory.value)
 
       } catch (err) {
         console.error('Error loading specs config:', err)
+        console.error('Error details:', {
+          status: err.response?.status,
+          statusText: err.response?.statusText,
+          data: err.response?.data
+        })
         if (checkAuthAndRedirect(err)) {
           return
         }
         if (err.response?.status === 404) {
+          console.log('specs.json not found, using default directory')
           error.value = 'specs.json file not found in repository root. Using default "specs" directory.'
           specDirectory.value = 'specs'
           specTermsDirectory.value = 'terms-definitions'
@@ -447,9 +564,10 @@ export default {
             currentDirectory.value = specDirectory.value
           }
           
+          console.log('Loading files from default directory:', currentDirectory.value)
           await loadSpecFiles(currentDirectory.value)
         } else {
-          error.value = 'Failed to load repository configuration.'
+          error.value = 'Failed to load repository configuration: ' + (err.response?.data?.message || err.message)
         }
       }
     }
@@ -483,11 +601,16 @@ export default {
       }
     }
 
-    const loadSpecFiles = async (directory) => {
+    const loadSpecFiles = async (directory, retryCount = 0) => {
       try {
         loading.value = true
-        loadingMessage.value = 'Loading directory contents...'
+        loadingMessage.value = retryCount > 0 ? 
+          `Refreshing directory contents (attempt ${retryCount + 1})...` : 
+          'Loading directory contents...'
         error.value = ''
+        
+        console.log('Loading files from directory:', directory, 'retry count:', retryCount)
+        
         const token = localStorage.getItem('github_token')
         const config = {
           headers: {
@@ -495,11 +618,26 @@ export default {
             'Accept': 'application/vnd.github.v3+json'
           }
         }
+        
+        // Only add cache-busting headers and timestamp for retry attempts
+        if (retryCount > 0) {
+          config.headers['Cache-Control'] = 'no-cache'
+          config.headers['If-None-Match'] = ''
+        }
+        
         // Get files and folders from the given directory, with branch
-        const response = await axios.get(
-          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${directory}?ref=${props.branch}`,
-          config
-        )
+        let url = `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${directory}?ref=${props.branch}`
+        
+        // Add timestamp to URL only for retry attempts to prevent caching
+        if (retryCount > 0) {
+          const timestamp = Date.now()
+          url += `&t=${timestamp}`
+        }
+        
+        console.log('Making API request to:', url)
+        const response = await axios.get(url, config)
+        console.log('API response received:', response.data?.length, 'items')
+        
         // Folders
         folders.value = response.data
           .filter(item => item.type === 'dir')
@@ -507,62 +645,82 @@ export default {
             name: folder.name,
             path: folder.path
           }))
+        console.log('Found folders:', folders.value.length)
+        
         // Files
         const textFileExtensions = ['.md']
         const filteredFiles = response.data
           .filter(file => file.type === 'file')
           .filter(file => textFileExtensions.some(ext => file.name.toLowerCase().endsWith(ext)))
+        
+        console.log('Found .md files:', filteredFiles.length)
 
-        // Check each file for external references and add hasExternalRefs property
-        // Process files in batches to avoid overwhelming the API
-        const batchSize = 5
-        const filesWithExternalCheck = []
-
-        loadingMessage.value = `Analyzing ${filteredFiles.length} files for external references...`
-
-        for (let i = 0; i < filteredFiles.length; i += batchSize) {
-          const batch = filteredFiles.slice(i, i + batchSize)
-          const currentBatch = Math.floor(i / batchSize) + 1
-          const totalBatches = Math.ceil(filteredFiles.length / batchSize)
-          
-          loadingMessage.value = `Checking batch ${currentBatch} of ${totalBatches} (${Math.min(i + batchSize, filteredFiles.length)}/${filteredFiles.length} files)...`
-          
-          const batchResults = await Promise.all(
-            batch.map(async (file) => {
-              const hasExternalRefs = await checkForExternalReferences(file.download_url, config)
-              
-              return {
-                name: file.name,
-                path: file.path,
-                sha: file.sha,
-                download_url: file.download_url,
-                hasExternalRefs: hasExternalRefs || file.name.includes('test') // Temporary test: mark files with 'test' in name
-              }
-            })
-          )
-          filesWithExternalCheck.push(...batchResults)
-        }
-
-        files.value = filesWithExternalCheck
+        // Simplified approach - just set the files without external reference checking for now
+        files.value = filteredFiles.map(file => ({
+          name: file.name,
+          path: file.path,
+          sha: file.sha,
+          download_url: file.download_url,
+          hasExternalRefs: false // Temporarily disabled to debug
+        }))
+        
+        console.log('Files set in reactive array:', files.value.length)
         currentDirectory.value = directory
+        
+        console.log('Current directory set to:', currentDirectory.value)
+        console.log('Is root directory:', isRootDirectory.value)
         
         // If we're in root directory and have specs config, apply saved order from markdown_paths
         if (isRootDirectory.value && specsConfig.value) {
+          console.log('Applying saved order...')
           applySavedOrder();
         }
       } catch (err) {
         console.error('Error loading spec files:', err)
+        console.error('Error details:', {
+          status: err.response?.status,
+          statusText: err.response?.statusText,
+          data: err.response?.data
+        })
         if (checkAuthAndRedirect(err)) {
           return
         }
         if (err.response?.status === 404) {
           error.value = `Spec directory "${directory}" not found in repository.`
         } else {
-          error.value = 'Failed to load spec files.'
+          error.value = 'Failed to load spec files: ' + (err.response?.data?.message || err.message)
         }
       } finally {
         loading.value = false
       }
+    }
+
+    // Helper function to refresh file list after deletion with retry logic
+    const refreshAfterDeletion = async (deletedFileName, maxRetries = 3) => {
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        if (attempt > 0) {
+          loadingMessage.value = `Verifying deletion... (attempt ${attempt + 1}/${maxRetries})`
+          // Wait before next attempt (simpler fixed delay)
+          const delay = 2000 // 2 seconds
+          console.log(`File ${deletedFileName} still visible, retrying in ${delay}ms...`)
+          await new Promise(resolve => setTimeout(resolve, delay))
+        }
+        
+        await loadSpecFiles(currentDirectory.value, attempt)
+        
+        // Check if the deleted file is still in the list
+        const fileStillExists = files.value.some(f => f.name === deletedFileName)
+        
+        if (!fileStillExists) {
+          // File successfully removed from the list
+          console.log(`File ${deletedFileName} successfully removed after ${attempt + 1} attempts`)
+          return
+        }
+      }
+      
+      // If we get here, the file is still visible after all retries
+      console.warn(`File ${deletedFileName} still visible after ${maxRetries} attempts. This may be due to GitHub API caching.`)
+      loadingMessage.value = ''
     }
 
     const openFile = (file) => {
@@ -639,22 +797,126 @@ export default {
           `${currentDirectory.value}/${newFileName.value}` :
           `${specDirectory.value}/${newFileName.value}`
 
-        // Close modal
-        closeCreateFileModal()
+        // Capture the values before closing the modal (which resets them)
+        const contentToPass = newFileContent.value || ''
+        const commitMessageToPass = newFileCommitMessage.value || 'Add new file'
 
         // Navigate to the editor with new file parameters
         const encodedPath = encodeURIComponent(filePath)
         const encodedDir = encodeURIComponent(currentDirectory.value || specDirectory.value)
-        const encodedContent = encodeURIComponent(newFileContent.value || '')
-        const encodedCommitMessage = encodeURIComponent(newFileCommitMessage.value || 'Add new file')
+        const encodedContent = encodeURIComponent(contentToPass)
+        const encodedCommitMessage = encodeURIComponent(commitMessageToPass)
         
-        router.push(`/editor/${props.owner}/${props.repo}/${props.branch}/${encodedPath}?dir=${encodedDir}&new=true&content=${encodedContent}&commitMessage=${encodedCommitMessage}`)
+        const finalUrl = `/editor/${props.owner}/${props.repo}/${props.branch}/${encodedPath}?dir=${encodedDir}&new=true&content=${encodedContent}&commitMessage=${encodedCommitMessage}`
+        
+        // Close modal AFTER capturing the values
+        closeCreateFileModal()
+        
+        router.push(finalUrl)
 
       } catch (err) {
         console.error('Error navigating to new file editor:', err)
         createFileError.value = 'Failed to open file editor. Please try again.'
       } finally {
         creatingFile.value = false
+      }
+    }
+
+    const showDeleteModal = (file) => {
+      fileToDelete.value = file
+      deleteFileCommitMessage.value = `Delete ${file.name}`
+      deleteFileError.value = ''
+      showDeleteFileModal.value = true
+    }
+
+    const closeDeleteFileModal = () => {
+      showDeleteFileModal.value = false
+      fileToDelete.value = null
+      deleteFileCommitMessage.value = 'Delete file'
+      deleteFileError.value = ''
+    }
+
+    const deleteFile = async () => {
+      if (!fileToDelete.value) return
+
+      // Store file info before starting deletion to prevent null reference errors
+      const fileInfo = {
+        name: fileToDelete.value.name,
+        path: fileToDelete.value.path
+      }
+
+      try {
+        deletingFile.value = true
+        deleteFileError.value = ''
+
+        const token = localStorage.getItem('github_token')
+        const config = {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        }
+
+        // Get the current file to get its SHA
+        const fileResponse = await axios.get(
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${fileInfo.path}?ref=${props.branch}`,
+          config
+        )
+
+        // Delete the file
+        const deleteData = {
+          message: deleteFileCommitMessage.value || `Delete ${fileInfo.name}`,
+          branch: props.branch,
+          sha: fileResponse.data.sha
+        }
+
+        await axios.delete(
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${fileInfo.path}`,
+          {
+            ...config,
+            data: deleteData
+          }
+        )
+
+        // Close modal
+        closeDeleteFileModal()
+
+        // Clear recently created file if it was the deleted file
+        if (recentlyCreatedFile.value === fileInfo.name) {
+          recentlyCreatedFile.value = ''
+          localStorage.removeItem('recentlyCreatedFile')
+        }
+
+        // Store the deleted file name for retry logic
+        const deletedFileName = fileInfo.name
+
+        // Optimistically remove the file from UI immediately for better UX
+        files.value = files.value.filter(f => f.name !== deletedFileName)
+        
+        // Also remove from dragged items if in root directory
+        if (isRootDirectory.value) {
+          draggedItems.value = draggedItems.value.filter(item => 
+            !(item.type === 'file' && item.name === deletedFileName)
+          )
+        }
+
+        // Refresh the file list with retry logic to handle GitHub API caching
+        // This runs in background to ensure consistency
+        setTimeout(() => {
+          refreshAfterDeletion(deletedFileName).catch(err => {
+            console.error('Error during post-deletion refresh:', err)
+            // If refresh fails, just log it - don't reload since the optimistic update already worked
+          })
+        }, 1000) // Start retry check after 1 second
+
+      } catch (err) {
+        console.error('Error deleting file:', err)
+        if (checkAuthAndRedirect(err)) {
+          return
+        }
+        deleteFileError.value = 'Failed to delete file. Please try again.'
+      } finally {
+        deletingFile.value = false
       }
     }
 
@@ -893,6 +1155,7 @@ export default {
       if (!isRootDirectory.value) return;
       
       isDragging.value = true;
+      draggedIndex.value = index;
       event.dataTransfer.effectAllowed = 'move';
       event.dataTransfer.setData('text/plain', JSON.stringify({ 
         item, 
@@ -902,11 +1165,60 @@ export default {
       event.target.style.opacity = '0.5';
     };
 
+    const onDragEnter = (event, index) => {
+      if (!isRootDirectory.value || !isDragging.value) return;
+      
+      event.preventDefault();
+      const rect = event.currentTarget.getBoundingClientRect();
+      const y = event.clientY - rect.top;
+      const height = rect.height;
+      
+      // Determine if we're in the top, middle, or bottom third
+      if (y < height * 0.33) {
+        dragPosition.value = 'before';
+      } else if (y > height * 0.67) {
+        dragPosition.value = 'after';
+      } else {
+        dragPosition.value = 'on';
+      }
+      
+      dragOverIndex.value = index;
+    };
+
+    const onDragLeave = (event) => {
+      if (!isRootDirectory.value || !isDragging.value) return;
+      
+      // Only clear if we're really leaving the element (not entering a child)
+      const rect = event.currentTarget.getBoundingClientRect();
+      const x = event.clientX;
+      const y = event.clientY;
+      
+      if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+        dragOverIndex.value = -1;
+        dragPosition.value = '';
+      }
+    };
+
     const onDragOver = (event, index, type) => {
       if (!isRootDirectory.value) return;
       
       event.preventDefault();
       event.dataTransfer.dropEffect = 'move';
+      
+      // Update position based on mouse position
+      const rect = event.currentTarget.getBoundingClientRect();
+      const y = event.clientY - rect.top;
+      const height = rect.height;
+      
+      if (y < height * 0.33) {
+        dragPosition.value = 'before';
+      } else if (y > height * 0.67) {
+        dragPosition.value = 'after';
+      } else {
+        dragPosition.value = 'on';
+      }
+      
+      dragOverIndex.value = index;
     };
 
     const onDrop = (event, dropIndex, dropType) => {
@@ -915,22 +1227,34 @@ export default {
       event.preventDefault();
       
       const dragData = JSON.parse(event.dataTransfer.getData('text/plain'));
-      const draggedItem = dragData.item;
-      const draggedType = dragData.type;
       const originalIndex = dragData.originalIndex;
       
-      if (originalIndex !== dropIndex) {
+      // Calculate the actual target index based on position
+      let targetIndex = dropIndex;
+      if (dragPosition.value === 'after') {
+        targetIndex = dropIndex + 1;
+      } else if (dragPosition.value === 'before') {
+        targetIndex = dropIndex;
+      } else {
+        // 'on' position - place after the target item
+        targetIndex = dropIndex + 1;
+      }
+      
+      if (originalIndex !== targetIndex && Math.abs(originalIndex - targetIndex) > 0) {
         // Reorder the items
         const newItems = [...draggedItems.value];
         const [movedItem] = newItems.splice(originalIndex, 1);
         
         // Adjust target index if we removed an item before it
-        let targetIndex = dropIndex;
-        if (originalIndex < dropIndex) {
-          targetIndex--;
+        let adjustedTargetIndex = targetIndex;
+        if (originalIndex < targetIndex) {
+          adjustedTargetIndex--;
         }
         
-        newItems.splice(targetIndex, 0, movedItem);
+        // Ensure we don't go out of bounds
+        adjustedTargetIndex = Math.max(0, Math.min(adjustedTargetIndex, newItems.length));
+        
+        newItems.splice(adjustedTargetIndex, 0, movedItem);
         
         draggedItems.value = newItems;
         
@@ -952,14 +1276,92 @@ export default {
         
         hasUnsavedChanges.value = true;
       }
+      
+      // Clear drag state
+      dragOverIndex.value = -1;
+      dragPosition.value = '';
     };
 
     const onDragEnd = (event) => {
       event.target.style.opacity = '1';
+      // Clear all drag state
+      draggedIndex.value = -1;
+      dragOverIndex.value = -1;
+      dragPosition.value = '';
+      
       // Small delay to prevent click event from firing immediately after drag
       setTimeout(() => {
         isDragging.value = false;
       }, 100);
+    };
+
+    // Handle dragging over the list container (for dropping at the end)
+    const onListDragOver = (event) => {
+      if (!isRootDirectory.value || !isDragging.value) return;
+      
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+      
+      // Check if we're dragging over empty space at the bottom
+      const rect = event.currentTarget.getBoundingClientRect();
+      const y = event.clientY - rect.top;
+      const listItems = event.currentTarget.querySelectorAll('.position-relative');
+      
+      if (listItems.length > 0) {
+        const lastItem = listItems[listItems.length - 1];
+        const lastItemRect = lastItem.getBoundingClientRect();
+        const relativeY = event.clientY - lastItemRect.bottom;
+        
+        // If we're below the last item, show the end drop zone
+        if (relativeY > 10) {
+          dragOverIndex.value = -2; // Special value for end of list
+          dragPosition.value = 'end';
+        }
+      }
+    };
+
+    // Handle dropping at the end of the list
+    const onListDrop = (event) => {
+      if (!isRootDirectory.value || !isDragging.value) return;
+      
+      event.preventDefault();
+      
+      if (dragOverIndex.value === -2) {
+        // Drop at the end of the list
+        const dragData = JSON.parse(event.dataTransfer.getData('text/plain'));
+        const originalIndex = dragData.originalIndex;
+        const targetIndex = draggedItems.value.length; // End of list
+        
+        if (originalIndex !== targetIndex - 1) { // Don't move if already at the end
+          const newItems = [...draggedItems.value];
+          const [movedItem] = newItems.splice(originalIndex, 1);
+          newItems.push(movedItem); // Add to end
+          
+          draggedItems.value = newItems;
+          
+          // Update files and folders arrays to maintain consistency
+          const newFolders = [];
+          const newFiles = [];
+          
+          draggedItems.value.forEach(item => {
+            if (item.type === 'folder') {
+              newFolders.push({ name: item.name, path: item.path });
+            } else {
+              const { type, ...fileItem } = item;
+              newFiles.push(fileItem);
+            }
+          });
+          
+          folders.value = newFolders;
+          files.value = newFiles;
+          
+          hasUnsavedChanges.value = true;
+        }
+      }
+      
+      // Clear drag state
+      dragOverIndex.value = -1;
+      dragPosition.value = '';
     };
 
     const saveOrder = async () => {
@@ -1121,6 +1523,14 @@ export default {
       closeCreateFileModal,
       createNewFile,
       updateDefaultContent,
+      showDeleteModal,
+      closeDeleteFileModal,
+      deleteFile,
+      showDeleteFileModal,
+      fileToDelete,
+      deleteFileCommitMessage,
+      deletingFile,
+      deleteFileError,
       toggleDropdown,
       selectFilter,
       setFilter,
@@ -1134,10 +1544,17 @@ export default {
       isRootDirectory,
       hasUnsavedChanges,
       isDragging,
+      draggedIndex,
+      dragOverIndex,
+      dragPosition,
       onDragStart,
+      onDragEnter,
+      onDragLeave,
       onDragOver,
       onDrop,
       onDragEnd,
+      onListDragOver,
+      onListDrop,
       saveOrder
     }
   }
@@ -1209,25 +1626,122 @@ export default {
 }
 
 /* Drag and drop styles */
-.draggable {
-  cursor: move;
-}
-
 .drag-handle {
   color: #6c757d;
   cursor: grab;
+  padding: 0.25rem;
+  border-radius: 3px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.drag-handle:hover {
+  background-color: #e9ecef;
+  color: #495057;
 }
 
 .drag-handle:active {
   cursor: grabbing;
+  background-color: #dee2e6;
 }
 
-.list-group-item.draggable:hover .drag-handle {
-  color: #495057;
+/* Enhanced drag visual feedback */
+.list-group-item.being-dragged {
+  opacity: 0.5;
+  transform: scale(0.98);
+  transition: all 0.2s ease;
 }
 
-.list-group-item[draggable="true"]:hover {
-  background-color: #f8f9fa;
-  border-color: #0d6efd;
+.list-group-item.drag-over {
+  background-color: #e3f2fd !important;
+  border-color: #2196f3 !important;
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.3);
+  transform: scale(1.02);
+  transition: all 0.2s ease;
+}
+
+/* Drop zone indicators */
+.drop-zone-indicator {
+  position: relative;
+  height: 8px;
+  margin: 2px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.drop-zone-before {
+  margin-top: 0;
+  margin-bottom: 4px;
+}
+
+.drop-zone-after {
+  margin-top: 4px;
+  margin-bottom: 0;
+}
+
+.drop-line {
+  position: absolute;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, #2196f3, #4caf50);
+  border-radius: 2px;
+  box-shadow: 0 0 8px rgba(33, 150, 243, 0.6);
+  animation: pulse-line 1.5s ease-in-out infinite;
+}
+
+.drop-text {
+  background-color: #2196f3;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  z-index: 11;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  animation: pulse-text 1.5s ease-in-out infinite;
+}
+
+/* Animations */
+@keyframes pulse-line {
+  0%, 100% {
+    opacity: 0.8;
+    transform: scaleY(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleY(1.2);
+  }
+}
+
+@keyframes pulse-text {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Delete button styling - keep it subtle until hover */
+.btn-outline-danger.btn-sm {
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.list-group-item:hover .btn-outline-danger.btn-sm {
+  opacity: 1;
+}
+
+.list-group-item .btn-outline-danger.btn-sm {
+  border: none;
+  padding: 0.25rem 0.5rem;
+}
+
+.list-group-item .btn-outline-danger.btn-sm:hover {
+  background-color: #dc3545;
+  color: white;
 }
 </style>
