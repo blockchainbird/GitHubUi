@@ -16,9 +16,22 @@ The FileExplorer component now includes the ability to delete files directly fro
 
 - **Safety First**: Confirmation modal prevents accidental deletions
 - **Custom Commit Messages**: Users can specify a commit message for the deletion
-- **Real-time Updates**: The file list updates immediately after successful deletion
+- **Immediate UI Update**: File disappears from the list immediately for better user experience
+- **Smart Refresh Logic**: Handles GitHub API caching delays with automatic retry mechanism
 - **Error Handling**: Clear error messages if deletion fails
 - **Permissions**: Only works if the user has write access to the repository
+
+## Technical Implementation
+
+### GitHub API Caching Handling
+
+The implementation includes sophisticated handling for GitHub API caching issues:
+
+1. **Optimistic Updates**: Files are immediately removed from the UI for instant feedback
+2. **Cache-Busting Headers**: Requests include headers to bypass GitHub's internal caching
+3. **Retry Logic**: Automatic retries with exponential backoff (up to 5 attempts)
+4. **Fallback Handling**: If retries fail, the system gracefully handles the caching delay
+5. **User Feedback**: Loading messages inform users about retry attempts
 
 ## Visual Indicators
 

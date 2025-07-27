@@ -445,6 +445,9 @@ export default {
       try {
         loadingMessage.value = 'Loading repository configuration...'
         const token = localStorage.getItem('github_token')
+        console.log('GitHub token exists:', !!token)
+        console.log('Props:', { owner: props.owner, repo: props.repo, branch: props.branch })
+        
         const config = {
           headers: {
             'Authorization': `token ${token}`,
@@ -453,39 +456,58 @@ export default {
         }
 
         // Try to get specs.json from repository root, with branch
-        const response = await axios.get(
-          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/specs.json?ref=${props.branch}`,
-          config
-        )
+        const specsUrl = `https://api.github.com/repos/${props.owner}/${props.repo}/contents/specs.json?ref=${props.branch}`
+        console.log('Loading specs config from:', specsUrl)
+        
+        const response = await axios.get(specsUrl, config)
+        console.log('Specs config loaded successfully')
 
         // Decode base64 content
         const content = JSON.parse(atob(response.data.content))
         specsConfig.value = content
+        console.log('Specs config content:', content)
+        
         // Get spec_directory from the first item in specs array
         if (Array.isArray(content.specs) && content.specs.length > 0) {
-          specDirectory.value = content.specs[0].spec_directory || 'spec'
-          specTermsDirectory.value = content.specs[0].spec_terms_directory || 'terms-definitions'
+          // Remove leading ./ if present to normalize the path
+          const rawSpecDir = content.specs[0].spec_directory || 'spec'
+          specDirectory.value = rawSpecDir.replace(/^\.\//, '')
+          
+          const rawTermsDir = content.specs[0].spec_terms_directory || 'terms-definitions'
+          specTermsDirectory.value = rawTermsDir.replace(/^\.\//, '')
         } else {
           specDirectory.value = 'spec'
           specTermsDirectory.value = 'terms-definitions'
         }
         
+        console.log('Spec directory set to:', specDirectory.value)
+        console.log('Spec terms directory set to:', specTermsDirectory.value)
+        
         // Check if we have a directory query parameter to navigate to
         const targetDir = route.query.dir
         if (targetDir) {
           currentDirectory.value = decodeURIComponent(targetDir)
+          console.log('Using target directory from query:', currentDirectory.value)
         } else {
           currentDirectory.value = specDirectory.value
+          console.log('Using default spec directory:', currentDirectory.value)
         }
         
+        console.log('About to load spec files from:', currentDirectory.value)
         await loadSpecFiles(currentDirectory.value)
 
       } catch (err) {
         console.error('Error loading specs config:', err)
+        console.error('Error details:', {
+          status: err.response?.status,
+          statusText: err.response?.statusText,
+          data: err.response?.data
+        })
         if (checkAuthAndRedirect(err)) {
           return
         }
         if (err.response?.status === 404) {
+          console.log('specs.json not found, using default directory')
           error.value = 'specs.json file not found in repository root. Using default "specs" directory.'
           specDirectory.value = 'specs'
           specTermsDirectory.value = 'terms-definitions'
@@ -498,9 +520,10 @@ export default {
             currentDirectory.value = specDirectory.value
           }
           
+          console.log('Loading files from default directory:', currentDirectory.value)
           await loadSpecFiles(currentDirectory.value)
         } else {
-          error.value = 'Failed to load repository configuration.'
+          error.value = 'Failed to load repository configuration: ' + (err.response?.data?.message || err.message)
         }
       }
     }
@@ -534,11 +557,16 @@ export default {
       }
     }
 
-    const loadSpecFiles = async (directory) => {
+    const loadSpecFiles = async (directory, retryCount = 0) => {
       try {
         loading.value = true
-        loadingMessage.value = 'Loading directory contents...'
+        loadingMessage.value = retryCount > 0 ? 
+          `Refreshing directory contents (attempt ${retryCount + 1})...` : 
+          'Loading directory contents...'
         error.value = ''
+        
+        console.log('Loading files from directory:', directory, 'retry count:', retryCount)
+        
         const token = localStorage.getItem('github_token')
         const config = {
           headers: {
@@ -546,11 +574,26 @@ export default {
             'Accept': 'application/vnd.github.v3+json'
           }
         }
+        
+        // Only add cache-busting headers and timestamp for retry attempts
+        if (retryCount > 0) {
+          config.headers['Cache-Control'] = 'no-cache'
+          config.headers['If-None-Match'] = ''
+        }
+        
         // Get files and folders from the given directory, with branch
-        const response = await axios.get(
-          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${directory}?ref=${props.branch}`,
-          config
-        )
+        let url = `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${directory}?ref=${props.branch}`
+        
+        // Add timestamp to URL only for retry attempts to prevent caching
+        if (retryCount > 0) {
+          const timestamp = Date.now()
+          url += `&t=${timestamp}`
+        }
+        
+        console.log('Making API request to:', url)
+        const response = await axios.get(url, config)
+        console.log('API response received:', response.data?.length, 'items')
+        
         // Folders
         folders.value = response.data
           .filter(item => item.type === 'dir')
@@ -558,62 +601,82 @@ export default {
             name: folder.name,
             path: folder.path
           }))
+        console.log('Found folders:', folders.value.length)
+        
         // Files
         const textFileExtensions = ['.md']
         const filteredFiles = response.data
           .filter(file => file.type === 'file')
           .filter(file => textFileExtensions.some(ext => file.name.toLowerCase().endsWith(ext)))
+        
+        console.log('Found .md files:', filteredFiles.length)
 
-        // Check each file for external references and add hasExternalRefs property
-        // Process files in batches to avoid overwhelming the API
-        const batchSize = 5
-        const filesWithExternalCheck = []
-
-        loadingMessage.value = `Analyzing ${filteredFiles.length} files for external references...`
-
-        for (let i = 0; i < filteredFiles.length; i += batchSize) {
-          const batch = filteredFiles.slice(i, i + batchSize)
-          const currentBatch = Math.floor(i / batchSize) + 1
-          const totalBatches = Math.ceil(filteredFiles.length / batchSize)
-          
-          loadingMessage.value = `Checking batch ${currentBatch} of ${totalBatches} (${Math.min(i + batchSize, filteredFiles.length)}/${filteredFiles.length} files)...`
-          
-          const batchResults = await Promise.all(
-            batch.map(async (file) => {
-              const hasExternalRefs = await checkForExternalReferences(file.download_url, config)
-              
-              return {
-                name: file.name,
-                path: file.path,
-                sha: file.sha,
-                download_url: file.download_url,
-                hasExternalRefs: hasExternalRefs || file.name.includes('test') // Temporary test: mark files with 'test' in name
-              }
-            })
-          )
-          filesWithExternalCheck.push(...batchResults)
-        }
-
-        files.value = filesWithExternalCheck
+        // Simplified approach - just set the files without external reference checking for now
+        files.value = filteredFiles.map(file => ({
+          name: file.name,
+          path: file.path,
+          sha: file.sha,
+          download_url: file.download_url,
+          hasExternalRefs: false // Temporarily disabled to debug
+        }))
+        
+        console.log('Files set in reactive array:', files.value.length)
         currentDirectory.value = directory
+        
+        console.log('Current directory set to:', currentDirectory.value)
+        console.log('Is root directory:', isRootDirectory.value)
         
         // If we're in root directory and have specs config, apply saved order from markdown_paths
         if (isRootDirectory.value && specsConfig.value) {
+          console.log('Applying saved order...')
           applySavedOrder();
         }
       } catch (err) {
         console.error('Error loading spec files:', err)
+        console.error('Error details:', {
+          status: err.response?.status,
+          statusText: err.response?.statusText,
+          data: err.response?.data
+        })
         if (checkAuthAndRedirect(err)) {
           return
         }
         if (err.response?.status === 404) {
           error.value = `Spec directory "${directory}" not found in repository.`
         } else {
-          error.value = 'Failed to load spec files.'
+          error.value = 'Failed to load spec files: ' + (err.response?.data?.message || err.message)
         }
       } finally {
         loading.value = false
       }
+    }
+
+    // Helper function to refresh file list after deletion with retry logic
+    const refreshAfterDeletion = async (deletedFileName, maxRetries = 3) => {
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        if (attempt > 0) {
+          loadingMessage.value = `Verifying deletion... (attempt ${attempt + 1}/${maxRetries})`
+          // Wait before next attempt (simpler fixed delay)
+          const delay = 2000 // 2 seconds
+          console.log(`File ${deletedFileName} still visible, retrying in ${delay}ms...`)
+          await new Promise(resolve => setTimeout(resolve, delay))
+        }
+        
+        await loadSpecFiles(currentDirectory.value, attempt)
+        
+        // Check if the deleted file is still in the list
+        const fileStillExists = files.value.some(f => f.name === deletedFileName)
+        
+        if (!fileStillExists) {
+          // File successfully removed from the list
+          console.log(`File ${deletedFileName} successfully removed after ${attempt + 1} attempts`)
+          return
+        }
+      }
+      
+      // If we get here, the file is still visible after all retries
+      console.warn(`File ${deletedFileName} still visible after ${maxRetries} attempts. This may be due to GitHub API caching.`)
+      loadingMessage.value = ''
     }
 
     const openFile = (file) => {
@@ -726,6 +789,12 @@ export default {
     const deleteFile = async () => {
       if (!fileToDelete.value) return
 
+      // Store file info before starting deletion to prevent null reference errors
+      const fileInfo = {
+        name: fileToDelete.value.name,
+        path: fileToDelete.value.path
+      }
+
       try {
         deletingFile.value = true
         deleteFileError.value = ''
@@ -740,19 +809,19 @@ export default {
 
         // Get the current file to get its SHA
         const fileResponse = await axios.get(
-          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${fileToDelete.value.path}?ref=${props.branch}`,
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${fileInfo.path}?ref=${props.branch}`,
           config
         )
 
         // Delete the file
         const deleteData = {
-          message: deleteFileCommitMessage.value || `Delete ${fileToDelete.value.name}`,
+          message: deleteFileCommitMessage.value || `Delete ${fileInfo.name}`,
           branch: props.branch,
           sha: fileResponse.data.sha
         }
 
         await axios.delete(
-          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${fileToDelete.value.path}`,
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${fileInfo.path}`,
           {
             ...config,
             data: deleteData
@@ -762,22 +831,33 @@ export default {
         // Close modal
         closeDeleteFileModal()
 
-        // Remove from current file list
-        files.value = files.value.filter(f => f.name !== fileToDelete.value.name)
+        // Clear recently created file if it was the deleted file
+        if (recentlyCreatedFile.value === fileInfo.name) {
+          recentlyCreatedFile.value = ''
+          localStorage.removeItem('recentlyCreatedFile')
+        }
+
+        // Store the deleted file name for retry logic
+        const deletedFileName = fileInfo.name
+
+        // Optimistically remove the file from UI immediately for better UX
+        files.value = files.value.filter(f => f.name !== deletedFileName)
         
         // Also remove from dragged items if in root directory
         if (isRootDirectory.value) {
           draggedItems.value = draggedItems.value.filter(item => 
-            !(item.type === 'file' && item.name === fileToDelete.value.name)
+            !(item.type === 'file' && item.name === deletedFileName)
           )
-          hasUnsavedChanges.value = true // Mark as changed since we removed an item
         }
 
-        // Clear recently created file if it was the deleted file
-        if (recentlyCreatedFile.value === fileToDelete.value.name) {
-          recentlyCreatedFile.value = ''
-          localStorage.removeItem('recentlyCreatedFile')
-        }
+        // Refresh the file list with retry logic to handle GitHub API caching
+        // This runs in background to ensure consistency
+        setTimeout(() => {
+          refreshAfterDeletion(deletedFileName).catch(err => {
+            console.error('Error during post-deletion refresh:', err)
+            // If refresh fails, just log it - don't reload since the optimistic update already worked
+          })
+        }, 1000) // Start retry check after 1 second
 
       } catch (err) {
         console.error('Error deleting file:', err)
