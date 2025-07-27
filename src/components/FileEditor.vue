@@ -1283,11 +1283,12 @@ export default {
       const basePath = import.meta.env.VITE_BASE_PATH || '/';
       const proxyPath = basePath.endsWith('/') ? basePath + 'proxy.php?url=' : basePath + '/proxy.php?url=';
       const corsProxies = [
-        proxyPath,
-        'https://api.allorigins.win/raw?url=',
-        'https://corsproxy.io/?',
-        'https://api.codetabs.com/v1/proxy?quest=',
-        'https://thingproxy.freeboard.io/fetch/'
+        proxyPath
+        // ,
+        // 'https://api.allorigins.win/raw?url=',
+        // 'https://corsproxy.io/?',
+        // 'https://api.codetabs.com/v1/proxy?quest=',
+        // 'https://thingproxy.freeboard.io/fetch/'
       ]
 
       for (const spec of externalSpecs) {
