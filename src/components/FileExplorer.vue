@@ -109,22 +109,35 @@
             </p>
           </div>
 
-          <div v-else class="list-group list-group-flush">
+          <div v-else class="list-group list-group-flush"
+            @dragover="onListDragOver"
+            @drop="onListDrop">
             <!-- Show items in their dragged order -->
-            <button v-for="(item, index) in orderedItems" :key="item.path" 
-              @click="item.type === 'folder' ? openFolder(item) : openFile(item)"
-              class="list-group-item list-group-item-action d-flex align-items-center"
-              :class="{ 
-                'recently-created': item.type === 'file' && item.name === recentlyCreatedFile
-              }"
-              @dragover="onDragOver($event, index, item.type)"
-              @drop="onDrop($event, index, item.type)">
-              <i v-if="isRootDirectory" 
-                class="bi bi-grip-vertical me-2 drag-handle"
-                draggable="true"
-                @dragstart="onDragStart($event, item, item.type, index)"
-                @dragend="onDragEnd"
-                @click.stop></i>
+            <div v-for="(item, index) in orderedItems" :key="item.path" class="position-relative">
+              <!-- Drop zone indicator at the top -->
+              <div v-if="isRootDirectory && isDragging && dragOverIndex === index && dragPosition === 'before'"
+                class="drop-zone-indicator drop-zone-before">
+                <div class="drop-line"></div>
+                <span class="drop-text">Drop here</span>
+              </div>
+              
+              <button @click="item.type === 'folder' ? openFolder(item) : openFile(item)"
+                class="list-group-item list-group-item-action d-flex align-items-center"
+                :class="{ 
+                  'recently-created': item.type === 'file' && item.name === recentlyCreatedFile,
+                  'drag-over': isRootDirectory && isDragging && dragOverIndex === index && dragPosition === 'on',
+                  'being-dragged': isRootDirectory && isDragging && draggedIndex === index
+                }"
+                @dragover="onDragOver($event, index, item.type)"
+                @drop="onDrop($event, index, item.type)"
+                @dragenter="onDragEnter($event, index)"
+                @dragleave="onDragLeave($event)">
+                <i v-if="isRootDirectory" 
+                  class="bi bi-grip-vertical me-2 drag-handle"
+                  draggable="true"
+                  @dragstart="onDragStart($event, item, item.type, index)"
+                  @dragend="onDragEnd"
+                  @click.stop></i>
               <i v-if="item.type === 'folder'" class="bi bi-folder-fill me-3" style="color: #ffc107;"></i>
               <i v-else class="bi bi-file-text me-3" style="color: #0d6efd;"></i>
               <div class="flex-grow-1">
@@ -148,6 +161,21 @@
               </div>
               <i v-else class="bi bi-chevron-right"></i>
             </button>
+            
+            <!-- Drop zone indicator at the bottom of last item -->
+            <div v-if="isRootDirectory && isDragging && dragOverIndex === index && dragPosition === 'after'"
+              class="drop-zone-indicator drop-zone-after">
+              <div class="drop-line"></div>
+              <span class="drop-text">Drop here</span>
+            </div>
+          </div>
+          
+          <!-- Final drop zone at the very end of the list -->
+          <div v-if="isRootDirectory && isDragging && dragOverIndex === -2"
+            class="drop-zone-indicator drop-zone-after">
+            <div class="drop-line"></div>
+            <span class="drop-text">Drop at end</span>
+          </div>
           </div>
         </div>
       </div>
@@ -293,6 +321,9 @@ export default {
     const draggedItems = ref([])
     const originalOrder = ref([])
     const isDragging = ref(false)
+    const draggedIndex = ref(-1)
+    const dragOverIndex = ref(-1)
+    const dragPosition = ref('') // 'before', 'on', or 'after'
 
     // Filter state
     const filterText = ref('')
@@ -1034,6 +1065,7 @@ export default {
       if (!isRootDirectory.value) return;
       
       isDragging.value = true;
+      draggedIndex.value = index;
       event.dataTransfer.effectAllowed = 'move';
       event.dataTransfer.setData('text/plain', JSON.stringify({ 
         item, 
@@ -1043,11 +1075,60 @@ export default {
       event.target.style.opacity = '0.5';
     };
 
+    const onDragEnter = (event, index) => {
+      if (!isRootDirectory.value || !isDragging.value) return;
+      
+      event.preventDefault();
+      const rect = event.currentTarget.getBoundingClientRect();
+      const y = event.clientY - rect.top;
+      const height = rect.height;
+      
+      // Determine if we're in the top, middle, or bottom third
+      if (y < height * 0.33) {
+        dragPosition.value = 'before';
+      } else if (y > height * 0.67) {
+        dragPosition.value = 'after';
+      } else {
+        dragPosition.value = 'on';
+      }
+      
+      dragOverIndex.value = index;
+    };
+
+    const onDragLeave = (event) => {
+      if (!isRootDirectory.value || !isDragging.value) return;
+      
+      // Only clear if we're really leaving the element (not entering a child)
+      const rect = event.currentTarget.getBoundingClientRect();
+      const x = event.clientX;
+      const y = event.clientY;
+      
+      if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+        dragOverIndex.value = -1;
+        dragPosition.value = '';
+      }
+    };
+
     const onDragOver = (event, index, type) => {
       if (!isRootDirectory.value) return;
       
       event.preventDefault();
       event.dataTransfer.dropEffect = 'move';
+      
+      // Update position based on mouse position
+      const rect = event.currentTarget.getBoundingClientRect();
+      const y = event.clientY - rect.top;
+      const height = rect.height;
+      
+      if (y < height * 0.33) {
+        dragPosition.value = 'before';
+      } else if (y > height * 0.67) {
+        dragPosition.value = 'after';
+      } else {
+        dragPosition.value = 'on';
+      }
+      
+      dragOverIndex.value = index;
     };
 
     const onDrop = (event, dropIndex, dropType) => {
@@ -1056,22 +1137,34 @@ export default {
       event.preventDefault();
       
       const dragData = JSON.parse(event.dataTransfer.getData('text/plain'));
-      const draggedItem = dragData.item;
-      const draggedType = dragData.type;
       const originalIndex = dragData.originalIndex;
       
-      if (originalIndex !== dropIndex) {
+      // Calculate the actual target index based on position
+      let targetIndex = dropIndex;
+      if (dragPosition.value === 'after') {
+        targetIndex = dropIndex + 1;
+      } else if (dragPosition.value === 'before') {
+        targetIndex = dropIndex;
+      } else {
+        // 'on' position - place after the target item
+        targetIndex = dropIndex + 1;
+      }
+      
+      if (originalIndex !== targetIndex && Math.abs(originalIndex - targetIndex) > 0) {
         // Reorder the items
         const newItems = [...draggedItems.value];
         const [movedItem] = newItems.splice(originalIndex, 1);
         
         // Adjust target index if we removed an item before it
-        let targetIndex = dropIndex;
-        if (originalIndex < dropIndex) {
-          targetIndex--;
+        let adjustedTargetIndex = targetIndex;
+        if (originalIndex < targetIndex) {
+          adjustedTargetIndex--;
         }
         
-        newItems.splice(targetIndex, 0, movedItem);
+        // Ensure we don't go out of bounds
+        adjustedTargetIndex = Math.max(0, Math.min(adjustedTargetIndex, newItems.length));
+        
+        newItems.splice(adjustedTargetIndex, 0, movedItem);
         
         draggedItems.value = newItems;
         
@@ -1093,14 +1186,92 @@ export default {
         
         hasUnsavedChanges.value = true;
       }
+      
+      // Clear drag state
+      dragOverIndex.value = -1;
+      dragPosition.value = '';
     };
 
     const onDragEnd = (event) => {
       event.target.style.opacity = '1';
+      // Clear all drag state
+      draggedIndex.value = -1;
+      dragOverIndex.value = -1;
+      dragPosition.value = '';
+      
       // Small delay to prevent click event from firing immediately after drag
       setTimeout(() => {
         isDragging.value = false;
       }, 100);
+    };
+
+    // Handle dragging over the list container (for dropping at the end)
+    const onListDragOver = (event) => {
+      if (!isRootDirectory.value || !isDragging.value) return;
+      
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+      
+      // Check if we're dragging over empty space at the bottom
+      const rect = event.currentTarget.getBoundingClientRect();
+      const y = event.clientY - rect.top;
+      const listItems = event.currentTarget.querySelectorAll('.position-relative');
+      
+      if (listItems.length > 0) {
+        const lastItem = listItems[listItems.length - 1];
+        const lastItemRect = lastItem.getBoundingClientRect();
+        const relativeY = event.clientY - lastItemRect.bottom;
+        
+        // If we're below the last item, show the end drop zone
+        if (relativeY > 10) {
+          dragOverIndex.value = -2; // Special value for end of list
+          dragPosition.value = 'end';
+        }
+      }
+    };
+
+    // Handle dropping at the end of the list
+    const onListDrop = (event) => {
+      if (!isRootDirectory.value || !isDragging.value) return;
+      
+      event.preventDefault();
+      
+      if (dragOverIndex.value === -2) {
+        // Drop at the end of the list
+        const dragData = JSON.parse(event.dataTransfer.getData('text/plain'));
+        const originalIndex = dragData.originalIndex;
+        const targetIndex = draggedItems.value.length; // End of list
+        
+        if (originalIndex !== targetIndex - 1) { // Don't move if already at the end
+          const newItems = [...draggedItems.value];
+          const [movedItem] = newItems.splice(originalIndex, 1);
+          newItems.push(movedItem); // Add to end
+          
+          draggedItems.value = newItems;
+          
+          // Update files and folders arrays to maintain consistency
+          const newFolders = [];
+          const newFiles = [];
+          
+          draggedItems.value.forEach(item => {
+            if (item.type === 'folder') {
+              newFolders.push({ name: item.name, path: item.path });
+            } else {
+              const { type, ...fileItem } = item;
+              newFiles.push(fileItem);
+            }
+          });
+          
+          folders.value = newFolders;
+          files.value = newFiles;
+          
+          hasUnsavedChanges.value = true;
+        }
+      }
+      
+      // Clear drag state
+      dragOverIndex.value = -1;
+      dragPosition.value = '';
     };
 
     const saveOrder = async () => {
@@ -1281,10 +1452,17 @@ export default {
       isRootDirectory,
       hasUnsavedChanges,
       isDragging,
+      draggedIndex,
+      dragOverIndex,
+      dragPosition,
       onDragStart,
+      onDragEnter,
+      onDragLeave,
       onDragOver,
       onDrop,
       onDragEnd,
+      onListDragOver,
+      onListDrop,
       saveOrder
     }
   }
@@ -1372,6 +1550,87 @@ export default {
 .drag-handle:active {
   cursor: grabbing;
   background-color: #dee2e6;
+}
+
+/* Enhanced drag visual feedback */
+.list-group-item.being-dragged {
+  opacity: 0.5;
+  transform: scale(0.98);
+  transition: all 0.2s ease;
+}
+
+.list-group-item.drag-over {
+  background-color: #e3f2fd !important;
+  border-color: #2196f3 !important;
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.3);
+  transform: scale(1.02);
+  transition: all 0.2s ease;
+}
+
+/* Drop zone indicators */
+.drop-zone-indicator {
+  position: relative;
+  height: 8px;
+  margin: 2px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.drop-zone-before {
+  margin-top: 0;
+  margin-bottom: 4px;
+}
+
+.drop-zone-after {
+  margin-top: 4px;
+  margin-bottom: 0;
+}
+
+.drop-line {
+  position: absolute;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, #2196f3, #4caf50);
+  border-radius: 2px;
+  box-shadow: 0 0 8px rgba(33, 150, 243, 0.6);
+  animation: pulse-line 1.5s ease-in-out infinite;
+}
+
+.drop-text {
+  background-color: #2196f3;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  z-index: 11;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  animation: pulse-text 1.5s ease-in-out infinite;
+}
+
+/* Animations */
+@keyframes pulse-line {
+  0%, 100% {
+    opacity: 0.8;
+    transform: scaleY(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleY(1.2);
+  }
+}
+
+@keyframes pulse-text {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  }
 }
 
 /* Delete button styling - keep it subtle until hover */
