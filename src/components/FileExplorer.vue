@@ -832,6 +832,69 @@ export default {
       loadingMessage.value = ''
     }
 
+    // Helper function to refresh file list after creation with retry logic
+    const refreshAfterCreation = async (createdFileName, maxRetries = 5) => {
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        if (attempt > 0) {
+          loadingMessage.value = `Looking for new file... (attempt ${attempt + 1}/${maxRetries})`
+          // Wait before next attempt with increasing delay
+          const delay = Math.min(1000 + (attempt * 1000), 5000) // 1s, 2s, 3s, 4s, 5s max
+          console.log(`File ${createdFileName} not visible yet, retrying in ${delay}ms...`)
+          await new Promise(resolve => setTimeout(resolve, delay))
+        }
+        
+        await loadSpecFiles(currentDirectory.value, attempt)
+        
+        // Check if the created file is now in the list
+        const fileExists = files.value.some(f => f.name === createdFileName)
+        
+        if (fileExists) {
+          // File successfully found in the list
+          console.log(`File ${createdFileName} successfully found after ${attempt + 1} attempts`)
+          recentlyCreatedFile.value = createdFileName
+          loadingMessage.value = ''
+          return
+        }
+      }
+      
+      // If we get here, the file is still not visible after all retries
+      console.warn(`File ${createdFileName} still not visible after ${maxRetries} attempts. This may be due to GitHub API caching.`)
+      loadingMessage.value = ''
+    }
+
+    // Helper function to refresh file list after rename (publish/unpublish) with retry logic
+    const refreshAfterRename = async (renameInfo, maxRetries = 5) => {
+      const { oldName, newName, action } = renameInfo
+      
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        if (attempt > 0) {
+          loadingMessage.value = `Verifying ${action} operation... (attempt ${attempt + 1}/${maxRetries})`
+          // Wait before next attempt with increasing delay
+          const delay = Math.min(1000 + (attempt * 1000), 5000) // 1s, 2s, 3s, 4s, 5s max
+          console.log(`File rename from ${oldName} to ${newName} not reflected yet, retrying in ${delay}ms...`)
+          await new Promise(resolve => setTimeout(resolve, delay))
+        }
+        
+        await loadSpecFiles(currentDirectory.value, attempt)
+        
+        // Check if the rename was successful: old file gone, new file present
+        const oldFileExists = files.value.some(f => f.name === oldName)
+        const newFileExists = files.value.some(f => f.name === newName)
+        
+        if (!oldFileExists && newFileExists) {
+          // Rename successfully completed
+          console.log(`File rename from ${oldName} to ${newName} successfully completed after ${attempt + 1} attempts`)
+          recentlyCreatedFile.value = newName
+          loadingMessage.value = ''
+          return
+        }
+      }
+      
+      // If we get here, the rename is still not reflected after all retries
+      console.warn(`File rename from ${oldName} to ${newName} still not reflected after ${maxRetries} attempts. This may be due to GitHub API caching.`)
+      loadingMessage.value = ''
+    }
+
     const openFile = (file) => {
       // Don't navigate if we're in the middle of a drag operation
       if (isDragging.value) return;
@@ -1338,11 +1401,40 @@ export default {
     const handleVisibilityChange = () => {
       if (!document.hidden && route.path.includes('/files/') && (currentDirectory.value || specDirectory.value)) {
         console.log('Page became visible, checking if we need to refresh file list...')
+        
+        // Check if we have a recently renamed file (publish/unpublish operation)
+        const storedRenameInfo = localStorage.getItem('recentlyRenamedFile')
+        if (storedRenameInfo) {
+          try {
+            const renameInfo = JSON.parse(storedRenameInfo)
+            console.log('Recently renamed file detected, refreshing with retry logic...', renameInfo)
+            refreshAfterRename(renameInfo).catch(err => {
+              console.error('Error during post-rename refresh:', err)
+              // Fallback to simple refresh if retry logic fails
+              loadSpecFiles(currentDirectory.value || specDirectory.value).catch(fallbackErr => {
+                console.error('Fallback refresh also failed:', fallbackErr)
+              })
+            })
+            // Clear the rename info after handling
+            localStorage.removeItem('recentlyRenamedFile')
+            return
+          } catch (parseErr) {
+            console.error('Error parsing recentlyRenamedFile:', parseErr)
+            localStorage.removeItem('recentlyRenamedFile')
+          }
+        }
+        
         // Check if we have a recently created file that might not be in the current list
         const storedRecentFile = localStorage.getItem('recentlyCreatedFile')
         if (storedRecentFile && !files.value.some(f => f.name === storedRecentFile)) {
-          console.log('Recently created file not found in list, refreshing...')
-          loadSpecFiles(currentDirectory.value || specDirectory.value)
+          console.log('Recently created file not found in list, refreshing with retry logic...')
+          refreshAfterCreation(storedRecentFile).catch(err => {
+            console.error('Error during post-creation refresh:', err)
+            // Fallback to simple refresh if retry logic fails
+            loadSpecFiles(currentDirectory.value || specDirectory.value).catch(fallbackErr => {
+              console.error('Fallback refresh also failed:', fallbackErr)
+            })
+          })
         }
       }
     }
@@ -1365,17 +1457,71 @@ export default {
           localStorage.removeItem('recentlyCreatedFile')
         }, 30000)
       }
+
+      // Check if we have a recently renamed file in localStorage
+      const storedRenameInfo = localStorage.getItem('recentlyRenamedFile')
+      if (storedRenameInfo) {
+        try {
+          const renameInfo = JSON.parse(storedRenameInfo)
+          console.log('Found recentlyRenamedFile on mount:', renameInfo)
+          // Auto-clear after 30 seconds to give user time to navigate back
+          setTimeout(() => {
+            localStorage.removeItem('recentlyRenamedFile')
+          }, 30000)
+        } catch (parseErr) {
+          console.error('Error parsing recentlyRenamedFile on mount:', parseErr)
+          localStorage.removeItem('recentlyRenamedFile')
+        }
+      }
     })
 
     // Watch for when user navigates back to this component  
     watch(() => route.path, (newPath, oldPath) => {
       // If we're on the file explorer route and the path changed
       if (newPath.includes('/files/') && oldPath && !oldPath.includes('/files/')) {
-        console.log('Navigating back to file explorer, refreshing file list...')
+        console.log('Navigating back to file explorer, refreshing file list with retry logic...')
         // Small delay to ensure component is fully mounted
         setTimeout(() => {
           if (currentDirectory.value || specDirectory.value) {
-            loadSpecFiles(currentDirectory.value || specDirectory.value);
+            
+            // Check if we have a recently renamed file (publish/unpublish operation)
+            const storedRenameInfo = localStorage.getItem('recentlyRenamedFile')
+            if (storedRenameInfo) {
+              try {
+                const renameInfo = JSON.parse(storedRenameInfo)
+                console.log('Recently renamed file detected in route watcher, refreshing...', renameInfo)
+                refreshAfterRename(renameInfo).catch(err => {
+                  console.error('Error during post-navigation refresh with rename logic:', err)
+                  // Fallback to simple refresh with retry
+                  loadSpecFiles(currentDirectory.value || specDirectory.value, 0).catch(fallbackErr => {
+                    console.error('Fallback refresh also failed:', fallbackErr)
+                  })
+                })
+                // Clear the rename info after handling
+                localStorage.removeItem('recentlyRenamedFile')
+                return
+              } catch (parseErr) {
+                console.error('Error parsing recentlyRenamedFile in route watcher:', parseErr)
+                localStorage.removeItem('recentlyRenamedFile')
+              }
+            }
+            
+            const storedRecentFile = localStorage.getItem('recentlyCreatedFile')
+            if (storedRecentFile) {
+              // If we have a recently created file, use creation retry logic
+              refreshAfterCreation(storedRecentFile).catch(err => {
+                console.error('Error during post-navigation refresh with creation logic:', err)
+                // Fallback to simple refresh with retry
+                loadSpecFiles(currentDirectory.value || specDirectory.value, 0).catch(fallbackErr => {
+                  console.error('Fallback refresh also failed:', fallbackErr)
+                })
+              })
+            } else {
+              // Use regular retry logic for general refresh
+              loadSpecFiles(currentDirectory.value || specDirectory.value, 0).catch(err => {
+                console.error('Error during post-navigation refresh:', err)
+              })
+            }
           }
         }, 200)
       }

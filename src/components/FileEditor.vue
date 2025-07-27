@@ -932,6 +932,11 @@ export default {
           // Track file creation completion
           trackFileOperation('create_complete', getFileExtension(decodedPath.value))
 
+          // Store recently created file info for FileExplorer to detect
+          const fileName = decodedPath.value.split('/').pop()
+          localStorage.setItem('recentlyCreatedFile', fileName)
+          console.log('Set recentlyCreatedFile in localStorage:', fileName)
+
           // Update the URL to remove new file query parameters
           const newRoute = `/editor/${props.owner}/${props.repo}/${props.branch}/${encodeURIComponent(decodedPath.value)}`
           const queryParams = new URLSearchParams()
@@ -985,6 +990,10 @@ export default {
         const pathParts = currentPath.split('/')
         const currentFilename = pathParts[pathParts.length - 1]
         
+        console.log('Current path:', currentPath)
+        console.log('Current filename:', currentFilename)
+        console.log('Current SHA:', fileSha.value)
+        
         // Toggle the underscore prefix
         let newFilename
         if (currentFilename.startsWith('_')) {
@@ -997,26 +1006,47 @@ export default {
         const action = currentFilename.startsWith('_') ? 'Published' : 'Unpublished'
         const commitMsg = `${action} ${currentFilename} -> ${newFilename}`
 
-        // First, create the file with the new name
+        console.log('New path:', newPath)
+        console.log('New filename:', newFilename)
+        console.log('Action:', action)
+
+        // First, get the current file info to ensure we have the latest SHA
+        const currentFileResponse = await axios.get(
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${currentPath}?ref=${props.branch}`,
+          config
+        )
+        
+        const latestSha = currentFileResponse.data.sha
+        console.log('Latest SHA from API:', latestSha)
+        console.log('SHA matches stored SHA:', latestSha === fileSha.value)
+        
+        // Update our stored SHA with the latest one
+        fileSha.value = latestSha
+
+        // Create the file with the new name
         const createData = {
           message: commitMsg,
           content: btoa(content.value),
           branch: props.branch
         }
 
+        console.log('Creating new file:', newPath)
         const createResponse = await axios.put(
           `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${newPath}`,
           createData,
           config
         )
 
-        // Then delete the old file
+        console.log('New file created successfully, new SHA:', createResponse.data.content.sha)
+
+        // Then delete the old file using the latest SHA
         const deleteData = {
           message: commitMsg,
-          sha: fileSha.value,
+          sha: latestSha,
           branch: props.branch
         }
 
+        console.log('Deleting old file:', currentPath, 'with SHA:', latestSha)
         await axios.delete(
           `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${currentPath}`,
           {
@@ -1025,6 +1055,8 @@ export default {
           }
         )
 
+        console.log('Old file deleted successfully')
+
         // Update the file SHA to the new file's SHA
         fileSha.value = createResponse.data.content.sha
         
@@ -1032,6 +1064,14 @@ export default {
         
         // Track the operation
         trackFileOperation(action.toLowerCase(), getFileExtension(newPath))
+
+        // Store both old and new filenames for FileExplorer to detect the rename
+        localStorage.setItem('recentlyRenamedFile', JSON.stringify({
+          oldName: currentFilename,
+          newName: newFilename,
+          action: action.toLowerCase()
+        }))
+        console.log('Set recentlyRenamedFile in localStorage:', { oldName: currentFilename, newName: newFilename, action: action.toLowerCase() })
 
         // Navigate to the new file path using correct route and encoding
         const encodedNewPath = encodeURIComponent(newPath)
@@ -1050,10 +1090,22 @@ export default {
 
       } catch (err) {
         console.error('Error toggling publish status:', err)
+        console.error('Error details:', {
+          status: err.response?.status,
+          statusText: err.response?.statusText,
+          data: err.response?.data,
+          headers: err.response?.headers
+        })
         if (checkAuthAndRedirect(err)) {
           return
         }
-        error.value = 'Failed to change publish status. Please try again.'
+        if (err.response?.status === 422) {
+          error.value = 'File state conflict. The file may have been modified. Please refresh and try again.'
+        } else if (err.response?.status === 409) {
+          error.value = 'A file with the target name already exists. Please check the repository.'
+        } else {
+          error.value = 'Failed to change publish status. Please try again.'
+        }
       } finally {
         saving.value = false
       }
