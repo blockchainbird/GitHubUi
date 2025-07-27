@@ -660,8 +660,13 @@ export default {
           
           // Decode the initial content and commit message from query params
           try {
-            newFileInitialContent.value = route.query.content ? decodeURIComponent(route.query.content) : ''
-            newFileCommitMessage.value = route.query.commitMessage ? decodeURIComponent(route.query.commitMessage) : 'Add new file'
+            // Handle content parameter - ensure we properly decode even empty content
+            newFileInitialContent.value = route.query.content !== undefined 
+              ? decodeURIComponent(route.query.content) 
+              : ''
+            newFileCommitMessage.value = route.query.commitMessage 
+              ? decodeURIComponent(route.query.commitMessage) 
+              : 'Add new file'
           } catch (decodeError) {
             console.warn('Error decoding query parameters:', decodeError)
             newFileInitialContent.value = ''
@@ -687,6 +692,11 @@ export default {
           // Force validation after a short delay to ensure everything is set up
           setTimeout(async () => {
             await validateContent()
+            
+            // Additional safeguard: re-set content if it was lost
+            if (!content.value && newFileInitialContent.value) {
+              content.value = newFileInitialContent.value
+            }
           }, 100)
           
           return
@@ -1643,12 +1653,16 @@ export default {
 
     // Watch for path changes (when navigating after publish/unpublish)
     watch(() => props.path, (newPath, oldPath) => {
-      if (newPath && newPath !== oldPath) {
-        // Reset state and reload content
-        loading.value = true
-        error.value = ''
-        success.value = ''
-        loadFileContent()
+      if (newPath && newPath !== oldPath && oldPath !== undefined) {
+        // Only reload content if this is a real path change (not initial load)
+        // and not for new files which should keep their initial content
+        if (route.query.new !== 'true') {
+          // Reset state and reload content
+          loading.value = true
+          error.value = ''
+          success.value = ''
+          loadFileContent()
+        }
       }
     })
 

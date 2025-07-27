@@ -753,16 +753,22 @@ export default {
           `${currentDirectory.value}/${newFileName.value}` :
           `${specDirectory.value}/${newFileName.value}`
 
-        // Close modal
-        closeCreateFileModal()
+        // Capture the values before closing the modal (which resets them)
+        const contentToPass = newFileContent.value || ''
+        const commitMessageToPass = newFileCommitMessage.value || 'Add new file'
 
         // Navigate to the editor with new file parameters
         const encodedPath = encodeURIComponent(filePath)
         const encodedDir = encodeURIComponent(currentDirectory.value || specDirectory.value)
-        const encodedContent = encodeURIComponent(newFileContent.value || '')
-        const encodedCommitMessage = encodeURIComponent(newFileCommitMessage.value || 'Add new file')
+        const encodedContent = encodeURIComponent(contentToPass)
+        const encodedCommitMessage = encodeURIComponent(commitMessageToPass)
         
-        router.push(`/editor/${props.owner}/${props.repo}/${props.branch}/${encodedPath}?dir=${encodedDir}&new=true&content=${encodedContent}&commitMessage=${encodedCommitMessage}`)
+        const finalUrl = `/editor/${props.owner}/${props.repo}/${props.branch}/${encodedPath}?dir=${encodedDir}&new=true&content=${encodedContent}&commitMessage=${encodedCommitMessage}`
+        
+        // Close modal AFTER capturing the values
+        closeCreateFileModal()
+        
+        router.push(finalUrl)
 
       } catch (err) {
         console.error('Error navigating to new file editor:', err)
