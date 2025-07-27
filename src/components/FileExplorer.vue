@@ -139,7 +139,13 @@
                 </div>
                 <small class="text-muted">{{ item.path }}</small>
               </div>
-              <i class="bi bi-chevron-right"></i>
+              <div v-if="item.type === 'file'" class="d-flex align-items-center gap-2">
+                <button @click.stop="showDeleteModal(item)" class="btn btn-outline-danger btn-sm" title="Delete File">
+                  <i class="bi bi-trash"></i>
+                </button>
+                <i class="bi bi-chevron-right"></i>
+              </div>
+              <i v-else class="bi bi-chevron-right"></i>
             </button>
           </div>
         </div>
@@ -205,6 +211,56 @@
         </div>
       </div>
     </div>
+
+    <!-- Delete File Confirmation Modal -->
+    <div v-if="showDeleteFileModal" class="modal fade show d-block" tabindex="-1"
+      style="background-color: rgba(0,0,0,0.5);" @click.self="closeDeleteFileModal"
+      @keyup.escape="closeDeleteFileModal">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="bi bi-exclamation-triangle text-warning"></i>
+              Delete File
+            </h5>
+            <button @click="closeDeleteFileModal" type="button" class="btn-close"></button>
+          </div>
+          <div class="modal-body">
+            <div v-if="deleteFileError" class="alert alert-danger" role="alert">
+              {{ deleteFileError }}
+            </div>
+
+            <p class="mb-3">
+              Are you sure you want to delete the file <strong>{{ fileToDelete?.name }}</strong>?
+            </p>
+            <p class="text-danger mb-3">
+              <i class="bi bi-exclamation-circle"></i>
+              This action cannot be undone.
+            </p>
+
+            <div class="mb-3">
+              <label for="deleteCommitMsg" class="form-label">Commit Message</label>
+              <input v-model="deleteFileCommitMessage" type="text" class="form-control" id="deleteCommitMsg"
+                placeholder="Delete file" @keydown.enter="deleteFile">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button @click="closeDeleteFileModal" type="button" class="btn btn-secondary">Cancel</button>
+            <button @click="deleteFile" type="button" class="btn btn-danger"
+              :disabled="deletingFile">
+              <span v-if="deletingFile">
+                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                Deleting...
+              </span>
+              <span v-else>
+                <i class="bi bi-trash"></i>
+                Delete File
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -253,6 +309,13 @@ export default {
     const creatingFile = ref(false)
     const createFileError = ref('')
     const fileNameInput = ref(null)
+
+    // Delete file modal state
+    const showDeleteFileModal = ref(false)
+    const fileToDelete = ref(null)
+    const deleteFileCommitMessage = ref('Delete file')
+    const deletingFile = ref(false)
+    const deleteFileError = ref('')
 
     // Computed properties for filtered results
     const filteredFiles = computed(() => {
@@ -646,6 +709,87 @@ export default {
       }
     }
 
+    const showDeleteModal = (file) => {
+      fileToDelete.value = file
+      deleteFileCommitMessage.value = `Delete ${file.name}`
+      deleteFileError.value = ''
+      showDeleteFileModal.value = true
+    }
+
+    const closeDeleteFileModal = () => {
+      showDeleteFileModal.value = false
+      fileToDelete.value = null
+      deleteFileCommitMessage.value = 'Delete file'
+      deleteFileError.value = ''
+    }
+
+    const deleteFile = async () => {
+      if (!fileToDelete.value) return
+
+      try {
+        deletingFile.value = true
+        deleteFileError.value = ''
+
+        const token = localStorage.getItem('github_token')
+        const config = {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        }
+
+        // Get the current file to get its SHA
+        const fileResponse = await axios.get(
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${fileToDelete.value.path}?ref=${props.branch}`,
+          config
+        )
+
+        // Delete the file
+        const deleteData = {
+          message: deleteFileCommitMessage.value || `Delete ${fileToDelete.value.name}`,
+          branch: props.branch,
+          sha: fileResponse.data.sha
+        }
+
+        await axios.delete(
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${fileToDelete.value.path}`,
+          {
+            ...config,
+            data: deleteData
+          }
+        )
+
+        // Close modal
+        closeDeleteFileModal()
+
+        // Remove from current file list
+        files.value = files.value.filter(f => f.name !== fileToDelete.value.name)
+        
+        // Also remove from dragged items if in root directory
+        if (isRootDirectory.value) {
+          draggedItems.value = draggedItems.value.filter(item => 
+            !(item.type === 'file' && item.name === fileToDelete.value.name)
+          )
+          hasUnsavedChanges.value = true // Mark as changed since we removed an item
+        }
+
+        // Clear recently created file if it was the deleted file
+        if (recentlyCreatedFile.value === fileToDelete.value.name) {
+          recentlyCreatedFile.value = ''
+          localStorage.removeItem('recentlyCreatedFile')
+        }
+
+      } catch (err) {
+        console.error('Error deleting file:', err)
+        if (checkAuthAndRedirect(err)) {
+          return
+        }
+        deleteFileError.value = 'Failed to delete file. Please try again.'
+      } finally {
+        deletingFile.value = false
+      }
+    }
+
     // Filter methods
     const toggleDropdown = () => {
       dropdownOpen.value = !dropdownOpen.value
@@ -1031,6 +1175,14 @@ export default {
       closeCreateFileModal,
       createNewFile,
       updateDefaultContent,
+      showDeleteModal,
+      closeDeleteFileModal,
+      deleteFile,
+      showDeleteFileModal,
+      fileToDelete,
+      deleteFileCommitMessage,
+      deletingFile,
+      deleteFileError,
       toggleDropdown,
       selectFilter,
       setFilter,
@@ -1137,5 +1289,25 @@ export default {
 .list-group-item[draggable="true"]:hover {
   background-color: #f8f9fa;
   border-color: #0d6efd;
+}
+
+/* Delete button styling - keep it subtle until hover */
+.btn-outline-danger.btn-sm {
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.list-group-item:hover .btn-outline-danger.btn-sm {
+  opacity: 1;
+}
+
+.list-group-item .btn-outline-danger.btn-sm {
+  border: none;
+  padding: 0.25rem 0.5rem;
+}
+
+.list-group-item .btn-outline-danger.btn-sm:hover {
+  background-color: #dc3545;
+  color: white;
 }
 </style>
