@@ -115,15 +115,16 @@
               @click="item.type === 'folder' ? openFolder(item) : openFile(item)"
               class="list-group-item list-group-item-action d-flex align-items-center"
               :class="{ 
-                'recently-created': item.type === 'file' && item.name === recentlyCreatedFile, 
-                'draggable': isRootDirectory 
+                'recently-created': item.type === 'file' && item.name === recentlyCreatedFile
               }"
-              :draggable="isRootDirectory"
-              @dragstart="onDragStart($event, item, item.type, index)"
               @dragover="onDragOver($event, index, item.type)"
-              @drop="onDrop($event, index, item.type)"
-              @dragend="onDragEnd">
-              <i v-if="isRootDirectory" class="bi bi-grip-vertical me-2 drag-handle"></i>
+              @drop="onDrop($event, index, item.type)">
+              <i v-if="isRootDirectory" 
+                class="bi bi-grip-vertical me-2 drag-handle"
+                draggable="true"
+                @dragstart="onDragStart($event, item, item.type, index)"
+                @dragend="onDragEnd"
+                @click.stop></i>
               <i v-if="item.type === 'folder'" class="bi bi-folder-fill me-3" style="color: #ffc107;"></i>
               <i v-else class="bi bi-file-text me-3" style="color: #0d6efd;"></i>
               <div class="flex-grow-1">
@@ -1355,26 +1356,22 @@ export default {
 }
 
 /* Drag and drop styles */
-.draggable {
-  cursor: move;
-}
-
 .drag-handle {
   color: #6c757d;
   cursor: grab;
+  padding: 0.25rem;
+  border-radius: 3px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.drag-handle:hover {
+  background-color: #e9ecef;
+  color: #495057;
 }
 
 .drag-handle:active {
   cursor: grabbing;
-}
-
-.list-group-item.draggable:hover .drag-handle {
-  color: #495057;
-}
-
-.list-group-item[draggable="true"]:hover {
-  background-color: #f8f9fa;
-  border-color: #0d6efd;
+  background-color: #dee2e6;
 }
 
 /* Delete button styling - keep it subtle until hover */
