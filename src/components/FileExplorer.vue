@@ -767,14 +767,21 @@ export default {
         
         console.log('Found .md files:', filteredFiles.length)
 
-        // Simplified approach - just set the files without external reference checking for now
-        files.value = filteredFiles.map(file => ({
-          name: file.name,
-          path: file.path,
-          sha: file.sha,
-          download_url: file.download_url,
-          hasExternalRefs: false // Temporarily disabled to debug
-        }))
+        // Check each file for external references
+        const filesWithExternalRefs = await Promise.all(
+          filteredFiles.map(async (file) => {
+            const hasExternalRefs = await checkForExternalReferences(file.download_url, config)
+            return {
+              name: file.name,
+              path: file.path,
+              sha: file.sha,
+              download_url: file.download_url,
+              hasExternalRefs
+            }
+          })
+        )
+
+        files.value = filesWithExternalRefs
         
         console.log('Files set in reactive array:', files.value.length)
         currentDirectory.value = directory
