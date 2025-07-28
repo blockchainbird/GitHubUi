@@ -69,10 +69,13 @@
                             Spec ID is required
                           </div>
                         </td>
-                        <td>
+                        <td class="d-flex align-items-center gap-2">
                           <input v-model="spec.gh_page" type="url" class="form-control form-control-sm"
                             placeholder="https://example.github.io/spec/" @input="markAsChanged"
                             :class="{ 'is-invalid': !spec.gh_page || !isValidUrl(spec.gh_page) }">
+                          <a v-if="isValidUrl(spec.gh_page)" :href="spec.gh_page" target="_blank" rel="noopener" class="btn btn-link btn-sm px-1" title="Open GitHub Page">
+                            <i class="bi bi-box-arrow-up-right"></i>
+                          </a>
                           <div v-if="!spec.gh_page" class="invalid-feedback">
                             GitHub Page URL is required
                           </div>
@@ -81,9 +84,14 @@
                           </div>
                         </td>
                         <td>
-                          <input v-model="spec.url" type="url" class="form-control form-control-sm"
-                            placeholder="https://github.com/user/repo" @input="markAsChanged"
-                            :class="{ 'is-invalid': !spec.url || !isValidUrl(spec.url) }">
+                          <div class="d-flex align-items-center gap-2">
+                            <input v-model="spec.url" type="url" class="form-control form-control-sm"
+                              placeholder="https://github.com/user/repo" @input="markAsChanged"
+                              :class="{ 'is-invalid': !spec.url || !isValidUrl(spec.url) }">
+                            <a v-if="isValidUrl(spec.url)" :href="spec.url" target="_blank" rel="noopener" class="btn btn-link btn-sm px-1" title="Open Repository">
+                              <i class="bi bi-box-arrow-up-right"></i>
+                            </a>
+                          </div>
                           <div v-if="!spec.url" class="invalid-feedback">
                             Repository URL is required
                           </div>
