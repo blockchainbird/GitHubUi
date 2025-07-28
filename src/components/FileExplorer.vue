@@ -915,7 +915,10 @@ export default {
       localStorage.removeItem('recentlyCreatedFile') // Also clear from localStorage
       hasUnsavedChanges.value = false // Reset unsaved changes when navigating away from root
       draggedItems.value = [] // Reset drag items when leaving root
-      loadSpecFiles(folder.path)
+      
+      // Update URL with new directory
+      const encodedDir = encodeURIComponent(folder.path)
+      router.push(`/files/${props.owner}/${props.repo}/${props.branch}?dir=${encodedDir}`)
     }
 
     const showCreateModal = async () => {
@@ -1540,6 +1543,15 @@ export default {
       }
     })
 
+    // Watch for query parameter changes (directory navigation)
+    watch(() => route.query.dir, (newDir, oldDir) => {
+      if (newDir && newDir !== oldDir && currentDirectory.value !== newDir) {
+        console.log('Query dir parameter changed, loading new directory:', newDir)
+        const decodedDir = decodeURIComponent(newDir)
+        loadSpecFiles(decodedDir)
+      }
+    })
+
     // Clean up event listener
     onUnmounted(() => {
       document.removeEventListener('click', handleClickOutside)
@@ -1559,16 +1571,25 @@ export default {
         if (normalizeDir(parent).startsWith(root)) {
           hasUnsavedChanges.value = false; // Reset unsaved changes when navigating
           draggedItems.value = []; // Reset drag items when navigating
-          loadSpecFiles(parent);
+          
+          // Update URL with new directory
+          const encodedDir = encodeURIComponent(parent)
+          router.push(`/files/${props.owner}/${props.repo}/${props.branch}?dir=${encodedDir}`)
         } else {
           hasUnsavedChanges.value = false; // Reset unsaved changes when navigating
           draggedItems.value = []; // Reset drag items when navigating
-          loadSpecFiles(root);
+          
+          // Update URL with root directory
+          const encodedDir = encodeURIComponent(root)
+          router.push(`/files/${props.owner}/${props.repo}/${props.branch}?dir=${encodedDir}`)
         }
       } else {
         hasUnsavedChanges.value = false; // Reset unsaved changes when navigating
         draggedItems.value = []; // Reset drag items when navigating
-        loadSpecFiles(root);
+        
+        // Update URL with root directory
+        const encodedDir = encodeURIComponent(root)
+        router.push(`/files/${props.owner}/${props.repo}/${props.branch}?dir=${encodedDir}`)
       }
     };
 
