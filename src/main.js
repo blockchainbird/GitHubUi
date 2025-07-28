@@ -70,11 +70,27 @@ router.afterEach((to) => {
 
 // Global error handler for axios
 import axios from 'axios'
+import { useRateLimit } from './composables/useRateLimit'
 
-// Add response interceptor to handle authentication errors globally
+// Initialize rate limit composable
+const { updateRateLimit } = useRateLimit()
+
+// Add response interceptor to handle authentication errors and rate limits globally
 axios.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Update rate limit info from GitHub API responses
+    if (response.config.url && response.config.url.includes('api.github.com')) {
+      updateRateLimit(response.headers)
+    }
+    return response
+  },
   (error) => {
+    // Update rate limit info even on errors if headers are present
+    if (error.response && error.response.config.url && 
+        error.response.config.url.includes('api.github.com')) {
+      updateRateLimit(error.response.headers)
+    }
+    
     if (error.response && (error.response.status === 401 || error.response.status === 403)) {
       // Token is invalid or expired, clear it and redirect to login
       localStorage.removeItem('github_token')

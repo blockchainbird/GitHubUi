@@ -57,6 +57,10 @@
             <i class="bi bi-heart-pulse"></i>
             Health Check
           </button>
+          <!-- API Rate Limit Indicator -->
+          <div class="nav-item d-flex align-items-center">
+            <RateLimitIndicator />
+          </div>
         </div>
       </div>
     </div>
@@ -102,10 +106,11 @@
 import { computed, ref, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Modal from './Modal.vue';
+import RateLimitIndicator from './RateLimitIndicator.vue';
 
 export default {
   name: 'MainNav',
-  components: { Modal },
+  components: { Modal, RateLimitIndicator },
   setup() {
     const route = useRoute();
     const router = useRouter();
@@ -302,6 +307,12 @@ export default {
     border-color: #0d6efd;
   }
 
+  .navbar-nav .nav-item {
+    margin: 0.25rem 0;
+    padding: 0.5rem 1rem;
+    justify-content: center;
+  }
+
   /* Animation for collapse - mobile only */
   .navbar-collapse {
     transition: all 0.3s ease;
@@ -321,6 +332,10 @@ export default {
 @media (min-width: 992px) {
   .navbar-nav {
     flex-direction: row;
+  }
+  
+  .navbar-nav .nav-item {
+    margin-left: 0.5rem;
   }
   
   /* Ensure navbar is always visible on desktop */
