@@ -149,13 +149,17 @@
                 <p class="mb-3">Your new Spec-Up-T project has been created and is ready to use.</p>
                 
                 <div class="d-flex justify-content-center gap-3">
-                  <a :href="createdRepoUrl" target="_blank" class="btn btn-primary">
+                  <button @click="openRepository" class="btn btn-primary">
+                    <i class="bi bi-folder-open"></i>
+                    Open Project Files
+                  </button>
+                  <a :href="createdRepoUrl" target="_blank" class="btn btn-outline-primary">
                     <i class="bi bi-github"></i>
-                    View Repository
+                    View on GitHub
                   </a>
-                  <a :href="`${createdRepoUrl}/settings/pages`" target="_blank" class="btn btn-outline-primary">
+                  <a :href="`${createdRepoUrl}/settings/pages`" target="_blank" class="btn btn-outline-secondary">
                     <i class="bi bi-gear"></i>
-                    Setup GitHub Pages
+                    Setup Pages
                   </a>
                   <button @click="createAnother" class="btn btn-outline-secondary">
                     <i class="bi bi-plus"></i>
@@ -164,35 +168,32 @@
                 </div>
               </div>
 
-              <!-- Next Steps -->
+              <!-- Quick Info -->
               <div class="card mt-4 text-start">
                 <div class="card-header">
                   <h6 class="mb-0">
-                    <i class="bi bi-list-check"></i>
-                    Next Steps
+                    <i class="bi bi-info-circle"></i>
+                    Your Spec-Up-T Project
                   </h6>
                 </div>
                 <div class="card-body">
-                  <ol class="list-group list-group-numbered list-group-flush">
-                    <li class="list-group-item d-flex justify-content-between align-items-start">
-                      <div class="ms-2 me-auto">
-                        <div class="fw-bold">Enable GitHub Pages</div>
-                        Go to Settings → Pages and enable GitHub Pages from the 'gh-pages' branch
-                      </div>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between align-items-start">
-                      <div class="ms-2 me-auto">
-                        <div class="fw-bold">Edit Your Specification</div>
-                        Clone the repository and start editing your specification files
-                      </div>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between align-items-start">
-                      <div class="ms-2 me-auto">
-                        <div class="fw-bold">Configure Build Settings</div>
-                        Review and customize the build configuration in specs.json
-                      </div>
-                    </li>
-                  </ol>
+                  <div class="row">
+                    <div class="col-md-6">
+                      <p class="mb-2"><strong>Repository:</strong> {{ projectForm.name }}</p>
+                      <p class="mb-2"><strong>Title:</strong> {{ projectForm.specTitle || projectForm.name }}</p>
+                      <p class="mb-2"><strong>Version:</strong> {{ projectForm.specVersion || '1.0.0' }}</p>
+                    </div>
+                    <div class="col-md-6">
+                      <p class="mb-2"><strong>Authors:</strong> {{ projectForm.authors || 'Not specified' }}</p>
+                      <p class="mb-2"><strong>Actions:</strong> {{ projectForm.enableActions ? 'Enabled' : 'Disabled' }}</p>
+                      <p class="mb-2"><strong>Visibility:</strong> {{ projectForm.isPrivate ? 'Private' : 'Public' }}</p>
+                    </div>
+                  </div>
+                  <div class="mt-3">
+                    <small class="text-muted">
+                      Click "Open Project Files" above to start editing your specification files, or visit GitHub to set up Pages deployment.
+                    </small>
+                  </div>
                 </div>
               </div>
             </div>
@@ -283,6 +284,22 @@ export default {
 
     const goBack = () => {
       router.push('/')
+    }
+
+    const openRepository = () => {
+      // Navigate to file explorer with the newly created repository
+      const user = JSON.parse(localStorage.getItem('github_user') || '{}')
+      if (user.login && projectForm.value.name) {
+        // Navigate to home page with repository loaded
+        router.push({
+          path: '/home',
+          query: {
+            repo: `${user.login}/${projectForm.value.name}`,
+            owner: user.login,
+            name: projectForm.value.name
+          }
+        })
+      }
     }
 
     // Helper function to check authentication
@@ -723,6 +740,7 @@ jobs:
       resetForm,
       createAnother,
       goBack,
+      openRepository,
       createProject
     }
   }

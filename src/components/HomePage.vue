@@ -178,8 +178,8 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, watchEffect } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import Modal from './Modal.vue'
 // import GoogleAnalyticsDemo from './GoogleAnalyticsDemo.vue'
@@ -196,6 +196,7 @@ export default {
   name: 'HomePage',
   setup() {
     const router = useRouter()
+    const route = useRoute()
     const owner = ref('')
     const repo = ref('')
     const branch = ref('main')
@@ -397,6 +398,14 @@ export default {
     // Load visited repositories when component mounts
     onMounted(() => {
       loadRepos()
+      
+      // Check for query parameters to auto-load a repository
+      if (route.query.owner && route.query.name) {
+        owner.value = route.query.owner
+        repo.value = route.query.name
+        // Automatically access the repository
+        accessRepository()
+      }
     })
 
     return {
