@@ -193,14 +193,10 @@
                     <div v-if="bulkImportMode === 'json'" class="mb-4">
                       <label for="jsonInput" class="form-label">External Specs JSON</label>
                       <textarea id="jsonInput" v-model="jsonInput" class="form-control font-monospace" 
-                        rows="8" placeholder='[
-  {
-    "external_spec": "toip1",
-    "gh_page": "https://example.github.io/spec/",
-    "url": "https://github.com/user/repo",
-    "terms_dir": "spec/terms-definitions"
-  }
-]'></textarea>
+                        rows="8" :readonly="false"
+                        :placeholder="jsonInputFocused ? '' : exampleJsonPlaceholder"
+                        @focus="jsonInputFocused = true" @blur="jsonInputFocused = false"
+                      ></textarea>
                       <div class="form-text">Paste a JSON array of external specifications</div>
                       <div v-if="jsonError" class="text-danger small mt-1">{{ jsonError }}</div>
                     </div>
@@ -339,6 +335,8 @@ export default {
     const urlError = ref('')
     const bulkImportLoading = ref(false)
     const bulkPreviewData = ref([])
+    const jsonInputFocused = ref(false)
+    const exampleJsonPlaceholder = '[\n  {\n    "external_spec": "toip1",\n    "gh_page": "https://example.github.io/spec/",\n    "url": "https://github.com/user/repo",\n    "terms_dir": "spec/terms-definitions"\n  }\n]'
 
     const resetNewSpec = () => {
       newSpec.value = {
@@ -720,6 +718,8 @@ export default {
       urlError,
       bulkImportLoading,
       bulkPreviewData,
+      jsonInputFocused,
+      exampleJsonPlaceholder,
       resetNewSpec,
       resetBulkImport,
       markAsChanged,
