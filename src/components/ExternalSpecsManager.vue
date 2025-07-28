@@ -196,9 +196,13 @@
                         rows="8" :readonly="false"
                         :placeholder="jsonInputFocused ? '' : exampleJsonPlaceholder"
                         @focus="jsonInputFocused = true" @blur="jsonInputFocused = false"
+                        @input="onJsonInputChange"
                       ></textarea>
-                      <div class="form-text">Paste a JSON array of external specifications</div>
+                      <div class="form-text">Paste a JSON array of external specifications - validation happens automatically</div>
                       <div v-if="jsonError" class="text-danger small mt-1">{{ jsonError }}</div>
+                      <div v-if="autoPreviewStatus" class="text-info small mt-1">
+                        <i class="bi bi-info-circle"></i> {{ autoPreviewStatus }}
+                      </div>
                     </div>
 
                     <!-- GitHub URL Tab -->
@@ -211,20 +215,30 @@
                     </div>
 
                     <!-- Import Actions -->
-                    <div class="d-flex justify-content-end gap-2">
-                      <button type="button" @click="resetBulkImport" class="btn btn-outline-secondary">
-                        Clear
-                      </button>
-                      <button type="button" @click="previewBulkImport" class="btn btn-outline-primary" 
-                        :disabled="bulkImportLoading">
-                        <i class="bi bi-eye"></i>
-                        {{ bulkImportLoading ? 'Loading...' : 'Preview' }}
-                      </button>
-                      <button type="button" @click="importBulkSpecs" class="btn btn-success" 
-                        :disabled="!bulkPreviewData.length || bulkImportLoading">
-                        <i class="bi bi-upload"></i>
-                        Import {{ bulkPreviewData.length }} Specs
-                      </button>
+                    <div class="d-flex justify-content-between align-items-center gap-2">
+                      <div class="text-muted">
+                        <small>
+                          <i class="bi bi-lightbulb"></i>
+                          Tip: Paste your JSON above and the preview will update automatically
+                        </small>
+                      </div>
+                      <div class="d-flex gap-2">
+                        <button type="button" @click="resetBulkImport" class="btn btn-outline-secondary">
+                          Clear
+                        </button>
+                        <button type="button" @click="previewBulkImport" class="btn btn-outline-primary" 
+                          :disabled="bulkImportLoading">
+                          <i class="bi bi-arrow-clockwise"></i>
+                          {{ bulkImportLoading ? 'Validating...' : 'Refresh Preview' }}
+                        </button>
+                        <button type="button" @click="importBulkSpecs" class="btn btn-success" 
+                          :disabled="!bulkPreviewData.length || bulkImportLoading || bulkPreviewData.some(spec => spec._isInvalid)">
+                          <i class="bi bi-upload"></i>
+                          {{ bulkPreviewData.filter(spec => !spec._isInvalid).length > 0 
+                             ? `Import ${bulkPreviewData.filter(spec => !spec._isInvalid).length} Valid Specs` 
+                             : 'No Valid Specs to Import' }}
+                        </button>
+                      </div>
                     </div>
 
                     <!-- Preview Section -->
@@ -243,17 +257,33 @@
                           </thead>
                           <tbody>
                             <tr v-for="(spec, index) in bulkPreviewData" :key="index"
-                              :class="{ 'table-warning': spec._isDuplicate }">
+                              :class="{ 'table-warning': spec._isDuplicate, 'table-danger': spec._isInvalid }">
                               <td>
-                                <span v-if="!spec._isDuplicate">{{ spec.external_spec }}</span>
-                                <input v-else v-model="spec.external_spec" class="form-control form-control-sm" 
+                                <span v-if="!spec._isDuplicate && !spec._isInvalid">{{ spec.external_spec }}</span>
+                                <input v-else-if="spec._isDuplicate" v-model="spec.external_spec" class="form-control form-control-sm" 
                                   placeholder="Enter new unique ID">
+                                <span v-else class="text-danger">{{ spec.external_spec || 'Missing' }}</span>
                               </td>
-                              <td class="text-truncate" style="max-width: 200px;">{{ spec.gh_page }}</td>
-                              <td class="text-truncate" style="max-width: 200px;">{{ spec.url }}</td>
-                              <td>{{ spec.terms_dir }}</td>
+                              <td class="text-truncate" style="max-width: 200px;">
+                                <span :class="{ 'text-danger': spec._isInvalid && (!spec.gh_page || !isValidUrl(spec.gh_page)) }">
+                                  {{ spec.gh_page || 'Missing' }}
+                                </span>
+                              </td>
+                              <td class="text-truncate" style="max-width: 200px;">
+                                <span :class="{ 'text-danger': spec._isInvalid && (!spec.url || !isValidUrl(spec.url)) }">
+                                  {{ spec.url || 'Missing' }}
+                                </span>
+                              </td>
                               <td>
-                                <span v-if="spec._isDuplicate" class="badge bg-warning text-dark">
+                                <span :class="{ 'text-danger': spec._isInvalid && !spec.terms_dir }">
+                                  {{ spec.terms_dir || 'Missing' }}
+                                </span>
+                              </td>
+                              <td>
+                                <span v-if="spec._isInvalid" class="badge bg-danger">
+                                  <i class="bi bi-x-circle"></i> Invalid
+                                </span>
+                                <span v-else-if="spec._isDuplicate" class="badge bg-warning text-dark">
                                   <i class="bi bi-exclamation-triangle"></i> Duplicate
                                 </span>
                                 <span v-else class="badge bg-success">
@@ -337,6 +367,8 @@ export default {
     const bulkPreviewData = ref([])
     const jsonInputFocused = ref(false)
     const exampleJsonPlaceholder = '[\n  {\n    "external_spec": "toip1",\n    "gh_page": "https://example.github.io/spec/",\n    "url": "https://github.com/user/repo",\n    "terms_dir": "spec/terms-definitions"\n  }\n]'
+    const autoPreviewStatus = ref('')
+    const autoPreviewTimeout = ref(null)
 
     const resetNewSpec = () => {
       newSpec.value = {
@@ -353,6 +385,34 @@ export default {
       jsonError.value = ''
       urlError.value = ''
       bulkPreviewData.value = []
+      autoPreviewStatus.value = ''
+      if (autoPreviewTimeout.value) {
+        clearTimeout(autoPreviewTimeout.value)
+        autoPreviewTimeout.value = null
+      }
+    }
+
+    const onJsonInputChange = () => {
+      // Clear previous timeout
+      if (autoPreviewTimeout.value) {
+        clearTimeout(autoPreviewTimeout.value)
+      }
+
+      // Clear errors and status
+      jsonError.value = ''
+      autoPreviewStatus.value = ''
+
+      // If input is empty, clear preview
+      if (!jsonInput.value.trim()) {
+        bulkPreviewData.value = []
+        return
+      }
+
+      // Set a timeout to auto-preview after user stops typing
+      autoPreviewTimeout.value = setTimeout(() => {
+        autoPreviewStatus.value = 'Validating JSON...'
+        previewBulkImport()
+      }, 1000) // Wait 1 second after user stops typing
     }
 
     const markAsChanged = () => {
@@ -361,9 +421,11 @@ export default {
 
     const isValidUrl = (url) => {
       try {
-        new URL(url)
+        const result = new URL(url)
+        console.log(`URL validation for "${url}":`, { valid: true, parsed: result.href })
         return true
-      } catch {
+      } catch (err) {
+        console.log(`URL validation for "${url}":`, { valid: false, error: err.message })
         return false
       }
     }
@@ -488,7 +550,7 @@ export default {
       bulkImportLoading.value = true
       jsonError.value = ''
       urlError.value = ''
-      bulkPreviewData.value = []
+      autoPreviewStatus.value = ''
 
       try {
         let specsData = []
@@ -496,13 +558,16 @@ export default {
         if (bulkImportMode.value === 'json') {
           if (!jsonInput.value.trim()) {
             jsonError.value = 'Please enter JSON data'
+            bulkPreviewData.value = []
             return
           }
 
           try {
             specsData = JSON.parse(jsonInput.value)
+            autoPreviewStatus.value = 'JSON parsed successfully'
           } catch (err) {
             jsonError.value = 'Invalid JSON format'
+            bulkPreviewData.value = []
             return
           }
         } else if (bulkImportMode.value === 'url') {
@@ -537,28 +602,64 @@ export default {
           } else {
             urlError.value = errorMsg
           }
+          bulkPreviewData.value = []
           return
         }
 
-        const validSpecs = specsData.filter(spec => {
-          if (!validateExternalSpec(spec)) {
-            console.warn('Invalid spec found:', spec)
-            return false
+        const validSpecs = []
+        const invalidSpecs = []
+        
+        specsData.forEach((spec, index) => {
+          console.log(`Validating spec ${index}:`, spec)
+          
+          // Detailed validation debugging
+          const validationChecks = {
+            exists: !!spec,
+            isObject: typeof spec === 'object',
+            hasExternalSpec: !!spec.external_spec,
+            hasGhPage: !!spec.gh_page,
+            hasUrl: !!spec.url,
+            hasTermsDir: !!spec.terms_dir,
+            validGhPageUrl: spec.gh_page ? isValidUrl(spec.gh_page) : false,
+            validUrl: spec.url ? isValidUrl(spec.url) : false
           }
-          return true
+          
+          console.log(`Validation checks for spec ${index}:`, validationChecks)
+          
+          if (validateExternalSpec(spec)) {
+            console.log(`Spec ${index} is VALID`)
+            validSpecs.push(spec)
+          } else {
+            console.log(`Spec ${index} is INVALID`)
+            invalidSpecs.push({...spec, _isInvalid: true})
+          }
         })
 
+        console.log('Total specs in JSON:', specsData.length)
+        console.log('Valid specs after filtering:', validSpecs.length)
+        console.log('Invalid specs:', invalidSpecs.length)
+        console.log('Valid specs:', validSpecs)
+
         if (validSpecs.length === 0) {
-          const errorMsg = 'No valid external specifications found'
+          const errorMsg = `No valid external specifications found. Please check your JSON format. Expected fields: external_spec, gh_page (valid URL), url (valid URL), terms_dir`
           if (bulkImportMode.value === 'json') {
             jsonError.value = errorMsg
           } else {
             urlError.value = errorMsg
           }
+          // Show only invalid specs in preview
+          bulkPreviewData.value = invalidSpecs
           return
         }
 
-        bulkPreviewData.value = checkForDuplicates(validSpecs)
+        // Combine valid specs (with duplicate check) and invalid specs
+        const validSpecsWithDuplicateCheck = checkForDuplicates(validSpecs)
+        bulkPreviewData.value = [...validSpecsWithDuplicateCheck, ...invalidSpecs]
+
+        // Update status for successful auto-preview
+        if (bulkImportMode.value === 'json' && validSpecs.length > 0) {
+          autoPreviewStatus.value = `Found ${validSpecs.length} valid specification${validSpecs.length === 1 ? '' : 's'} ready to import`
+        }
 
       } catch (err) {
         console.error('Preview error:', err)
@@ -568,14 +669,23 @@ export default {
         } else {
           urlError.value = errorMsg
         }
+        bulkPreviewData.value = []
       } finally {
         bulkImportLoading.value = false
       }
     }
 
     const importBulkSpecs = () => {
-      // Check for any remaining duplicates
-      const duplicates = bulkPreviewData.value.filter(spec => spec._isDuplicate)
+      // Filter out invalid specs
+      const validSpecs = bulkPreviewData.value.filter(spec => !spec._isInvalid)
+      
+      if (validSpecs.length === 0) {
+        alert('No valid specifications to import. Please fix the validation errors first.')
+        return
+      }
+
+      // Check for any remaining duplicates in valid specs
+      const duplicates = validSpecs.filter(spec => spec._isDuplicate)
       if (duplicates.length > 0) {
         // Check if duplicates have new IDs
         const unresolved = duplicates.filter(spec => !spec.external_spec || 
@@ -587,17 +697,11 @@ export default {
         }
       }
 
-      // Final validation
-      const invalidSpecs = bulkPreviewData.value.filter(spec => !validateExternalSpec(spec))
-      if (invalidSpecs.length > 0) {
-        alert('Some specifications are invalid. Please check all required fields.')
-        return
-      }
-
-      // Add specs to main list
-      bulkPreviewData.value.forEach(spec => {
+      // Add valid specs to main list
+      validSpecs.forEach(spec => {
         const cleanSpec = { ...spec }
         delete cleanSpec._isDuplicate
+        delete cleanSpec._isInvalid
         externalSpecs.value.push(cleanSpec)
       })
 
@@ -606,7 +710,7 @@ export default {
       addMode.value = 'single'
       markAsChanged()
 
-      alert(`Successfully imported ${bulkPreviewData.value.length} external specifications!`)
+      alert(`Successfully imported ${validSpecs.length} valid external specifications!`)
     }
 
     const saveSpecs = async () => {
@@ -720,8 +824,10 @@ export default {
       bulkPreviewData,
       jsonInputFocused,
       exampleJsonPlaceholder,
+      autoPreviewStatus,
       resetNewSpec,
       resetBulkImport,
+      onJsonInputChange,
       markAsChanged,
       isValidUrl,
       addNewSpec,
