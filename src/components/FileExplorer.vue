@@ -474,6 +474,9 @@ export default {
     const filteredFiles = computed(() => {
       let result = files.value
 
+      // Filter out terms-and-definitions-intro.md as it's only meant as a hook for the terms directory
+      result = result.filter(file => file.name !== 'terms-and-definitions-intro.md')
+
       // Apply filter type
       if (selectedFilter.value === 'Folders') {
         result = []
