@@ -8,6 +8,7 @@ import FileEditor from './components/FileEditor.vue'
 import ExternalSpecsManager from './components/ExternalSpecsManager.vue'
 import HealthCheck from './components/HealthCheck.vue'
 import AdminScreen from './components/AdminScreen.vue'
+import CreateSpecUpProject from './components/CreateSpecUpProject.vue'
 
 import * as bootstrap from 'bootstrap/dist/js/bootstrap.bundle.min.js'
 import 'bootstrap-icons/font/bootstrap-icons.css'
@@ -23,6 +24,7 @@ const routes = [
   { path: '/', redirect: '/login' },
   { path: '/login', component: LoginPage },
   { path: '/home', component: HomePage },
+  { path: '/create-project', component: CreateSpecUpProject },
   { path: '/admin/:owner/:repo/:branch', component: AdminScreen, props: true },
   { path: '/files/:owner/:repo/:branch', component: FileExplorer, props: true },
   { path: '/editor/:owner/:repo/:branch/:path+', component: FileEditor, props: true },

@@ -98,6 +98,23 @@
         </div>
       </div>
       
+      <!-- Create New Project Section -->
+      <div class="card mt-4">
+        <div class="card-body text-center">
+          <h5 class="card-title">
+            <i class="bi bi-plus-circle"></i>
+            Create New Spec-Up-T Project
+          </h5>
+          <p class="card-text text-muted">
+            Start a new specification project with our guided setup wizard
+          </p>
+          <router-link to="/create-project" class="btn btn-success">
+            <i class="bi bi-rocket"></i>
+            Create Project
+          </router-link>
+        </div>
+      </div>
+      
       <!-- Google Analytics Demo Section -->
       <!-- <div class="mt-4">
         <GoogleAnalyticsDemo />
