@@ -28,15 +28,6 @@
             <i class="bi bi-gear"></i>
             Admin
           </button>
-          <button @click="showModalAndClose" class="nav-link btn btn-link">
-            <i class="bi bi-info-circle"></i>
-            About
-          </button>
-          <a href="https://blockchainbird.github.io/spec-up-t-website/docs/tools/spec-up-t-editor-user-guide/"
-            target="_blank" rel="noopener" class="nav-link" @click="closeNavbar">
-            <i class="bi bi-box-arrow-up-right"></i>
-            Documentation
-          </a>
           <button v-if="showRepoRelatedButtons"
             @click="navigateAndClose(`/external-specs/${route.params.owner}/${route.params.repo}/${route.params.branch}`)"
             class="nav-link btn btn-link" title="Manage External Specifications">
@@ -53,6 +44,16 @@
             <i class="bi bi-heart-pulse"></i>
             Health Check
           </button>
+          <button @click="showModalAndClose" class="nav-link btn btn-link">
+            <i class="bi bi-info-circle"></i>
+            About
+          </button>
+          <a href="https://blockchainbird.github.io/spec-up-t-website/docs/tools/spec-up-t-editor-user-guide/"
+            target="_blank" rel="noopener" class="nav-link" @click="closeNavbar">
+            <i class="bi bi-box-arrow-up-right"></i>
+            Help
+          </a>
+
           <!-- API Rate Limit Indicator -->
           <div class="nav-item d-flex align-items-center">
             <RateLimitIndicator />
