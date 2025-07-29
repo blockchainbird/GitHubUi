@@ -1949,7 +1949,6 @@ textarea:focus {
   content: 'External';
   // font-weight: bold;
   color: #155724;
-  border: 1px solid #155724;
   padding: 0.15rem 0.5rem;
   border-radius: 0.25rem;
   background-color: $success-color;
