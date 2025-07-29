@@ -307,10 +307,12 @@ External specifications allow you to reference terminology and content from othe
 
 ### Adding External Specifications
 
+The External Specifications Manager offers three different methods for adding external specifications:
+
 #### Single Specification Method
 
 1. **Choose "Single" Mode**
-   - Click the "Single" tab
+   - Click the "Single" option
 
 2. **Fill in the Details**
    - **Specification ID**: A unique name (e.g., "keri-spec", "toip-glossary")
@@ -324,8 +326,8 @@ External specifications allow you to reference terminology and content from othe
 
 #### Bulk Import Method
 
-1. **Choose "Bulk" Mode**
-   - Click the "Bulk" tab
+1. **Choose "Bulk Import" Mode**
+   - Click the "Bulk Import" option
 
 2. **JSON Input**
    - Select the "JSON Input" sub-tab
@@ -336,6 +338,45 @@ External specifications allow you to reference terminology and content from othe
    - Select the "GitHub URL" sub-tab
    - Enter a URL to a JSON file containing external specs
    - Click "Import from URL"
+
+#### Reference Sets Method
+
+1. **Choose "Reference Sets" Mode**
+   - Click the "Reference Sets" option
+   - This provides access to curated collections of external specifications
+
+2. **Browse Available Sets**
+   - The system automatically loads available reference sets from a central repository
+   - Each set displays metadata including:
+     - **Title**: Descriptive name of the reference set
+     - **Description**: What the set contains
+     - **Creator**: Who created the set
+     - **Date**: When it was created
+     - **References**: Number of specifications in the set
+
+3. **Preview a Reference Set**
+   - Click the "Preview" button on any reference set card
+   - A modal will show:
+     - Complete set metadata
+     - List of all specifications in the set
+     - Direct links to GitHub pages and repositories
+
+4. **Import from Reference Sets**
+   - **Quick Import**: Click "Import" directly on a reference set card
+   - **Preview Import**: Use "Preview" first, then "Import References" in the modal
+   - The system will:
+     - Validate all references before importing
+     - Check for duplicate specification IDs
+     - Skip duplicates and show a summary of what was imported
+     - Display success/failure feedback with detailed results
+
+#### Benefits of Reference Sets
+
+- **Curated Collections**: Access professionally curated sets of related external specifications
+- **Time Saving**: Import multiple related specifications at once
+- **Quality Assurance**: All references are pre-validated and tested
+- **Community Sharing**: Shared repository allows access to community-contributed sets
+- **Automatic Updates**: New reference sets become available automatically
 
 ### Managing External Specifications
 
@@ -467,6 +508,28 @@ Results are organized into categories, each with a color-coded status:
    - Run health checks periodically to catch issues early
    - Address warnings before they become errors
 
+4. **Standardize External References**
+   - Use Reference Sets when available for consistency across team projects
+   - Document which external specifications your team commonly uses
+   - Consider creating custom reference sets for organization-specific standards
+
+### Working with External Specifications
+
+1. **Prefer Reference Sets**
+   - Use curated Reference Sets when available instead of manual entry
+   - Reference Sets provide quality assurance and reduce setup time
+   - Preview sets before importing to understand what you're adding
+
+2. **Validate External Links**
+   - Always run health checks after adding external specifications
+   - Test URLs manually if the health check reports issues
+   - Keep external specifications up to date as referenced repositories evolve
+
+3. **Organize Your References**
+   - Use descriptive specification IDs that your team will understand
+   - Group related external specifications logically
+   - Document why specific external specifications were chosen
+
 ### Security Best Practices
 
 1. **Protect Your Token**
@@ -505,6 +568,18 @@ Results are organized into categories, each with a color-coded status:
 
 ### Workflow 3: Setting Up External References
 
+#### Option A: Using Reference Sets (Recommended for Common Specifications)
+
+1. **Access the External Specs Manager** from the navigation
+2. **Select "Reference Sets"** for curated collections
+3. **Browse available sets** and preview their contents
+4. **Import relevant sets** that match your project's needs
+5. **Review imported specifications** in the main list
+6. **Save your configuration** with an appropriate commit message
+7. **Run a health check** to verify everything is working correctly
+
+#### Option B: Manual Setup
+
 1. **Access the External Specs Manager** from the navigation
 2. **Gather information** about the external specifications you want to reference:
    - GitHub repository URL
@@ -538,7 +613,30 @@ Results are organized into categories, each with a color-coded status:
 6. **Test the organization** by reviewing how the files flow together
 7. **Make adjustments** as needed and save again
 
-### Workflow 6: Regular Maintenance
+### Workflow 6: Using Reference Sets for Quick Setup
+
+1. **Navigate to External Specs Manager** from the repository navigation
+2. **Select "Reference Sets"** option (alongside Single and Bulk Import)
+3. **Review available sets**:
+   - Read the title and description of each set
+   - Check the number of references included
+   - Note the creator and date for quality assessment
+4. **Preview sets of interest**:
+   - Click "Preview" to examine the complete contents
+   - Review the list of specifications included
+   - Check that the repositories and URLs are relevant to your project
+5. **Import selected sets**:
+   - Use "Import" for quick addition without preview
+   - Or use "Import References" from the preview modal
+   - Review the import summary showing what was added and what was skipped
+6. **Verify the import**:
+   - Check the main external specifications list
+   - Ensure all expected references were added
+   - Address any duplicate notifications
+7. **Save your configuration** with a descriptive commit message
+8. **Run a health check** to validate all imported references
+
+### Workflow 7: Regular Maintenance
 
 1. **Monthly health checks** on all active repositories
 2. **Review and update external specifications** as needed
@@ -609,6 +707,24 @@ Results are organized into categories, each with a color-coded status:
 2. Verify the external specification URLs are accessible
 3. Check that the terms directory contains the expected files
 4. Refresh the page to reload external references
+
+**Problem**: Reference sets not loading
+
+**Solutions**:
+
+1. Check your internet connection
+2. Click the "Refresh Sets" button to reload available sets
+3. Verify that the reference sets repository is accessible
+4. Try refreshing the page if sets appear empty
+
+**Problem**: Import from reference sets shows "No valid specifications"
+
+**Solutions**:
+
+1. Check that the reference set contains properly formatted specifications
+2. Verify that all URLs in the reference set are accessible
+3. Try previewing the set first to see detailed validation results
+4. Contact the reference set creator if the data appears corrupted
 
 ### Performance Issues
 
