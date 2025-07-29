@@ -10,5 +10,9 @@ $theme-colors: (
   "danger": #D291BC, // soft magenta
   "dark": #5D4660, // deep lavender
 );
-// Import Bootstrap
+
+$success-color: #C2B280;
+$success-color-transparent: #c2b2806e;
+
+// Import Bootstrap (keeping @import for compatibility)
 @import "bootstrap/scss/bootstrap";

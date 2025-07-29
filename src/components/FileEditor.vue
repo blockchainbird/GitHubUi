@@ -1945,6 +1945,19 @@ textarea:focus {
   /* background-color: #94c3f1; */
   background-color: $success-color-transparent;
 }
+.external-term-reference::before {
+  content: 'External';
+  // font-weight: bold;
+  color: #155724;
+  border: 1px solid #155724;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.25rem;
+  background-color: $success-color;
+  font-size: 0.85rem;
+  display: block;
+  margin: 0.25rem;
+  float: right;
+}
 
 .term-name {
   font-weight: 600;
