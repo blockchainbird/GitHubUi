@@ -99,6 +99,42 @@ If the specs.json file doesn't exist, the app will default to looking for files 
 - **Vite**: Build tool and development server
 - **Axios**: HTTP client for GitHub API calls
 
+## Environment Variables
+
+The application supports the following environment variables:
+
+- `VITE_BASE_PATH`: Base path for the application (default: `/`)
+- `VITE_PROXY_URL`: URL for the CORS proxy server (for external specs)
+- `VITE_GA_MEASUREMENT_ID`: Google Analytics measurement ID (optional)
+
+## Proxy Configuration
+
+For loading external specifications, the application uses a proxy server to handle CORS restrictions. You can configure this in several ways:
+
+### Development Setup
+
+1. Create a `.env.local` file in the project root:
+
+   ```env
+   VITE_PROXY_URL=https://dwarshuis.com/test/spec-up-t-temp/GitHubUi/proxy.php?url=
+   ```
+
+2. The application will automatically use this proxy for all external spec requests.
+
+### Production Setup
+
+- In production, the application can use the included `proxy.php` file
+- Or configure `VITE_PROXY_URL` to point to your preferred proxy server
+
+### Proxy Functionality
+
+The proxy server:
+
+- Handles CORS headers for cross-origin requests
+- Provides status checks for proxy availability
+- Supports timeout handling for external requests
+- Logs proxy usage for debugging purposes
+
 ## Security
 
 - GitHub tokens are stored in localStorage
