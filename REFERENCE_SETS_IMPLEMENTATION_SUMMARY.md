@@ -14,7 +14,7 @@ The External Specifications Manager now supports importing external specificatio
 
 ### 2. UI Integration
 
-- New "Reference Sets" tab in the Bulk Import mode
+- New "Reference Sets" option at the main level (alongside "Single" and "Bulk Import")
 - Grid layout showing available sets with metadata
 - Preview modal for examining set contents before import
 - Import functionality with duplicate detection
@@ -65,10 +65,9 @@ The External Specifications Manager now supports importing external specificatio
 ## Usage
 
 1. Navigate to External Specifications Manager
-2. Select "Bulk Import" mode
-3. Choose "Reference Sets" tab
-4. Browse available sets
-5. Preview or directly import desired sets
+2. Select "Reference Sets" option (main level)
+3. Browse available sets
+4. Preview or directly import desired sets
 
 The implementation successfully integrates with the existing codebase and provides a seamless user experience for importing curated external specification sets.
 

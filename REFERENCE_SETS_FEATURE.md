@@ -47,8 +47,7 @@ Each reference set follows this JSON structure:
 #### Accessing Reference Sets
 
 1. Navigate to the External Specifications Manager
-2. Click "Bulk Import" mode
-3. Select the "Reference Sets" tab
+2. Select the "Reference Sets" option (alongside "Single" and "Bulk Import")
 
 #### Browsing Available Sets
 
