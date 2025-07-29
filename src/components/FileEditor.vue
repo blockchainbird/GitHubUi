@@ -195,6 +195,16 @@
                 placeholder="Search terms, definitions, or external specs..." autocomplete="off">
             </div>
 
+            <div class="mb-3 d-flex justify-content-between align-items-center">
+              <label class="form-label mb-0">Filter Options</label>
+              <button @click="toggleDefinitionsCollapse" type="button" 
+                class="btn btn-outline-secondary btn-sm"
+                :title="definitionsCollapsed ? 'Expand all definitions' : 'Collapse all definitions'">
+                <i class="bi" :class="definitionsCollapsed ? 'bi-chevron-down' : 'bi-chevron-up'"></i>
+                {{ definitionsCollapsed ? 'Expand' : 'Collapse' }} Definitions
+              </button>
+            </div>
+
             <div class="mb-3">
               <label class="form-label">Reference Type</label>
               <div class="btn-group w-100" role="group">
@@ -259,7 +269,7 @@
                     </div>
                     <span v-if="term.external" class="badge bg-success">External</span>
                   </div>
-                  <div v-if="term.definition" class="definition-preview w-100 mt-2 pt-2 border-top"
+                  <div v-if="term.definition && !definitionsCollapsed" class="definition-preview w-100 mt-2 pt-2 border-top"
                     v-html="term.definition"></div>
                 </button>
               </div>
@@ -404,6 +414,9 @@ export default {
     const termsError = ref('')
     const specsConfig = ref(null)
     const referenceType = ref('auto')
+    
+    // Definition preview collapse/expand state
+    const definitionsCollapsed = ref(false)
 
     // Add Term modal state
     const newTerm = ref({
@@ -1475,13 +1488,26 @@ export default {
       if (!filter) {
         filteredTerms.value = terms.value
       } else {
-        filteredTerms.value = terms.value.filter(term =>
-          term.id.toLowerCase().includes(filter) ||
-          term.aliases.some(alias => alias.toLowerCase().includes(filter)) ||
-          (term.definitionText && term.definitionText.toLowerCase().includes(filter)) ||
-          (term.external && term.externalSpec.toLowerCase().includes(filter))
-        )
+        filteredTerms.value = terms.value.filter(term => {
+          // Always search in id, aliases, and external spec name
+          const basicMatch = term.id.toLowerCase().includes(filter) ||
+            term.aliases.some(alias => alias.toLowerCase().includes(filter)) ||
+            (term.external && term.externalSpec.toLowerCase().includes(filter))
+          
+          // Only search in definition text when definitions are not collapsed
+          const definitionMatch = !definitionsCollapsed.value && 
+            term.definitionText && 
+            term.definitionText.toLowerCase().includes(filter)
+          
+          return basicMatch || definitionMatch
+        })
       }
+    }
+
+    const toggleDefinitionsCollapse = () => {
+      definitionsCollapsed.value = !definitionsCollapsed.value
+      // Re-filter terms to apply the new visibility rules
+      filterTerms()
     }
 
     const insertTermReference = async (term) => {
@@ -1770,6 +1796,9 @@ export default {
       insertTermReference,
       refreshTerms,
       referenceType,
+      // Definition collapse/expand functionality
+      definitionsCollapsed,
+      toggleDefinitionsCollapse,
       // Add Term functionality
       newTerm,
       addTermError,
