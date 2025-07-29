@@ -186,6 +186,10 @@
                           @click="bulkImportMode = 'url'" type="button">
                           <i class="bi bi-link-45deg"></i> GitHub URL
                         </button>
+                        <button class="nav-link" :class="{ active: bulkImportMode === 'sets' }" 
+                          @click="bulkImportMode = 'sets'" type="button">
+                          <i class="bi bi-collection"></i> Reference Sets
+                        </button>
                       </div>
                     </div>
 
@@ -214,8 +218,118 @@
                       <div v-if="urlError" class="text-danger small mt-1">{{ urlError }}</div>
                     </div>
 
+                    <!-- Reference Sets Tab -->
+                    <div v-if="bulkImportMode === 'sets'" class="mb-4">
+                      <div class="d-flex justify-content-between align-items-center mb-3">
+                        <label class="form-label mb-0">Available Reference Sets</label>
+                        <button type="button" @click="loadReferenceSets" class="btn btn-outline-primary btn-sm" 
+                          :disabled="referenceSetsLoading">
+                          <i class="bi bi-arrow-clockwise"></i>
+                          {{ referenceSetsLoading ? 'Loading...' : 'Refresh Sets' }}
+                        </button>
+                      </div>
+
+                      <!-- Loading State -->
+                      <div v-if="referenceSetsLoading" class="text-center py-3">
+                        <div class="spinner-border spinner-border-sm" role="status">
+                          <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <div class="mt-2 small">Loading reference sets...</div>
+                      </div>
+
+                      <!-- Error State -->
+                      <div v-else-if="referenceSetsError" class="alert alert-danger" role="alert">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Error loading reference sets: {{ referenceSetsError }}
+                      </div>
+
+                      <!-- Reference Sets Grid -->
+                      <div v-else-if="referenceSets.length > 0" class="row">
+                        <div v-for="set in referenceSets" :key="set.identifier" class="col-md-6 mb-3">
+                          <div class="card h-100" :class="{ 'border-primary': selectedReferenceSet?.identifier === set.identifier }">
+                            <div class="card-body d-flex flex-column">
+                              <h6 class="card-title">{{ set.title }}</h6>
+                              <p class="card-text small text-muted flex-grow-1">{{ set.description }}</p>
+                              <div class="small text-muted mb-2">
+                                <div><strong>Creator:</strong> {{ set.creator }}</div>
+                                <div><strong>Date:</strong> {{ set.date }}</div>
+                                <div><strong>References:</strong> {{ set.references?.length || 0 }} specifications</div>
+                              </div>
+                              <div class="d-flex gap-2">
+                                <button type="button" @click="selectReferenceSet(set)" 
+                                  class="btn btn-outline-primary btn-sm flex-grow-1">
+                                  <i class="bi bi-eye"></i> Preview
+                                </button>
+                                <button type="button" @click="selectedReferenceSet = set; importReferenceSet()" 
+                                  class="btn btn-success btn-sm">
+                                  <i class="bi bi-plus-circle"></i> Import
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- No Sets Available -->
+                      <div v-else class="text-center py-4 text-muted">
+                        <i class="bi bi-collection"></i>
+                        <div>No reference sets available</div>
+                      </div>
+
+                      <!-- Reference Set Preview Modal -->
+                      <div v-if="showReferenceSetPreview && selectedReferenceSet" class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+                        <div class="modal-dialog modal-lg">
+                          <div class="modal-content">
+                            <div class="modal-header">
+                              <h5 class="modal-title">{{ selectedReferenceSet.title }}</h5>
+                              <button type="button" class="btn-close" @click="resetReferenceSetSelection"></button>
+                            </div>
+                            <div class="modal-body">
+                              <div class="mb-3">
+                                <p class="text-muted">{{ selectedReferenceSet.description }}</p>
+                                <div class="small">
+                                  <div><strong>Creator:</strong> {{ selectedReferenceSet.creator }}</div>
+                                  <div><strong>Date:</strong> {{ selectedReferenceSet.date }}</div>
+                                  <div><strong>Type:</strong> {{ selectedReferenceSet.type }}</div>
+                                </div>
+                              </div>
+                              
+                              <h6>References ({{ selectedReferenceSet.references?.length || 0 }})</h6>
+                              <div v-if="selectedReferenceSet.references?.length > 0" class="table-responsive">
+                                <table class="table table-sm">
+                                  <thead>
+                                    <tr>
+                                      <th>Spec ID</th>
+                                      <th>GitHub Page</th>
+                                      <th>Repository</th>
+                                      <th>Terms Dir</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    <tr v-for="ref in selectedReferenceSet.references" :key="ref.external_spec">
+                                      <td>{{ ref.external_spec }}</td>
+                                      <td><a :href="ref.gh_page" target="_blank" class="text-truncate d-block" style="max-width: 200px;">{{ ref.gh_page }}</a></td>
+                                      <td><a :href="ref.url" target="_blank" class="text-truncate d-block" style="max-width: 200px;">{{ ref.url }}</a></td>
+                                      <td>{{ ref.terms_dir }}</td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                              </div>
+                              <div v-else class="text-muted">No references available</div>
+                            </div>
+                            <div class="modal-footer">
+                              <button type="button" class="btn btn-secondary" @click="resetReferenceSetSelection">Close</button>
+                              <button type="button" class="btn btn-success" @click="importReferenceSet">
+                                <i class="bi bi-plus-circle"></i> Import References
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     <!-- Import Actions -->
-                    <div class="d-flex justify-content-between align-items-center gap-2">
+                    <div v-if="bulkImportMode !== 'sets'" class="d-flex justify-content-between align-items-center gap-2">
                       <div class="text-muted">
                         <small>
                           <i class="bi bi-lightbulb"></i>
@@ -242,7 +356,7 @@
                     </div>
 
                     <!-- Preview Section -->
-                    <div v-if="bulkPreviewData.length > 0" class="mt-4">
+                    <div v-if="bulkPreviewData.length > 0 && bulkImportMode !== 'sets'" class="mt-4">
                       <h6>Preview ({{ bulkPreviewData.length }} specifications)</h6>
                       <div class="table-responsive">
                         <table class="table table-sm table-striped">
@@ -370,6 +484,13 @@ export default {
     const autoPreviewStatus = ref('')
     const autoPreviewTimeout = ref(null)
 
+    // Reference sets state
+    const referenceSets = ref([])
+    const referenceSetsLoading = ref(false)
+    const referenceSetsError = ref('')
+    const selectedReferenceSet = ref(null)
+    const showReferenceSetPreview = ref(false)
+
     const resetNewSpec = () => {
       newSpec.value = {
         external_spec: '',
@@ -390,6 +511,12 @@ export default {
         clearTimeout(autoPreviewTimeout.value)
         autoPreviewTimeout.value = null
       }
+    }
+
+    const resetReferenceSetSelection = () => {
+      selectedReferenceSet.value = null
+      showReferenceSetPreview.value = false
+      referenceSetsError.value = ''
     }
 
     const onJsonInputChange = () => {
@@ -713,6 +840,104 @@ export default {
       alert(`Successfully imported ${validSpecs.length} valid external specifications!`)
     }
 
+    const loadReferenceSets = async () => {
+      try {
+        referenceSetsLoading.value = true
+        referenceSetsError.value = ''
+
+        // Fetch directory listing from the external reference sets repository
+        const response = await fetch(
+          'https://api.github.com/repos/blockchainbird/spec-up-gs/contents/external-reference-sets'
+        )
+
+        if (!response.ok) {
+          throw new Error(`Failed to load reference sets: ${response.statusText}`)
+        }
+
+        const files = await response.json()
+        const jsonFiles = files.filter(file => file.name.endsWith('.json'))
+
+        // Load metadata for each set
+        const setsPromises = jsonFiles.map(async (file) => {
+          try {
+            const setResponse = await fetch(file.download_url)
+            if (!setResponse.ok) {
+              throw new Error(`Failed to load ${file.name}`)
+            }
+            const setData = await setResponse.json()
+            return {
+              ...setData,
+              filename: file.name,
+              downloadUrl: file.download_url
+            }
+          } catch (err) {
+            console.error(`Error loading ${file.name}:`, err)
+            return null
+          }
+        })
+
+        const sets = await Promise.all(setsPromises)
+        referenceSets.value = sets.filter(set => set !== null)
+
+      } catch (err) {
+        console.error('Error loading reference sets:', err)
+        referenceSetsError.value = err.message
+      } finally {
+        referenceSetsLoading.value = false
+      }
+    }
+
+    const selectReferenceSet = (set) => {
+      selectedReferenceSet.value = set
+      showReferenceSetPreview.value = true
+    }
+
+    const importReferenceSet = () => {
+      if (!selectedReferenceSet.value) return
+
+      const setReferences = selectedReferenceSet.value.references || []
+      const validSpecs = setReferences.filter(spec => validateExternalSpec(spec))
+      
+      if (validSpecs.length === 0) {
+        alert('No valid specifications found in the selected reference set.')
+        return
+      }
+
+      // Check for duplicates
+      const duplicates = validSpecs.filter(spec => 
+        externalSpecs.value.some(existing => existing.external_spec === spec.external_spec)
+      )
+
+      if (duplicates.length > 0) {
+        const duplicateIds = duplicates.map(spec => spec.external_spec).join(', ')
+        if (!confirm(`The following specification IDs already exist: ${duplicateIds}. Do you want to skip duplicates and import the rest?`)) {
+          return
+        }
+      }
+
+      // Add non-duplicate specs
+      const nonDuplicateSpecs = validSpecs.filter(spec => 
+        !externalSpecs.value.some(existing => existing.external_spec === spec.external_spec)
+      )
+
+      nonDuplicateSpecs.forEach(spec => {
+        externalSpecs.value.push({ ...spec })
+      })
+
+      markAsChanged()
+      resetReferenceSetSelection()
+
+      const importedCount = nonDuplicateSpecs.length
+      const skippedCount = duplicates.length
+      let message = `Successfully imported ${importedCount} specification${importedCount === 1 ? '' : 's'} from ${selectedReferenceSet.value.title}!`
+      
+      if (skippedCount > 0) {
+        message += ` (${skippedCount} duplicate${skippedCount === 1 ? '' : 's'} skipped)`
+      }
+
+      alert(message)
+    }
+
     const saveSpecs = async (retryCount = 0) => {
       const maxRetries = 2
 
@@ -847,6 +1072,7 @@ export default {
       addToVisitedRepos(owner.value, repo.value, branch.value)
 
       loadSpecs()
+      loadReferenceSets()
     })
 
     return {
@@ -870,8 +1096,14 @@ export default {
       jsonInputFocused,
       exampleJsonPlaceholder,
       autoPreviewStatus,
+      referenceSets,
+      referenceSetsLoading,
+      referenceSetsError,
+      selectedReferenceSet,
+      showReferenceSetPreview,
       resetNewSpec,
       resetBulkImport,
+      resetReferenceSetSelection,
       onJsonInputChange,
       markAsChanged,
       isValidUrl,
@@ -879,6 +1111,9 @@ export default {
       removeSpec,
       previewBulkImport,
       importBulkSpecs,
+      loadReferenceSets,
+      selectReferenceSet,
+      importReferenceSet,
       saveSpecs,
       goBack
     }
