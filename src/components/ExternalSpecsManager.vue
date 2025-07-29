@@ -713,7 +713,9 @@ export default {
       alert(`Successfully imported ${validSpecs.length} valid external specifications!`)
     }
 
-    const saveSpecs = async () => {
+    const saveSpecs = async (retryCount = 0) => {
+      const maxRetries = 2
+
       try {
         // Validate all external specs before saving
         const invalidSpecs = externalSpecs.value.filter(spec =>
@@ -742,6 +744,11 @@ export default {
           throw new Error('No GitHub token found')
         }
 
+        // If this is a retry due to conflict, refresh the file state first
+        if (retryCount > 0) {
+          await refreshFileState()
+        }
+
         // Prepare updated content
         const updatedContent = { ...originalSpecsJson.value.content }
         if (updatedContent.specs && updatedContent.specs.length > 0) {
@@ -767,6 +774,11 @@ export default {
         )
 
         if (!response.ok) {
+          // Handle 409 Conflict - file was modified by someone else
+          if (response.status === 409 && retryCount < maxRetries) {
+            console.log(`File conflict detected, retrying... (attempt ${retryCount + 1}/${maxRetries})`)
+            return await saveSpecs(retryCount + 1)
+          }
           throw new Error(`Failed to save specs.json: ${response.statusText}`)
         }
 
@@ -774,7 +786,8 @@ export default {
         originalSpecsJson.value.sha = result.content.sha
         hasChanges.value = false
 
-        alert('External specifications saved successfully!')
+        const retryMessage = retryCount > 0 ? ` (resolved after ${retryCount} retry${retryCount === 1 ? '' : 'ies'})` : ''
+        alert(`External specifications saved successfully!${retryMessage}`)
 
       } catch (err) {
         console.error('Error saving specs:', err)
@@ -785,6 +798,38 @@ export default {
       } finally {
         saving.value = false
       }
+    }
+
+    const refreshFileState = async () => {
+      const token = localStorage.getItem('github_token')
+      if (!token) {
+        throw new Error('No GitHub token found')
+      }
+
+      const response = await fetch(
+        `https://api.github.com/repos/${owner.value}/${repo.value}/contents/specs.json?ref=${branch.value}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error(`Failed to refresh file state: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      const content = JSON.parse(atob(data.content))
+
+      // Update the SHA for the next save attempt
+      originalSpecsJson.value = {
+        content: content,
+        sha: data.sha
+      }
+
+      console.log('File state refreshed with new SHA:', data.sha)
     }
 
     const goBack = () => {
