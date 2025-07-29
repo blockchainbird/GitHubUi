@@ -132,8 +132,8 @@
                         required
                       >
                         <option value="github">GitHub</option>
-                        <option value="gitlab">GitLab</option>
-                        <option value="bitbucket">Bitbucket</option>
+                        <!-- <option value="gitlab">GitLab</option>
+                        <option value="bitbucket">Bitbucket</option> -->
                       </select>
                     </div>
                     <div class="col-md-4 mb-3">
