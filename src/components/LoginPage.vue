@@ -1,6 +1,6 @@
 <template>
   <div class="row justify-content-center login-bg">
-    <div class="col-md-6 col-lg-4">
+    <div class="mt-3 col-md-6 col-lg-4">
       <div class="card">
         <div class="card-body">
           <div class="text-center mb-3">
