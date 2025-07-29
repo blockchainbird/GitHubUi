@@ -267,9 +267,18 @@
                         {{ term.external ? term.source : term.file }}
                       </small>
                     </div>
-                    <span v-if="term.external" class="badge bg-success">External</span>
+                    <div class="d-flex align-items-center gap-2">
+                      <button v-if="term.definition" 
+                        @click.stop="toggleIndividualTerm(term)"
+                        class="btn btn-outline-secondary btn-sm"
+                        :title="isTermDefinitionVisible(term) ? 'Hide definition' : 'Show definition'"
+                        type="button">
+                        <i class="bi" :class="isTermDefinitionVisible(term) ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                      </button>
+                      <span v-if="term.external" class="badge bg-success">External</span>
+                    </div>
                   </div>
-                  <div v-if="term.definition && !definitionsCollapsed" class="definition-preview w-100 mt-2 pt-2 border-top"
+                  <div v-if="term.definition && isTermDefinitionVisible(term)" class="definition-preview w-100 mt-2 pt-2 border-top"
                     v-html="term.definition"></div>
                 </button>
               </div>
@@ -417,6 +426,7 @@ export default {
     
     // Definition preview collapse/expand state
     const definitionsCollapsed = ref(false)
+    const individualTermsExpanded = ref(new Map()) // Track individual term expansion state
 
     // Add Term modal state
     const newTerm = ref({
@@ -1494,10 +1504,10 @@ export default {
             term.aliases.some(alias => alias.toLowerCase().includes(filter)) ||
             (term.external && term.externalSpec.toLowerCase().includes(filter))
           
-          // Only search in definition text when definitions are not collapsed
-          const definitionMatch = !definitionsCollapsed.value && 
-            term.definitionText && 
-            term.definitionText.toLowerCase().includes(filter)
+          // Only search in definition text when the definition would be visible
+          const definitionMatch = term.definitionText && 
+            term.definitionText.toLowerCase().includes(filter) && 
+            isTermDefinitionVisible(term)
           
           return basicMatch || definitionMatch
         })
@@ -1506,8 +1516,31 @@ export default {
 
     const toggleDefinitionsCollapse = () => {
       definitionsCollapsed.value = !definitionsCollapsed.value
+      
+      // If we're going from collapsed to expanded, clear individual states
+      // so all terms show their definitions
+      if (!definitionsCollapsed.value) {
+        individualTermsExpanded.value.clear()
+      }
+      
       // Re-filter terms to apply the new visibility rules
       filterTerms()
+    }
+
+    const toggleIndividualTerm = (term) => {
+      const termKey = term.id + (term.external ? '_' + term.externalSpec : '')
+      const currentState = individualTermsExpanded.value.get(termKey) || false
+      individualTermsExpanded.value.set(termKey, !currentState)
+    }
+
+    const isTermDefinitionVisible = (term) => {
+      // If globally collapsed, check individual term state
+      if (definitionsCollapsed.value) {
+        const termKey = term.id + (term.external ? '_' + term.externalSpec : '')
+        return individualTermsExpanded.value.get(termKey) || false
+      }
+      // If globally expanded, show all (unless we want to add individual collapse when expanded)
+      return true
     }
 
     const insertTermReference = async (term) => {
@@ -1799,6 +1832,9 @@ export default {
       // Definition collapse/expand functionality
       definitionsCollapsed,
       toggleDefinitionsCollapse,
+      individualTermsExpanded,
+      toggleIndividualTerm,
+      isTermDefinitionVisible,
       // Add Term functionality
       newTerm,
       addTermError,
