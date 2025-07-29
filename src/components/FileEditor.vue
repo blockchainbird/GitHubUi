@@ -554,22 +554,22 @@ export default {
         })
         if (termDef) {
           const definition = termDef.definition || termDef.definitionText || 'No definition available'
-          return `<h2 class="term-reference">
+          return `<div class="external-term-reference">
             <span class="term-name">${cleanTermId}</span>
             <div class="term-definition">${definition}</div>
-          </h2>`
+          </div>`
         } else {
           // If definition not found and terms are not loaded, trigger loading
           if (currentTerms.length === 0) {
             // Trigger async loading without blocking
             setTimeout(() => loadTermDefinitionAsync(cleanSpecName, cleanTermId), 0)
-            return `<div class="term-reference">
+            return `<div class="external-term-reference">
               <span class="term-name">${cleanTermId}</span>
               <div class="term-definition loading">Loading definition...</div>
             </div>`
           } else {
             // Terms are loaded but term not found
-            return `<div class="term-reference">
+            return `<div class="external-term-reference">
               <span class="term-name">${cleanTermId}</span>
               <div class="term-definition not-found">Definition not found for "${cleanTermId}" in spec "${cleanSpecName}"</div>
             </div>`
@@ -597,7 +597,7 @@ export default {
 
         if (termDef) {
           const definition = termDef.definition || termDef.definitionText || 'No definition available'
-          return `<div class="term-reference">
+          return `<div class="external-term-reference">
             <span class="term-name">${cleanTermId}</span>
             <div class="term-definition">${definition}</div>
           </div>`
@@ -606,13 +606,13 @@ export default {
           if (currentTerms.length === 0) {
             // Trigger async loading without blocking
             setTimeout(() => loadTermDefinitionAsync(cleanSpecName, cleanTermId), 0)
-            return `<div class="term-reference">
+            return `<div class="external-term-reference">
               <span class="term-name">${cleanTermId}</span>
               <div class="term-definition loading">Loading definition...</div>
             </div>`
           } else {
             // Terms are loaded but term not found
-            return `<div class="term-reference">
+            return `<div class="external-term-reference">
               <span class="term-name">${cleanTermId}</span>
               <div class="term-definition not-found">Definition not found for "${cleanTermId}" in spec "${cleanSpecName}"</div>
             </div>`
@@ -635,7 +635,7 @@ export default {
 
         if (termDef) {
           const definition = termDef.definition || termDef.definitionText || 'No definition available'
-          return `<div class="term-reference">
+          return `<div class="external-term-reference">
             <span class="term-name">${cleanTermId}</span>
             <div class="term-definition">${definition}</div>
           </div>`
@@ -644,13 +644,13 @@ export default {
           if (currentTerms.length === 0) {
             // Trigger async loading without blocking
             setTimeout(() => loadTermDefinitionAsync('', cleanTermId), 0)
-            return `<div class="term-reference">
+            return `<div class="external-term-reference">
               <span class="term-name">${cleanTermId}</span>
               <div class="term-definition loading">Loading definition...</div>
             </div>`
           } else {
             // Terms are loaded but term not found
-            return `<div class="term-reference">
+            return `<div class="external-term-reference">
               <span class="term-name">${cleanTermId}</span>
               <div class="term-definition not-found">Definition not found for "${cleanTermId}"</div>
             </div>`
@@ -663,10 +663,10 @@ export default {
         const cleanTermId = termId.trim()
         const cleanAliases = aliases ? aliases.split(',').map(a => a.trim()).filter(a => a.length > 0) : []
 
-        return `<h2 class="term-definition-marker">
+        return `<div class="term-definition-marker">
           <span class="definition-term-name">${cleanTermId}</span>
           ${cleanAliases.length > 0 ? `<div class="definition-aliases">Aliases: ${cleanAliases.join(', ')}</div>` : ''}
-        </h2>`
+        </div>`
       })
 
       // Wrap consecutive list items in ul tags
@@ -1853,7 +1853,8 @@ export default {
 }
 </script>
 
-<style>
+<style lang="scss">
+@import '../styles/custom-bootstrap.scss';
 .markdown-preview {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.6;
@@ -1936,12 +1937,13 @@ textarea:focus {
 }
 
 /* Term reference styles */
-.term-reference {
+.external-term-reference {
   margin: 1rem 0;
   padding: 0.15rem;
   border: 1px solid #e9ecef;
   border-radius: 0.375rem;
-  background-color: #94c3f1;
+  /* background-color: #94c3f1; */
+  background-color: $success-color-transparent;
 }
 
 .term-name {
