@@ -1330,12 +1330,17 @@ export default {
     const loadExternalSpecs = async (externalSpecs) => {
       const externalTerms = []
 
-      // Define multiple CORS proxy options, with local PHP proxy first
-      // Use VITE_BASE_PATH for proxy path if available
       const basePath = import.meta.env.VITE_BASE_PATH || '/';
-      const proxyPath = basePath.endsWith('/') ? basePath + 'proxy.php?url=' : basePath + '/proxy.php?url=';
+      let proxyPath;
+      if (import.meta.env.VITE_PROXY_URL) {
+        proxyPath = import.meta.env.VITE_PROXY_URL;
+      } else {
+        proxyPath = basePath.endsWith('/') ? basePath + 'proxy.php?url=' : basePath + '/proxy.php?url=';
+      }
+
       const corsProxies = [
         proxyPath
+        // Fallback proxies commented out for now - can be enabled if needed
         // ,
         // 'https://api.allorigins.win/raw?url=',
         // 'https://corsproxy.io/?',
