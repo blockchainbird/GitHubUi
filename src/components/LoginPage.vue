@@ -62,13 +62,13 @@
               </div>
             </form>
 
-            <div class="mt-4">
+            <!-- <div class="mt-4">
               <h6>Required Token Permissions:</h6>
               <ul class="text-muted small">
                 <li>repo (Full control of private repositories)</li>
                 <li>Contents (Read and write repository contents)</li>
               </ul>
-            </div>
+            </div> -->
           </div>
         </div>
       </div>
