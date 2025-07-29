@@ -8,21 +8,13 @@
       </span>
 
       <!-- Hamburger button for mobile -->
-      <button 
-        class="navbar-toggler" 
-        type="button" 
-        @click="toggleNavbar"
-        :aria-expanded="isNavbarOpen"
-        aria-controls="navbarNav" 
-        aria-label="Toggle navigation">
+      <button class="navbar-toggler" type="button" @click="toggleNavbar" :aria-expanded="isNavbarOpen"
+        aria-controls="navbarNav" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
 
       <!-- Collapsible content -->
-      <div 
-        class="collapse navbar-collapse" 
-        :class="{ show: isNavbarOpen }" 
-        id="navbarNav">
+      <div class="collapse navbar-collapse" :class="{ show: isNavbarOpen }" id="navbarNav">
         <div class="navbar-nav ms-auto">
           <button @click="navigateAndClose('/home')" class="nav-link btn btn-link">
             <i class="bi bi-house"></i>
@@ -40,8 +32,8 @@
             <i class="bi bi-info-circle"></i>
             About
           </button>
-          <a href="https://blockchainbird.github.io/spec-up-t-website/" target="_blank" rel="noopener"
-            class="nav-link" @click="closeNavbar">
+          <a href="https://blockchainbird.github.io/spec-up-t-website/docs/tools/spec-up-t-editor-user-guide/"
+            target="_blank" rel="noopener" class="nav-link" @click="closeNavbar">
             <i class="bi bi-box-arrow-up-right"></i>
             Documentation
           </a>
@@ -51,8 +43,8 @@
             <i class="bi bi-link-45deg"></i>
             External Specs
           </button>
-          <a v-if="showRepoRelatedButtons" :href="githubRepoUrl" target="_blank" rel="noopener"
-            class="nav-link" title="View Repository on GitHub" @click="closeNavbar">
+          <a v-if="showRepoRelatedButtons" :href="githubRepoUrl" target="_blank" rel="noopener" class="nav-link"
+            title="View Repository on GitHub" @click="closeNavbar">
             <i class="bi bi-github"></i>
             View on GitHub
           </a>
@@ -74,7 +66,8 @@
       </template>
       <template #body>
         <p>
-          <strong>Spec-Up-T Editor</strong> is a web-based tool designed to help users create and manage specifications in a
+          <strong>Spec-Up-T Editor</strong> is a web-based tool designed to help users create and manage specifications
+          in a
           user-friendly manner. It provides an intuitive interface for editing, validating, and visualizing
           specifications, making it easier for teams to collaborate and maintain their documentation.
         </p>
