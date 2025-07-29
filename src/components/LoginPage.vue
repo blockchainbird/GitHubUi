@@ -43,6 +43,14 @@
                     </a>
                     with repo permissions
                   </small>
+                  –
+                  <small>
+                    <a href="https://blockchainbird.github.io/spec-up-t-website/docs/getting-started/github-token/#get-the-token"
+                      target="_blank" class="text-decoration-none">
+                      <i class="bi bi-box-arrow-up-right"></i>
+                      Instructions
+                    </a>
+                  </small>
                 </div>
               </div>
 
