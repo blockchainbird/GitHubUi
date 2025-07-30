@@ -628,6 +628,7 @@ export default {
     const definitionEditor = ref(null)
     const isTermsModalFromSimpleEditor = ref(false) // Track if modal opened from simple editor
     const isSyncing = ref(false) // Track if we're currently syncing to prevent loops
+    const isInitialLoading = ref(true) // Track initial loading phase to prevent unwanted mode switches
 
     // Helper function to check authentication and redirect if needed
     const checkAuthAndRedirect = (error) => {
@@ -930,6 +931,9 @@ export default {
           if (isTermsFile.value) {
             editMode.value = 'simple'
           }
+          
+          // Mark initial loading as complete
+          isInitialLoading.value = false
         }, 100)
         
         return
@@ -963,6 +967,9 @@ export default {
         if (isTermsFile.value) {
           editMode.value = 'simple'
         }
+
+        // Mark initial loading as complete
+        isInitialLoading.value = false
 
       } catch (err) {
         console.error('Error loading file:', err)
@@ -2315,9 +2322,9 @@ export default {
     })
 
     // Initialize simple editor when content loads for terms files
-    // This watcher is more conservative and only runs during initial setup
+    // This watcher only runs during initial setup to avoid interfering with user interactions
     watch(content, () => {
-      if (isTermsFile.value && !loading.value && !isSyncing.value) {
+      if (isTermsFile.value && !loading.value && !isSyncing.value && isInitialLoading.value) {
         // Set default to simple mode for terms files if not already set and this looks like terms content
         if (editMode.value === 'edit' && (content.value.includes('[[def:') || content.value.includes('[[tref:'))) {
           editMode.value = 'simple'
@@ -2402,7 +2409,9 @@ export default {
       insertNewTerm,
       // Help functionality
       helpContent,
-      showHelpModal
+      showHelpModal,
+      // Loading state
+      isInitialLoading
     }
   }
 }
