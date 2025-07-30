@@ -1,0 +1,159 @@
+/**
+ * Utility functions for text editing operations
+ * Provides common text manipulation functions for editors
+ */
+
+import { nextTick } from 'vue'
+
+/**
+ * Insert text around selection in textarea
+ * @param {HTMLTextAreaElement} textarea - The textarea element
+ * @param {string} content - Current content
+ * @param {string} before - Text to insert before selection
+ * @param {string} after - Text to insert after selection
+ * @returns {Promise<{newContent: string, newPosition: number}>}
+ */
+export const insertText = async (textarea, content, before, after = '') => {
+  if (!textarea) return { newContent: content, newPosition: 0 }
+
+  const start = textarea.selectionStart
+  const end = textarea.selectionEnd
+  const selectedText = content.substring(start, end)
+
+  const replacement = before + selectedText + after
+  const newContent = content.substring(0, start) + replacement + content.substring(end)
+  const newPosition = start + before.length
+
+  await nextTick()
+  textarea.focus()
+  textarea.setSelectionRange(newPosition, newPosition + selectedText.length)
+
+  return { newContent, newPosition }
+}
+
+/**
+ * Insert heading at current position
+ * @param {HTMLTextAreaElement} textarea - The textarea element
+ * @param {string} content - Current content
+ * @returns {Promise<{newContent: string, newPosition: number}>}
+ */
+export const insertHeading = async (textarea, content) => {
+  return insertText(textarea, content, '## ', '')
+}
+
+/**
+ * Insert list item at line start
+ * @param {HTMLTextAreaElement} textarea - The textarea element
+ * @param {string} content - Current content
+ * @returns {Promise<{newContent: string, newPosition: number}>}
+ */
+export const insertList = async (textarea, content) => {
+  if (!textarea) return { newContent: content, newPosition: 0 }
+
+  const start = textarea.selectionStart
+  const lineStart = content.lastIndexOf('\n', start - 1) + 1
+  const newContent = content.substring(0, lineStart) + '* ' + content.substring(lineStart)
+  const newPosition = start + 2
+
+  await nextTick()
+  textarea.focus()
+  textarea.setSelectionRange(newPosition, newPosition)
+
+  return { newContent, newPosition }
+}
+
+/**
+ * Get file extension from path
+ * @param {string} filePath - File path
+ * @returns {string} File extension
+ */
+export const getFileExtension = (filePath) => {
+  const ext = filePath.split('.').pop()?.toLowerCase()
+  return ext || 'unknown'
+}
+
+/**
+ * Check if file is a terms file based on path or content
+ * @param {string} filename - Filename
+ * @param {string} content - File content
+ * @returns {boolean} True if file appears to be a terms file
+ */
+export const isTermsFile = (filename, content) => {
+  if (!filename) return false
+  
+  const isLikelyTermsFile = filename.toLowerCase().includes('term') || 
+                           content.includes('[[def:') || 
+                           content.includes('[[tref:')
+  
+  return isLikelyTermsFile && filename.toLowerCase().endsWith('.md')
+}
+
+/**
+ * Process term references in markdown content for rendering
+ * @param {string} content - Markdown content
+ * @param {Array} terms - Available terms for reference resolution
+ * @returns {string} Processed HTML content
+ */
+export const processTermReferences = (content, terms = []) => {
+  if (!content) return ''
+
+  let html = content
+
+  // Handle tref patterns (external references)
+  html = html.replace(/\[\[tref:\s*([^,\]]+),\s*([^\]]+)\]\]/g, (match, specName, termId) => {
+    return `<div class="external-term-reference">
+      <div class="term-name">${termId.trim()}</div>
+      <div class="term-definition loading">Loading definition from ${specName.trim()}...</div>
+    </div>`
+  })
+
+  // Handle xref patterns (external references)
+  html = html.replace(/\[\[xref:\s*([^,\]]+),\s*([^\]]+)\]\]/g, (match, specName, termId) => {
+    return `<span class="term-reference external" title="External reference to ${termId.trim()} from ${specName.trim()}">
+      ${termId.trim()}
+    </span>`
+  })
+
+  // Handle ref patterns (local references)
+  html = html.replace(/\[\[ref:\s*([^\]]+)\]\]/g, (match, termId) => {
+    const term = terms.find(t => t.id === termId.trim() && !t.external)
+    if (term) {
+      return `<span class="term-reference local" title="${term.definitionText || 'Local term reference'}">
+        ${termId.trim()}
+      </span>`
+    }
+    return `<span class="term-reference local missing" title="Term not found">
+      ${termId.trim()}
+    </span>`
+  })
+
+  // Handle def patterns (term definitions)
+  html = html.replace(/\[\[def:\s*([^,\]]+)(?:,\s*([^\]]+))?\]\]/g, (match, termId, aliases) => {
+    const cleanAliases = aliases ? aliases.split(',').map(a => a.trim()).filter(a => a.length > 0) : []
+
+    return `<div class="term-definition-marker">
+      <div class="definition-term-name">${termId.trim()}</div>
+      ${cleanAliases.length > 0 ? `<div class="definition-aliases">Aliases: ${cleanAliases.join(', ')}</div>` : ''}
+    </div>`
+  })
+
+  return html
+}
+
+/**
+ * Create debounced function
+ * @param {Function} func - Function to debounce
+ * @param {number} wait - Wait time in milliseconds
+ * @returns {Function} Debounced function
+ */
+export const debounce = (func, wait) => {
+  let timeout
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout)
+      func(...args)
+    }
+    clearTimeout(timeout)
+    timeout = setTimeout(later, wait)
+  }
+}

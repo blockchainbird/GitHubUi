@@ -56,7 +56,9 @@
       </div>
     </div>
 
-    <ContentValidationAlert :warnings="validationWarnings" :show-warnings="showValidationWarnings" />
+    <ContentValidationAlert 
+      :warnings="validationWarnings" 
+      :show-warnings="showValidationWarnings" />
 
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border" role="status">
@@ -95,12 +97,18 @@
           <div class="card-body p-0">
             <!-- Simple Editor (Terms Files Only) -->
             <div v-if="editMode === 'simple'" class="p-3">
-              <SimpleTermsEditor v-model:termType="simpleEditor.termType"
-                v-model:externalRepo="simpleEditor.externalRepo" v-model:mainTerm="simpleEditor.mainTerm"
-                v-model:aliases="simpleEditor.aliases" v-model:definition="simpleEditor.definition"
-                @form-change="onSimpleFormChange" @definition-input="onSimpleDefinitionInput"
-                @definition-enter="handleDefinitionEnter" @show-external-terms="showExternalTermsModal"
-                @insert-definition-text="insertDefinitionText" ref="simpleEditorRef" />
+              <SimpleTermsEditor
+                v-model:termType="simpleEditor.termType"
+                v-model:externalRepo="simpleEditor.externalRepo"
+                v-model:mainTerm="simpleEditor.mainTerm"
+                v-model:aliases="simpleEditor.aliases"
+                v-model:definition="simpleEditor.definition"
+                @form-change="onSimpleFormChange"
+                @definition-input="onSimpleDefinitionInput"
+                @definition-enter="handleDefinitionEnter"
+                @show-external-terms="showExternalTermsModal"
+                @insert-definition-text="insertDefinitionText"
+                ref="simpleEditorRef" />
             </div>
 
             <!-- Technical/Edit Mode -->
@@ -121,7 +129,7 @@
                     <i class="bi bi-type-italic"></i>
                   </button>
                 </div>
-
+                
                 <div class="btn-group btn-group-sm me-2" role="group">
                   <button @click="showTermsModal" class="btn btn-outline-info" title="Insert Term Reference">
                     <i class="bi bi-bookmark"></i>
@@ -157,12 +165,21 @@
     </div>
 
     <!-- Terms Modal -->
-    <TermsModal :loading="loadingTerms" :error="termsError" :proxy-info="proxyInfo" :terms="filteredTerms"
-      v-model:searchFilter="termFilter" v-model:referenceType="referenceType"
-      :definitions-collapsed="definitionsCollapsed" :is-definition-visible="isTermDefinitionVisible"
-      :is-from-simple-editor="isTermsModalFromSimpleEditor" @filter-terms="filterTerms"
-      @toggle-definitions="toggleDefinitionsCollapse" @toggle-individual-term="toggleIndividualTerm"
-      @refresh-terms="refreshTerms" @insert-term="handleInsertTerm" />
+    <TermsModal
+      :loading="loadingTerms"
+      :error="termsError"
+      :proxy-info="proxyInfo"
+      :terms="filteredTerms"
+      v-model:searchFilter="termFilter"
+      v-model:referenceType="referenceType"
+      :definitions-collapsed="definitionsCollapsed"
+      :is-definition-visible="isTermDefinitionVisible"
+      :is-from-simple-editor="isTermsModalFromSimpleEditor"
+      @filter-terms="filterTerms"
+      @toggle-definitions="toggleDefinitionsCollapse"
+      @toggle-individual-term="toggleIndividualTerm"
+      @refresh-terms="refreshTerms"
+      @insert-term="handleInsertTerm" />
 
     <!-- Commit Modal -->
     <div class="modal fade" id="commitModal" tabindex="-1">
@@ -232,12 +249,12 @@ import { useTermsManagement } from '../composables/useTermsManagement.js'
 import { useSimpleEditor } from '../composables/useSimpleEditor.js'
 import { useContentValidation } from '../composables/useContentValidation.js'
 import { usePublishToggle } from '../composables/usePublishToggle.js'
-import {
-  insertText,
-  insertHeading,
-  insertList,
-  isTermsFile,
-  processTermReferences,
+import { 
+  insertText, 
+  insertHeading, 
+  insertList, 
+  isTermsFile, 
+  processTermReferences, 
   getFileExtension,
   debounce
 } from '../utils/editorUtils.js'
@@ -293,7 +310,6 @@ export default {
       referenceType,
       definitionsCollapsed,
       individualTermsExpanded,
-      specsConfig,
       filterTerms,
       isTermDefinitionVisible,
       toggleDefinitionsCollapse,
@@ -312,8 +328,8 @@ export default {
       generatedTermLine,
       syncSimpleToTechnical,
       syncTechnicalToSimple,
-      addAlias: addSimpleAlias,
-      removeAlias: removeSimpleAlias,
+      addAlias,
+      removeAlias,
       onAliasInputChange,
       insertDefinitionText
     } = simpleEditorState
@@ -337,64 +353,7 @@ export default {
 
     // Check if file is terms file
     const isTermsFileComputed = computed(() => {
-      // For new files, check if we're in a terms directory or if filename suggests terms
-      const isCreatingNewFile = isNewFile.value || route.query.new === 'true'
-      
-      // Debug logging
-      console.log('Debug isTermsFileComputed:', {
-        isNewFile: isNewFile.value,
-        routeQueryNew: route.query.new,
-        isCreatingNewFile,
-        path: props.path,
-        filename: filename.value,
-        route: route
-      })
-      
-      if (isCreatingNewFile) {
-        // Handle both string and array cases for path
-        let path = ''
-        if (typeof props.path === 'string') {
-          path = props.path
-        } else if (Array.isArray(props.path) && props.path.length > 0) {
-          path = props.path[0]
-        }
-        
-        const name = filename.value || ''
-        
-        // Check if path contains terms directory patterns
-        const isInTermsDirectory = path.toLowerCase().includes('term') ||
-          path.toLowerCase().includes('/terms/') ||
-          path.toLowerCase().includes('/terms-definitions/') ||
-          path.toLowerCase().includes('definitions')
-        
-        // Check if filename suggests it's a terms file
-        const isTermsFileName = name.toLowerCase().includes('term') ||
-          name.toLowerCase().includes('definition') ||
-          name.toLowerCase().includes('def-')
-        
-        // Check if we're creating a markdown file (new files typically don't have extension in path initially)
-        const isMarkdownFile = name.toLowerCase().endsWith('.md') || 
-                             path.toLowerCase().endsWith('.md') ||
-                             (!name.includes('.') && !path.includes('.')) // Assume .md for files without extension
-        
-        console.log('Debug new file terms detection:', {
-          path, name, isInTermsDirectory, isTermsFileName, isMarkdownFile,
-          result: (isInTermsDirectory || isTermsFileName) && isMarkdownFile
-        })
-        
-        // For new files in terms context, enable terms mode
-        return (isInTermsDirectory || isTermsFileName) && isMarkdownFile
-      }
-      
-      // For existing files, use the original logic
-      const existingFileResult = isTermsFile(filename.value, content.value)
-      console.log('Debug existing file terms detection:', {
-        filename: filename.value,
-        hasContent: !!content.value,
-        result: existingFileResult
-      })
-      
-      return existingFileResult
+      return isTermsFile(filename.value, content.value)
     })
 
     // Rendered content for preview
@@ -458,7 +417,7 @@ export default {
       if (isSyncing.value) return
       error.value = ''
       success.value = ''
-      await validateContent(content.value, filename.value, specsConfig.value)
+      await validateContent(content.value, filename.value, termsManagement.specsConfig.value)
     }
 
     const onSimpleFormChange = () => {
@@ -498,7 +457,7 @@ export default {
 
       simpleEditor.value.externalRepo = term.externalSpec || ''
       simpleEditor.value.mainTerm = term.id || ''
-
+      
       if (term.aliases && term.aliases.length > 0) {
         simpleEditor.value.aliases = [...term.aliases, null]
       } else {
@@ -553,7 +512,7 @@ export default {
       const result = await insertText(textarea, content.value, refText)
       content.value = result.newContent
 
-      await validateContent(content.value, filename.value, specsConfig.value)
+      await validateContent(content.value, filename.value, termsManagement.specsConfig.value)
 
       const modal = bootstrap.Modal.getInstance(document.getElementById('termsModal'))
       modal.hide()
@@ -607,7 +566,7 @@ export default {
 
       try {
         const result = await togglePublishStatus(content.value, fileSha.value, decodedPath.value, filename.value)
-
+        
         if (result.success) {
           success.value = result.message
           fileSha.value = result.newSha
@@ -687,7 +646,7 @@ export default {
 
     watch(content, async () => {
       if (!loading.value && !isSyncing.value) {
-        await validateContent(content.value, filename.value, specsConfig.value)
+        await validateContent(content.value, filename.value, termsManagement.specsConfig.value)
       }
     }, { flush: 'post' })
 
@@ -715,7 +674,7 @@ export default {
       editMode,
       editor,
       proxyInfo,
-
+      
       // Computed
       filename,
       decodedPath,
@@ -725,13 +684,13 @@ export default {
       isTermsFileComputed,
       renderedContent,
       helpContent,
-
+      
       // Simple editor
       simpleEditor,
       definitionEditor,
       isTermsModalFromSimpleEditor,
       generatedTermLine,
-
+      
       // Terms
       terms,
       filteredTerms,
@@ -741,11 +700,11 @@ export default {
       referenceType,
       definitionsCollapsed,
       individualTermsExpanded,
-
+      
       // Validation
       validationWarnings,
       showValidationWarnings,
-
+      
       // Methods
       handleContentChange,
       onSimpleFormChange,
@@ -764,7 +723,7 @@ export default {
       showAddTermModal,
       showHelpModal,
       goBack,
-
+      
       // Terms methods
       filterTerms,
       isTermDefinitionVisible,
