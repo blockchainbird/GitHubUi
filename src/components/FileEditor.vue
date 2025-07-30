@@ -19,7 +19,7 @@
           Close
         </button>
         <button @click="togglePublishStatus" class="btn me-2" :class="isDraft ? 'btn-success' : 'btn-warning'"
-          :disabled="saving || isNewFile" 
+          :disabled="saving || isNewFile"
           :title="isNewFile ? 'Create the file first before publishing/unpublishing' : ''">
           <i class="bi" :class="isDraft ? 'bi-eye' : 'bi-eye-slash'"></i>
           {{ isDraft ? 'Publish' : 'Unpublish' }}
@@ -50,7 +50,8 @@
         <i class="bi bi-info-circle-fill me-2 flex-shrink-0 mt-1"></i>
         <div>
           <strong>Creating New File:</strong>
-          This file doesn't exist yet. You can edit and use all toolbar functions. Click "Create & Commit" when you're ready to save it to the repository.
+          This file doesn't exist yet. You can edit and use all toolbar functions. Click "Create & Commit" when you're
+          ready to save it to the repository.
         </div>
       </div>
     </div>
@@ -83,7 +84,8 @@
               {{ path }}
             </h5>
             <div class="btn-group" role="group">
-              <input type="radio" class="btn-check" id="simple-mode" v-model="editMode" value="simple" autocomplete="off" v-if="isTermsFile">
+              <input type="radio" class="btn-check" id="simple-mode" v-model="editMode" value="simple"
+                autocomplete="off" v-if="isTermsFile">
               <label class="btn btn-outline-success btn-sm" for="simple-mode" v-if="isTermsFile">
                 <i class="bi bi-ui-checks"></i> Simple
               </label>
@@ -119,44 +121,36 @@
                       <div class="mb-3">
                         <label class="form-label fw-bold">Term Type</label>
                         <div class="btn-group w-100" role="group">
-                          <input type="radio" class="btn-check" id="termType-local" v-model="simpleEditor.termType" value="local" autocomplete="off">
+                          <input type="radio" class="btn-check" id="termType-local" v-model="simpleEditor.termType"
+                            value="local" autocomplete="off">
                           <label class="btn btn-outline-primary" for="termType-local">
-                            <i class="bi bi-house"></i> Local Term
+                            <i class="bi bi-house"></i> Create New Term
                           </label>
-                          <input type="radio" class="btn-check" id="termType-external" v-model="simpleEditor.termType" value="external" autocomplete="off">
-                          <label class="btn btn-outline-success" for="termType-external">
-                            <i class="bi bi-link-45deg"></i> External Reference
+                          <input type="radio" class="btn-check" id="termType-external" v-model="simpleEditor.termType"
+                            value="external" autocomplete="off">
+                          <label class="btn btn-outline-success" for="termType-external" @click="onUseExternalTermClick">
+                            <i class="bi bi-link-45deg"></i> Use External Term
                           </label>
                         </div>
                         <div class="form-text">
-                          <strong>Local:</strong> A term defined in this specification. 
-                          <strong>External:</strong> A reference to a term defined in another specification.
+                          <strong>Create New Term:</strong> You want to create a new term and definition in this specification.
+                          <strong>Use External Term:</strong> You want to reference a term defined in another specification.
                         </div>
                       </div>
 
                       <!-- External Repository (only for external terms) -->
                       <div v-if="simpleEditor.termType === 'external'" class="mb-3">
                         <label for="externalRepo" class="form-label fw-bold">External Repository</label>
-                        <input 
-                          id="externalRepo" 
-                          v-model="simpleEditor.externalRepo" 
-                          @input="syncSimpleToTechnical"
-                          class="form-control" 
-                          placeholder="e.g., keri-spec, did-core"
-                          required>
+                        <input id="externalRepo" v-model="simpleEditor.externalRepo" @input="syncSimpleToTechnical"
+                          class="form-control" placeholder="e.g., keri-spec, did-core" required>
                         <div class="form-text">The name of the external specification or repository.</div>
                       </div>
 
                       <!-- Main Term -->
                       <div class="mb-3">
                         <label for="mainTerm" class="form-label fw-bold">Main Term</label>
-                        <input 
-                          id="mainTerm" 
-                          v-model="simpleEditor.mainTerm" 
-                          @input="syncSimpleToTechnical"
-                          class="form-control" 
-                          placeholder="e.g., identifier, credential, proof"
-                          required>
+                        <input id="mainTerm" v-model="simpleEditor.mainTerm" @input="syncSimpleToTechnical"
+                          class="form-control" placeholder="e.g., identifier, credential, proof" required>
                         <div class="form-text">The primary term being defined or referenced.</div>
                       </div>
 
@@ -166,18 +160,12 @@
                           {{ simpleEditor.termType === 'local' ? 'Term Variants' : 'Aliases' }}
                           <small class="text-muted">(optional)</small>
                         </label>
-                        <div v-for="(alias, index) in simpleEditor.aliases" :key="`alias-${index}`" class="input-group mb-2">
-                          <input 
-                            v-model="simpleEditor.aliases[index]" 
-                            @input="onAliasInput(index)"
-                            class="form-control" 
+                        <div v-for="(alias, index) in simpleEditor.aliases" :key="`alias-${index}`"
+                          class="input-group mb-2">
+                          <input v-model="simpleEditor.aliases[index]" @input="onAliasInput(index)" class="form-control"
                             :placeholder="`${simpleEditor.termType === 'local' ? 'Variant' : 'Alias'} ${index + 1}`">
-                          <button 
-                            v-if="simpleEditor.aliases.length > 1" 
-                            @click="removeAlias(index)" 
-                            class="btn btn-outline-danger" 
-                            type="button"
-                            title="Remove this alias">
+                          <button v-if="simpleEditor.aliases.length > 1" @click="removeAlias(index)"
+                            class="btn btn-outline-danger" type="button" title="Remove this alias">
                             <i class="bi bi-trash"></i>
                           </button>
                         </div>
@@ -186,9 +174,9 @@
                           Add {{ simpleEditor.termType === 'local' ? 'Variant' : 'Alias' }}
                         </button>
                         <div class="form-text">
-                          {{ simpleEditor.termType === 'local' 
-                            ? 'Different ways this term might be expressed (e.g., ID, identifier, identity)' 
-                            : 'Alternative names for this external term' }}
+                          {{ simpleEditor.termType === 'local'
+                          ? 'Different ways this term might be expressed (e.g., ID, identifier, identity)'
+                          : 'Alternative names for this external term' }}
                         </div>
                       </div>
 
@@ -214,16 +202,20 @@
                       <!-- Definition Editor Toolbar -->
                       <div class="editor-toolbar p-2 mb-3 border-bottom bg-light rounded">
                         <div class="btn-group btn-group-sm" role="group">
-                          <button @click="insertDefinitionText('**', '**')" class="btn btn-outline-secondary" title="Bold">
+                          <button @click="insertDefinitionText('**', '**')" class="btn btn-outline-secondary"
+                            title="Bold">
                             <i class="bi bi-type-bold"></i>
                           </button>
-                          <button @click="insertDefinitionText('*', '*')" class="btn btn-outline-secondary" title="Italic">
+                          <button @click="insertDefinitionText('*', '*')" class="btn btn-outline-secondary"
+                            title="Italic">
                             <i class="bi bi-type-italic"></i>
                           </button>
-                          <button @click="insertDefinitionText('`', '`')" class="btn btn-outline-secondary" title="Code">
+                          <button @click="insertDefinitionText('`', '`')" class="btn btn-outline-secondary"
+                            title="Code">
                             <i class="bi bi-code"></i>
                           </button>
-                          <button @click="insertDefinitionText('[', '](url)')" class="btn btn-outline-secondary" title="Link">
+                          <button @click="insertDefinitionText('[', '](url)')" class="btn btn-outline-secondary"
+                            title="Link">
                             <i class="bi bi-link"></i>
                           </button>
                           <button @click="showTermsModal" class="btn btn-outline-info" title="Insert Term Reference">
@@ -235,17 +227,13 @@
 
                       <div class="mb-3">
                         <label for="definitionContent" class="form-label fw-bold">Definition</label>
-                        <textarea 
-                          id="definitionContent"
-                          ref="definitionEditor"
-                          v-model="simpleEditor.definition" 
-                          @input="syncSimpleToTechnical"
-                          class="form-control"
-                          rows="12"
+                        <textarea id="definitionContent" ref="definitionEditor" v-model="simpleEditor.definition"
+                          @input="syncSimpleToTechnical" class="form-control" rows="12"
                           style="font-family: 'Consolas', 'Monaco', 'Courier New', monospace;"
                           placeholder="Enter the definition content here. Each line will automatically be prefixed with '~' in the technical format.&#10;&#10;You can use:&#10;- **bold text**&#10;- *italic text*&#10;- `code snippets`&#10;- [links](url)&#10;- [[ref: term]] for local references&#10;- [[xref: spec, term]] for external references"></textarea>
                         <div class="form-text">
-                          Write the definition content naturally. The system will automatically format it with '~' prefixes for technical compatibility.
+                          Write the definition content naturally. The system will automatically format it with '~'
+                          prefixes for technical compatibility.
                         </div>
                       </div>
                     </div>
@@ -290,7 +278,8 @@
                 </div>
               </div>
 
-              <textarea ref="editor" v-model="content" @input="handleContentChange" @keyup="handleContentChange" class="form-control border-0"
+              <textarea ref="editor" v-model="content" @input="handleContentChange" @keyup="handleContentChange"
+                class="form-control border-0"
                 style="min-height: 600px; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; resize: vertical;"
                 placeholder="Start editing your content here..."></textarea>
             </div>
@@ -338,7 +327,7 @@
           <div class="modal-header">
             <h5 class="modal-title">
               <i class="bi bi-bookmark"></i>
-              Insert Term Reference
+              {{ isTermsModalFromSimpleEditor ? 'Select External Term' : 'Insert Term Reference' }}
               <small v-if="!loadingTerms && terms.length > 0" class="text-muted">
                 ({{ filteredTerms.length }} of {{ terms.length }} terms)
               </small>
@@ -349,20 +338,19 @@
             <div class="mb-3">
               <label for="termFilter" class="form-label">Search Terms</label>
               <input id="termFilter" v-model="termFilter" @keyup="filterTerms" class="form-control"
-                placeholder="Search terms, definitions, or external specs..." autocomplete="off">
+                :placeholder="isTermsModalFromSimpleEditor ? 'Search external terms and specs...' : 'Search terms, definitions, or external specs...'" autocomplete="off">
             </div>
 
             <div class="mb-3 d-flex justify-content-between align-items-center">
               <label class="form-label mb-0">Filter Options</label>
-              <button @click="toggleDefinitionsCollapse" type="button" 
-                class="btn btn-outline-secondary btn-sm"
+              <button @click="toggleDefinitionsCollapse" type="button" class="btn btn-outline-secondary btn-sm"
                 :title="definitionsCollapsed ? 'Expand all definitions' : 'Collapse all definitions'">
                 <i class="bi" :class="definitionsCollapsed ? 'bi-chevron-down' : 'bi-chevron-up'"></i>
                 {{ definitionsCollapsed ? 'Expand' : 'Collapse' }} Definitions
               </button>
             </div>
 
-            <div class="mb-3">
+            <div v-if="!isTermsModalFromSimpleEditor" class="mb-3">
               <label class="form-label">Reference Type</label>
               <div class="btn-group w-100" role="group">
                 <input type="radio" class="btn-check" id="refType-auto" v-model="referenceType" value="auto"
@@ -401,15 +389,17 @@
               {{ termsError }}
             </div>
 
-            <div v-else-if="filteredTerms.length === 0 && !loadingTerms" class="text-center py-4">
+            <div v-else-if="displayedTermsForModal.length === 0 && !loadingTerms" class="text-center py-4">
               <i class="bi bi-search" style="font-size: 2rem; color: #6c757d;"></i>
-              <p class="mt-2 text-muted">No terms found matching your search.</p>
+              <p class="mt-2 text-muted">
+                {{ isTermsModalFromSimpleEditor ? 'No external terms found matching your search.' : 'No terms found matching your search.' }}
+              </p>
             </div>
 
             <div v-else class="terms-list" style="max-height: 400px; overflow-y: auto;">
               <div class="list-group">
-                <button v-for="term in filteredTerms" :key="term.id + (term.external ? '_' + term.externalSpec : '')"
-                  @click="insertTermReference(term)"
+                <button v-for="term in displayedTermsForModal" :key="term.id + (term.external ? '_' + term.externalSpec : '')"
+                  @click="isTermsModalFromSimpleEditor ? selectExternalTermForSimpleEditor(term) : insertTermReference(term)"
                   class="list-group-item list-group-item-action d-flex flex-column align-items-start"
                   :class="{ 'external-term': term.external }">
                   <div class="d-flex align-items-center w-100 mb-2">
@@ -425,18 +415,16 @@
                       </small>
                     </div>
                     <div class="d-flex align-items-center gap-2">
-                      <button v-if="term.definition" 
-                        @click.stop="toggleIndividualTerm(term)"
+                      <button v-if="term.definition" @click.stop="toggleIndividualTerm(term)"
                         class="btn btn-outline-secondary btn-sm"
-                        :title="isTermDefinitionVisible(term) ? 'Hide definition' : 'Show definition'"
-                        type="button">
+                        :title="isTermDefinitionVisible(term) ? 'Hide definition' : 'Show definition'" type="button">
                         <i class="bi" :class="isTermDefinitionVisible(term) ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
                       </button>
                       <span v-if="term.external" class="badge bg-success">External</span>
                     </div>
                   </div>
-                  <div v-if="term.definition && isTermDefinitionVisible(term)" class="definition-preview w-100 mt-2 pt-2 border-top"
-                    v-html="term.definition"></div>
+                  <div v-if="term.definition && isTermDefinitionVisible(term)"
+                    class="definition-preview w-100 mt-2 pt-2 border-top" v-html="term.definition"></div>
                 </button>
               </div>
             </div>
@@ -640,6 +628,7 @@ export default {
       definition: ''
     })
     const definitionEditor = ref(null)
+    const isTermsModalFromSimpleEditor = ref(false) // Track if modal opened from simple editor
 
     // Helper function to check authentication and redirect if needed
     const checkAuthAndRedirect = (error) => {
@@ -716,6 +705,16 @@ export default {
           return `[[tref: ${externalRepo}, ${mainTerm}, ${validAliases.join(', ')}]]`
         }
       }
+    })
+
+    // Filter terms displayed in modal based on context
+    const displayedTermsForModal = computed(() => {
+      if (isTermsModalFromSimpleEditor.value) {
+        // When opened from simple editor, only show external terms
+        return filteredTerms.value.filter(term => term.external)
+      }
+      // Otherwise show all filtered terms
+      return filteredTerms.value
     })
     
     // Helper function to get file extension for analytics
@@ -1244,6 +1243,49 @@ export default {
         textarea.focus()
         textarea.setSelectionRange(start + before.length, start + before.length + selectedText.length)
       })
+    }
+
+    // Handle clicking "Use External Term" in simple editor
+    const onUseExternalTermClick = async () => {
+      // Set the term type to external
+      simpleEditor.value.termType = 'external'
+      
+      // Set flag to indicate modal is opened from simple editor
+      isTermsModalFromSimpleEditor.value = true
+      
+      // Show the terms modal
+      await showTermsModal()
+    }
+
+    // Handle selecting an external term from the modal when in simple editor mode
+    const selectExternalTermForSimpleEditor = (term) => {
+      if (!term.external) {
+        console.warn('Non-external term selected in simple editor mode')
+        return
+      }
+
+      // Populate the simple editor fields
+      simpleEditor.value.externalRepo = term.externalSpec || ''
+      simpleEditor.value.mainTerm = term.id || ''
+      
+      // Set aliases, ensuring we have at least one empty slot for UX
+      if (term.aliases && term.aliases.length > 0) {
+        simpleEditor.value.aliases = [...term.aliases, '']
+      } else {
+        simpleEditor.value.aliases = ['']
+      }
+
+      // Sync to technical editor
+      syncSimpleToTechnical()
+
+      // Hide modal
+      const modal = bootstrap.Modal.getInstance(document.getElementById('termsModal'))
+      if (modal) {
+        modal.hide()
+      }
+
+      // Reset the flag
+      isTermsModalFromSimpleEditor.value = false
     }
 
     const handleContentChange = async () => {
@@ -1869,12 +1911,26 @@ export default {
     }
 
     const showTermsModal = async () => {
+      // Reset flag if this is called from regular context (not from simple editor)
+      if (!isTermsModalFromSimpleEditor.value) {
+        isTermsModalFromSimpleEditor.value = false
+      }
+      
       // Show modal immediately with loading spinner
       loadingTerms.value = true
       termsError.value = ''
       termFilter.value = ''
       filteredTerms.value = []
       const modal = new bootstrap.Modal(document.getElementById('termsModal'))
+      
+      // Add event listener to reset flag when modal is hidden
+      const modalElement = document.getElementById('termsModal')
+      const resetFlag = () => {
+        isTermsModalFromSimpleEditor.value = false
+        modalElement.removeEventListener('hidden.bs.modal', resetFlag)
+      }
+      modalElement.addEventListener('hidden.bs.modal', resetFlag)
+      
       modal.show()
 
       // Try to load from storage first
@@ -2229,6 +2285,10 @@ export default {
       simpleEditor,
       definitionEditor,
       generatedTermLine,
+      displayedTermsForModal,
+      isTermsModalFromSimpleEditor,
+      onUseExternalTermClick,
+      selectExternalTermForSimpleEditor,
       syncSimpleToTechnical,
       syncTechnicalToSimple,
       addAlias,
