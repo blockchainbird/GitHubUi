@@ -162,7 +162,10 @@
                         </label>
                         <div v-for="(alias, index) in simpleEditor.aliases" :key="`alias-${index}`"
                           class="input-group mb-2">
-                          <input v-model="simpleEditor.aliases[index]" @input="onAliasInput(index)" class="form-control"
+                          <input :value="simpleEditor.aliases[index] || ''" 
+                            @input="onAliasInputChange(index, $event.target.value)"
+                            @focus="onAliasInputFocus(index)" @blur="onAliasInputBlur(index)"
+                            class="form-control"
                             :placeholder="`${simpleEditor.termType === 'local' ? 'Variant' : 'Alias'} ${index + 1}`">
                           <button v-if="simpleEditor.aliases.length > 1" @click="removeAlias(index)"
                             class="btn btn-outline-danger" type="button" title="Remove this alias">
@@ -464,8 +467,10 @@
             <div v-if="newTerm.name.trim()" class="mb-3">
               <label class="form-label">Aliases</label>
               <div v-for="(alias, index) in newTerm.aliases" :key="index" class="input-group mb-2">
-                <input v-model="newTerm.aliases[index]" @input="onAliasChange(index)" type="text" class="form-control"
-                  :placeholder="`Alias ${index + 1}...`">
+                <input :value="newTerm.aliases[index] || ''"
+                  @input="onTermAliasInputChange(index, $event.target.value)"
+                  @focus="onTermAliasInputFocus(index)" @blur="onTermAliasInputBlur(index)"
+                  type="text" class="form-control" :placeholder="`Alias ${index + 1}...`">
                 <button @click="removeTermAlias(index)" type="button" class="btn btn-outline-danger"
                   :disabled="newTerm.aliases.length === 1" title="Remove alias">
                   <i class="bi bi-x"></i>
@@ -574,7 +579,7 @@ export default {
     // Add Term modal state
     const newTerm = ref({
       name: '',
-      aliases: ['']
+      aliases: [null]
     })
     const addTermError = ref('')
 
@@ -622,7 +627,7 @@ export default {
       termType: 'local', // 'local' or 'external'
       externalRepo: '',
       mainTerm: '',
-      aliases: [''],
+      aliases: [null],
       definition: ''
     })
     const definitionEditor = ref(null)
@@ -688,8 +693,8 @@ export default {
 
       const mainTerm = simpleEditor.value.mainTerm.trim()
       const validAliases = simpleEditor.value.aliases
+        .filter(alias => alias && alias.trim && alias.trim().length > 0)
         .map(alias => alias.trim())
-        .filter(alias => alias.length > 0)
 
       if (simpleEditor.value.termType === 'local') {
         if (validAliases.length === 0) {
@@ -1130,7 +1135,7 @@ export default {
           termType: 'local',
           externalRepo: '',
           mainTerm: '',
-          aliases: [''],
+          aliases: [null],
           definition: ''
         }
         return
@@ -1144,7 +1149,7 @@ export default {
         termType: 'local',
         externalRepo: '',
         mainTerm: '',
-        aliases: [''],
+        aliases: [null],
         definition: ''
       }
 
@@ -1159,9 +1164,9 @@ export default {
           
           if (match[2]) {
             const aliases = match[2].split(',').map(a => a.trim()).filter(a => a.length > 0)
-            simpleEditor.value.aliases = aliases.length > 0 ? aliases : ['']
+            simpleEditor.value.aliases = aliases.length > 0 ? aliases : [null]
           } else {
-            simpleEditor.value.aliases = ['']
+            simpleEditor.value.aliases = [null]
           }
         }
       } else if (firstLine.startsWith('[[tref:')) {
@@ -1174,9 +1179,9 @@ export default {
           
           if (match[3]) {
             const aliases = match[3].split(',').map(a => a.trim()).filter(a => a.length > 0)
-            simpleEditor.value.aliases = aliases.length > 0 ? aliases : ['']
+            simpleEditor.value.aliases = aliases.length > 0 ? aliases : [null]
           } else {
-            simpleEditor.value.aliases = ['']
+            simpleEditor.value.aliases = [null]
           }
         }
       }
@@ -1184,8 +1189,9 @@ export default {
       // Ensure at least one empty alias slot for UX
       if (simpleEditor.value.aliases.length === 0 || 
           (simpleEditor.value.aliases.length > 0 && 
+           simpleEditor.value.aliases[simpleEditor.value.aliases.length - 1] && 
            simpleEditor.value.aliases[simpleEditor.value.aliases.length - 1].trim() !== '')) {
-        simpleEditor.value.aliases.push('')
+        simpleEditor.value.aliases.push(null)
       }
 
       // Parse the definition content (remove ~ prefixes and handle empty lines)
@@ -1219,7 +1225,7 @@ export default {
     }
 
     const addAlias = () => {
-      simpleEditor.value.aliases.push('')
+      simpleEditor.value.aliases.push(null)
       syncSimpleToTechnicalDebounced()
     }
 
@@ -1230,13 +1236,32 @@ export default {
       }
     }
 
-    const onAliasInput = (index) => {
+    const onAliasInputChange = (index, value) => {
+      // Set the alias value, using null for empty strings to enable proper placeholder behavior
+      simpleEditor.value.aliases[index] = value.trim() === '' ? null : value
+      
       // If this is the last alias and it has content, add a new empty one
-      if (index === simpleEditor.value.aliases.length - 1 && 
-          simpleEditor.value.aliases[index].trim()) {
-        simpleEditor.value.aliases.push('')
+      if (index === simpleEditor.value.aliases.length - 1 && value.trim()) {
+        simpleEditor.value.aliases.push(null)
       }
       syncSimpleToTechnicalDebounced()
+    }
+
+    const onAliasInput = (index) => {
+      // Legacy method - keep for backward compatibility but redirect to new handler
+      const value = simpleEditor.value.aliases[index] || ''
+      onAliasInputChange(index, value)
+    }
+
+    const onAliasInputFocus = (index) => {
+      // No specific action needed - placeholder will disappear automatically with proper null handling
+    }
+
+    const onAliasInputBlur = (index) => {
+      // Clean up empty values to null for proper placeholder display
+      if (!simpleEditor.value.aliases[index] || simpleEditor.value.aliases[index].trim() === '') {
+        simpleEditor.value.aliases[index] = null
+      }
     }
 
     const insertDefinitionText = async (before, after = '') => {
@@ -1284,9 +1309,9 @@ export default {
       
       // Set aliases, ensuring we have at least one empty slot for UX
       if (term.aliases && term.aliases.length > 0) {
-        simpleEditor.value.aliases = [...term.aliases, '']
+        simpleEditor.value.aliases = [...term.aliases, null]
       } else {
-        simpleEditor.value.aliases = ['']
+        simpleEditor.value.aliases = [null]
       }
 
       // Sync to technical editor immediately (not debounced for user actions)
@@ -2138,7 +2163,7 @@ export default {
       // Reset form
       newTerm.value = {
         name: '',
-        aliases: ['']
+        aliases: [null]
       }
       addTermError.value = ''
 
@@ -2160,16 +2185,36 @@ export default {
       }
     }
 
-    const onAliasChange = (index) => {
+    const onTermAliasInputChange = (index, value) => {
       addTermError.value = ''
-      // If this is the last alias and it's been filled, add a new empty one
-      if (index === newTerm.value.aliases.length - 1 && newTerm.value.aliases[index].trim()) {
-        newTerm.value.aliases.push('')
+      // Set the alias value, using null for empty strings to enable proper placeholder behavior
+      newTerm.value.aliases[index] = value.trim() === '' ? null : value
+      
+      // If this is the last alias and it has content, add a new empty one
+      if (index === newTerm.value.aliases.length - 1 && value.trim()) {
+        newTerm.value.aliases.push(null)
+      }
+    }
+
+    const onAliasChange = (index) => {
+      // Legacy method - keep for backward compatibility but redirect to new handler
+      const value = newTerm.value.aliases[index] || ''
+      onTermAliasInputChange(index, value)
+    }
+
+    const onTermAliasInputFocus = (index) => {
+      // No specific action needed - placeholder will disappear automatically with proper null handling
+    }
+
+    const onTermAliasInputBlur = (index) => {
+      // Clean up empty values to null for proper placeholder display
+      if (!newTerm.value.aliases[index] || newTerm.value.aliases[index].trim() === '') {
+        newTerm.value.aliases[index] = null
       }
     }
 
     const addTermAlias = () => {
-      newTerm.value.aliases.push('')
+      newTerm.value.aliases.push(null)
     }
 
     const removeTermAlias = (index) => {
@@ -2366,6 +2411,9 @@ export default {
       addAlias,
       removeAlias,
       onAliasInput,
+      onAliasInputChange,
+      onAliasInputFocus,
+      onAliasInputBlur,
       insertDefinitionText,
       // New file mode
       isNewFile,
@@ -2403,6 +2451,9 @@ export default {
       showAddTermModal,
       onTermNameChange,
       onAliasChange,
+      onTermAliasInputChange,
+      onTermAliasInputFocus,
+      onTermAliasInputBlur,
       addTermAlias,
       removeTermAlias,
       generateTermDefinition,
