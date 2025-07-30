@@ -83,9 +83,14 @@
               {{ path }}
             </h5>
             <div class="btn-group" role="group">
+              <input type="radio" class="btn-check" id="simple-mode" v-model="editMode" value="simple" autocomplete="off" v-if="isTermsFile">
+              <label class="btn btn-outline-success btn-sm" for="simple-mode" v-if="isTermsFile">
+                <i class="bi bi-ui-checks"></i> Simple
+              </label>
+
               <input type="radio" class="btn-check" id="edit-mode" v-model="editMode" value="edit" autocomplete="off">
               <label class="btn btn-outline-primary btn-sm" for="edit-mode">
-                <i class="bi bi-pencil"></i> Edit
+                <i class="bi bi-pencil"></i> {{ isTermsFile ? 'Technical' : 'Edit' }}
               </label>
 
               <input type="radio" class="btn-check" id="preview-mode" v-model="editMode" value="preview"
@@ -97,8 +102,160 @@
           </div>
 
           <div class="card-body p-0">
-            <!-- Edit Mode -->
-            <div v-if="editMode === 'edit'" class="position-relative">
+            <!-- Simple Mode for Terms Files -->
+            <div v-if="editMode === 'simple' && isTermsFile" class="p-4 simple-editor">
+              <div class="row">
+                <!-- Term Part -->
+                <div class="col-12 mb-4">
+                  <div class="card border-primary">
+                    <div class="card-header bg-primary text-white">
+                      <h5 class="mb-0">
+                        <i class="bi bi-bookmark-fill"></i>
+                        Term Definition
+                      </h5>
+                    </div>
+                    <div class="card-body">
+                      <!-- Term Type Selection -->
+                      <div class="mb-3">
+                        <label class="form-label fw-bold">Term Type</label>
+                        <div class="btn-group w-100" role="group">
+                          <input type="radio" class="btn-check" id="termType-local" v-model="simpleEditor.termType" value="local" autocomplete="off">
+                          <label class="btn btn-outline-primary" for="termType-local">
+                            <i class="bi bi-house"></i> Local Term
+                          </label>
+                          <input type="radio" class="btn-check" id="termType-external" v-model="simpleEditor.termType" value="external" autocomplete="off">
+                          <label class="btn btn-outline-success" for="termType-external">
+                            <i class="bi bi-link-45deg"></i> External Reference
+                          </label>
+                        </div>
+                        <div class="form-text">
+                          <strong>Local:</strong> A term defined in this specification. 
+                          <strong>External:</strong> A reference to a term defined in another specification.
+                        </div>
+                      </div>
+
+                      <!-- External Repository (only for external terms) -->
+                      <div v-if="simpleEditor.termType === 'external'" class="mb-3">
+                        <label for="externalRepo" class="form-label fw-bold">External Repository</label>
+                        <input 
+                          id="externalRepo" 
+                          v-model="simpleEditor.externalRepo" 
+                          @input="syncSimpleToTechnical"
+                          class="form-control" 
+                          placeholder="e.g., keri-spec, did-core"
+                          required>
+                        <div class="form-text">The name of the external specification or repository.</div>
+                      </div>
+
+                      <!-- Main Term -->
+                      <div class="mb-3">
+                        <label for="mainTerm" class="form-label fw-bold">Main Term</label>
+                        <input 
+                          id="mainTerm" 
+                          v-model="simpleEditor.mainTerm" 
+                          @input="syncSimpleToTechnical"
+                          class="form-control" 
+                          placeholder="e.g., identifier, credential, proof"
+                          required>
+                        <div class="form-text">The primary term being defined or referenced.</div>
+                      </div>
+
+                      <!-- Aliases/Variants -->
+                      <div class="mb-3">
+                        <label class="form-label fw-bold">
+                          {{ simpleEditor.termType === 'local' ? 'Term Variants' : 'Aliases' }}
+                          <small class="text-muted">(optional)</small>
+                        </label>
+                        <div v-for="(alias, index) in simpleEditor.aliases" :key="`alias-${index}`" class="input-group mb-2">
+                          <input 
+                            v-model="simpleEditor.aliases[index]" 
+                            @input="onAliasInput(index)"
+                            class="form-control" 
+                            :placeholder="`${simpleEditor.termType === 'local' ? 'Variant' : 'Alias'} ${index + 1}`">
+                          <button 
+                            v-if="simpleEditor.aliases.length > 1" 
+                            @click="removeAlias(index)" 
+                            class="btn btn-outline-danger" 
+                            type="button"
+                            title="Remove this alias">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </div>
+                        <button @click="addAlias" class="btn btn-outline-secondary btn-sm" type="button">
+                          <i class="bi bi-plus"></i>
+                          Add {{ simpleEditor.termType === 'local' ? 'Variant' : 'Alias' }}
+                        </button>
+                        <div class="form-text">
+                          {{ simpleEditor.termType === 'local' 
+                            ? 'Different ways this term might be expressed (e.g., ID, identifier, identity)' 
+                            : 'Alternative names for this external term' }}
+                        </div>
+                      </div>
+
+                      <!-- Generated Term Line Preview -->
+                      <div class="alert alert-light border">
+                        <div class="form-label fw-bold mb-2">Generated Term Line:</div>
+                        <code class="d-block p-2 bg-white border rounded">{{ generatedTermLine }}</code>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Definition Part -->
+                <div class="col-12">
+                  <div class="card border-success">
+                    <div class="card-header bg-success text-white">
+                      <h5 class="mb-0">
+                        <i class="bi bi-file-text"></i>
+                        Definition Content
+                      </h5>
+                    </div>
+                    <div class="card-body">
+                      <!-- Definition Editor Toolbar -->
+                      <div class="editor-toolbar p-2 mb-3 border-bottom bg-light rounded">
+                        <div class="btn-group btn-group-sm" role="group">
+                          <button @click="insertDefinitionText('**', '**')" class="btn btn-outline-secondary" title="Bold">
+                            <i class="bi bi-type-bold"></i>
+                          </button>
+                          <button @click="insertDefinitionText('*', '*')" class="btn btn-outline-secondary" title="Italic">
+                            <i class="bi bi-type-italic"></i>
+                          </button>
+                          <button @click="insertDefinitionText('`', '`')" class="btn btn-outline-secondary" title="Code">
+                            <i class="bi bi-code"></i>
+                          </button>
+                          <button @click="insertDefinitionText('[', '](url)')" class="btn btn-outline-secondary" title="Link">
+                            <i class="bi bi-link"></i>
+                          </button>
+                          <button @click="showTermsModal" class="btn btn-outline-info" title="Insert Term Reference">
+                            <i class="bi bi-bookmark"></i>
+                            Insert Reference
+                          </button>
+                        </div>
+                      </div>
+
+                      <div class="mb-3">
+                        <label for="definitionContent" class="form-label fw-bold">Definition</label>
+                        <textarea 
+                          id="definitionContent"
+                          ref="definitionEditor"
+                          v-model="simpleEditor.definition" 
+                          @input="syncSimpleToTechnical"
+                          class="form-control"
+                          rows="12"
+                          style="font-family: 'Consolas', 'Monaco', 'Courier New', monospace;"
+                          placeholder="Enter the definition content here. Each line will automatically be prefixed with '~' in the technical format.&#10;&#10;You can use:&#10;- **bold text**&#10;- *italic text*&#10;- `code snippets`&#10;- [links](url)&#10;- [[ref: term]] for local references&#10;- [[xref: spec, term]] for external references"></textarea>
+                        <div class="form-text">
+                          Write the definition content naturally. The system will automatically format it with '~' prefixes for technical compatibility.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Technical Edit Mode -->
+            <div v-else-if="editMode === 'edit'" class="position-relative">
               <div class="editor-toolbar p-2 border-bottom bg-light">
                 <div class="btn-group btn-group-sm" role="group">
                   <button @click="insertText('**', '**')" class="btn btn-outline-secondary" title="Bold">
@@ -323,12 +480,12 @@
               <div v-for="(alias, index) in newTerm.aliases" :key="index" class="input-group mb-2">
                 <input v-model="newTerm.aliases[index]" @input="onAliasChange(index)" type="text" class="form-control"
                   :placeholder="`Alias ${index + 1}...`">
-                <button @click="removeAlias(index)" type="button" class="btn btn-outline-danger"
+                <button @click="removeTermAlias(index)" type="button" class="btn btn-outline-danger"
                   :disabled="newTerm.aliases.length === 1" title="Remove alias">
                   <i class="bi bi-x"></i>
                 </button>
               </div>
-              <button @click="addAlias" type="button" class="btn btn-outline-secondary btn-sm"
+              <button @click="addTermAlias" type="button" class="btn btn-outline-secondary btn-sm"
                 title="Add another alias">
                 <i class="bi bi-plus"></i>
                 Add Alias
@@ -474,6 +631,16 @@ export default {
     const validationWarnings = ref([])
     const showValidationWarnings = ref(false)
 
+    // Simple editor state for terms files
+    const simpleEditor = ref({
+      termType: 'local', // 'local' or 'external'
+      externalRepo: '',
+      mainTerm: '',
+      aliases: [''],
+      definition: ''
+    })
+    const definitionEditor = ref(null)
+
     // Helper function to check authentication and redirect if needed
     const checkAuthAndRedirect = (error) => {
       if (error.response && (error.response.status === 401 || error.response.status === 403)) {
@@ -509,6 +676,46 @@ export default {
       }
       // For existing files, compare with original content
       return content.value !== originalContent.value
+    })
+
+    // Check if this is a terms file based on directory or content
+    const isTermsFile = computed(() => {
+      if (!filename.value) return false
+      
+      // Check if filename suggests it's a terms file
+      const isLikelyTermsFile = filename.value.toLowerCase().includes('term') || 
+                               content.value.includes('[[def:') || 
+                               content.value.includes('[[tref:')
+      
+      // For better UX, enable simple mode for any markdown file that looks like terms
+      return isLikelyTermsFile && isMarkdown.value
+    })
+
+    // Generate the term line for simple editor preview
+    const generatedTermLine = computed(() => {
+      if (!simpleEditor.value.mainTerm.trim()) {
+        return simpleEditor.value.termType === 'local' ? '[[def: ]]' : '[[tref: , ]]'
+      }
+
+      const mainTerm = simpleEditor.value.mainTerm.trim()
+      const validAliases = simpleEditor.value.aliases
+        .map(alias => alias.trim())
+        .filter(alias => alias.length > 0)
+
+      if (simpleEditor.value.termType === 'local') {
+        if (validAliases.length === 0) {
+          return `[[def: ${mainTerm}]]`
+        } else {
+          return `[[def: ${mainTerm}, ${validAliases.join(', ')}]]`
+        }
+      } else {
+        const externalRepo = simpleEditor.value.externalRepo.trim() || 'external-spec'
+        if (validAliases.length === 0) {
+          return `[[tref: ${externalRepo}, ${mainTerm}]]`
+        } else {
+          return `[[tref: ${externalRepo}, ${mainTerm}, ${validAliases.join(', ')}]]`
+        }
+      }
     })
     
     // Helper function to get file extension for analytics
@@ -716,13 +923,18 @@ export default {
           setTimeout(async () => {
             await validateContent()
             
-            // Additional safeguard: re-set content if it was lost
-            if (!content.value && newFileInitialContent.value) {
-              content.value = newFileInitialContent.value
-            }
-          }, 100)
+          // Additional safeguard: re-set content if it was lost
+          if (!content.value && newFileInitialContent.value) {
+            content.value = newFileInitialContent.value
+          }
           
-          return
+          // Set default edit mode to simple for terms files
+          if (isTermsFile.value) {
+            editMode.value = 'simple'
+          }
+        }, 100)
+        
+        return
         }
 
         // Regular file loading for existing files
@@ -748,6 +960,11 @@ export default {
         
         // Track file view
         trackFileOperation('view', getFileExtension(decodedPath.value))
+
+        // Set default edit mode to simple for terms files
+        if (isTermsFile.value) {
+          editMode.value = 'simple'
+        }
 
       } catch (err) {
         console.error('Error loading file:', err)
@@ -850,6 +1067,183 @@ export default {
       
       validationWarnings.value = warnings
       showValidationWarnings.value = warnings.length > 0
+    }
+
+    // Simple editor methods
+    const syncSimpleToTechnical = async () => {
+      // Generate the technical content from simple editor values
+      const termLine = generatedTermLine.value
+      
+      if (!termLine.trim()) {
+        content.value = ''
+        await validateContent()
+        return
+      }
+      
+      // Convert definition to technical format (add ~ prefix to each line)
+      let definitionContent = ''
+      if (simpleEditor.value.definition.trim()) {
+        const definitionLines = simpleEditor.value.definition
+          .split('\n')
+          .map(line => {
+            const trimmed = line.trim()
+            if (trimmed === '') {
+              return ''  // Preserve empty lines
+            }
+            // Add ~ prefix if not already present
+            return line.startsWith('~') ? line : `~ ${line}`
+          })
+        
+        definitionContent = definitionLines.join('\n')
+      }
+
+      // Combine term line and definition with proper spacing
+      const parts = [termLine]
+      if (definitionContent.trim()) {
+        parts.push('') // Empty line separator
+        parts.push(definitionContent)
+      }
+      
+      content.value = parts.join('\n')
+      
+      // Trigger validation
+      await validateContent()
+    }
+
+    const syncTechnicalToSimple = () => {
+      if (!content.value.trim()) {
+        // Reset simple editor for empty content
+        simpleEditor.value = {
+          termType: 'local',
+          externalRepo: '',
+          mainTerm: '',
+          aliases: [''],
+          definition: ''
+        }
+        return
+      }
+
+      const lines = content.value.split('\n')
+      const firstLine = lines[0]?.trim() || ''
+
+      // Reset to defaults
+      simpleEditor.value = {
+        termType: 'local',
+        externalRepo: '',
+        mainTerm: '',
+        aliases: [''],
+        definition: ''
+      }
+
+      // Parse the term line
+      if (firstLine.startsWith('[[def:')) {
+        // Local term: [[def: term, alias1, alias2]]
+        const match = firstLine.match(/^\[\[def:\s*([^,\]]+)(?:,\s*([^\]]+))?\]\]/)
+        if (match) {
+          simpleEditor.value.termType = 'local'
+          simpleEditor.value.mainTerm = match[1].trim()
+          simpleEditor.value.externalRepo = ''
+          
+          if (match[2]) {
+            const aliases = match[2].split(',').map(a => a.trim()).filter(a => a.length > 0)
+            simpleEditor.value.aliases = aliases.length > 0 ? aliases : ['']
+          } else {
+            simpleEditor.value.aliases = ['']
+          }
+        }
+      } else if (firstLine.startsWith('[[tref:')) {
+        // External term: [[tref: external-repo, term, alias1, alias2]]
+        const match = firstLine.match(/^\[\[tref:\s*([^,\]]+),\s*([^,\]]+)(?:,\s*([^\]]+))?\]\]/)
+        if (match) {
+          simpleEditor.value.termType = 'external'
+          simpleEditor.value.externalRepo = match[1].trim()
+          simpleEditor.value.mainTerm = match[2].trim()
+          
+          if (match[3]) {
+            const aliases = match[3].split(',').map(a => a.trim()).filter(a => a.length > 0)
+            simpleEditor.value.aliases = aliases.length > 0 ? aliases : ['']
+          } else {
+            simpleEditor.value.aliases = ['']
+          }
+        }
+      }
+
+      // Ensure at least one empty alias slot for UX
+      if (simpleEditor.value.aliases.length === 0 || 
+          (simpleEditor.value.aliases.length > 0 && 
+           simpleEditor.value.aliases[simpleEditor.value.aliases.length - 1].trim() !== '')) {
+        simpleEditor.value.aliases.push('')
+      }
+
+      // Parse the definition content (remove ~ prefixes and handle empty lines)
+      const definitionLines = []
+      let foundContent = false
+      
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i]
+        
+        if (line.trim() === '') {
+          // Preserve empty lines only if we've found content
+          if (foundContent) {
+            definitionLines.push('')
+          }
+        } else if (line.startsWith('~ ')) {
+          // Standard definition line with ~ prefix and space
+          definitionLines.push(line.substring(2))
+          foundContent = true
+        } else if (line.startsWith('~')) {
+          // Definition line with ~ prefix but no space
+          definitionLines.push(line.substring(1).trim())
+          foundContent = true
+        } else if (line.trim()) {
+          // Line doesn't start with ~, but has content - include as is
+          definitionLines.push(line)
+          foundContent = true
+        }
+      }
+      
+      simpleEditor.value.definition = definitionLines.join('\n').trim()
+    }
+
+    const addAlias = () => {
+      simpleEditor.value.aliases.push('')
+      syncSimpleToTechnical()
+    }
+
+    const removeAlias = (index) => {
+      if (simpleEditor.value.aliases.length > 1) {
+        simpleEditor.value.aliases.splice(index, 1)
+        syncSimpleToTechnical()
+      }
+    }
+
+    const onAliasInput = (index) => {
+      // If this is the last alias and it has content, add a new empty one
+      if (index === simpleEditor.value.aliases.length - 1 && 
+          simpleEditor.value.aliases[index].trim()) {
+        simpleEditor.value.aliases.push('')
+      }
+      syncSimpleToTechnical()
+    }
+
+    const insertDefinitionText = async (before, after = '') => {
+      const textarea = definitionEditor.value
+      if (!textarea) return
+
+      const start = textarea.selectionStart
+      const end = textarea.selectionEnd
+      const selectedText = simpleEditor.value.definition.substring(start, end)
+
+      const replacement = before + selectedText + after
+      simpleEditor.value.definition = simpleEditor.value.definition.substring(0, start) + replacement + simpleEditor.value.definition.substring(end)
+
+      // Sync to technical editor
+      await syncSimpleToTechnical()
+
+      nextTick(() => {
+        textarea.focus()
+        textarea.setSelectionRange(start + before.length, start + before.length + selectedText.length)
+      })
     }
 
     const handleContentChange = async () => {
@@ -1650,11 +2044,11 @@ export default {
       }
     }
 
-    const addAlias = () => {
+    const addTermAlias = () => {
       newTerm.value.aliases.push('')
     }
 
-    const removeAlias = (index) => {
+    const removeTermAlias = (index) => {
       if (newTerm.value.aliases.length > 1) {
         newTerm.value.aliases.splice(index, 1)
       }
@@ -1790,6 +2184,28 @@ export default {
       }
     }, { flush: 'post' })
 
+    // Watch for edit mode changes to sync between simple and technical editors
+    watch(editMode, (newMode) => {
+      if (newMode === 'simple' && isTermsFile.value) {
+        // Switching to simple mode - parse technical content
+        syncTechnicalToSimple()
+      }
+    })
+
+    // Initialize simple editor when content loads for terms files
+    watch(content, () => {
+      if (isTermsFile.value && !loading.value) {
+        if (editMode.value === 'simple') {
+          syncTechnicalToSimple()
+        }
+        // Set default to simple mode for terms files if not already set
+        if (editMode.value === 'edit' && (content.value.includes('[[def:') || content.value.includes('[[tref:'))) {
+          editMode.value = 'simple'
+          nextTick(() => syncTechnicalToSimple())
+        }
+      }
+    }, { immediate: true })
+
     return {
       loading,
       saving,
@@ -1807,6 +2223,18 @@ export default {
       hasChanges,
       renderedContent,
       editor,
+      // Terms file detection
+      isTermsFile,
+      // Simple editor for terms files
+      simpleEditor,
+      definitionEditor,
+      generatedTermLine,
+      syncSimpleToTechnical,
+      syncTechnicalToSimple,
+      addAlias,
+      removeAlias,
+      onAliasInput,
+      insertDefinitionText,
       // New file mode
       isNewFile,
       handleContentChange,
@@ -1841,8 +2269,8 @@ export default {
       showAddTermModal,
       onTermNameChange,
       onAliasChange,
-      addAlias,
-      removeAlias,
+      addTermAlias,
+      removeTermAlias,
       generateTermDefinition,
       insertNewTerm,
       // Help functionality
@@ -2046,6 +2474,104 @@ textarea:focus {
 
 .alert-warning li {
   margin-bottom: 0.25rem;
+}
+
+/* Simple Editor Styles */
+.simple-editor {
+  .card {
+    border-width: 2px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .card-header {
+    font-weight: 600;
+    
+    h5 {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      
+      i {
+        margin-right: 0.5rem;
+      }
+    }
+  }
+  
+  .generated-term-line {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+    
+    code {
+      background-color: white;
+      border: 1px solid #e9ecef;
+      padding: 0.5rem;
+      border-radius: 0.25rem;
+      display: block;
+      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+      color: #495057;
+    }
+  }
+  
+  .definition-editor-toolbar {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+    margin-bottom: 0.75rem;
+    
+    .btn-group {
+      .btn {
+        border-color: #dee2e6;
+        
+        &:hover {
+          background-color: #e9ecef;
+        }
+      }
+    }
+  }
+  
+  .form-label {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  
+  .form-text {
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+  }
+  
+  .btn-group {
+    .btn-check:checked + .btn {
+      background-color: #0d6efd;
+      border-color: #0d6efd;
+      color: white;
+    }
+    
+    .btn-outline-primary:hover {
+      background-color: #0d6efd;
+      border-color: #0d6efd;
+      color: white;
+    }
+    
+    .btn-outline-success:hover {
+      background-color: #198754;
+      border-color: #198754;
+      color: white;
+    }
+  }
+  
+  .input-group {
+    .btn-outline-danger:hover {
+      background-color: #dc3545;
+      border-color: #dc3545;
+      color: white;
+    }
+  }
 }
 
 .alert-warning li:last-child {
