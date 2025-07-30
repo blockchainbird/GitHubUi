@@ -141,7 +141,7 @@
                       <!-- External Repository (only for external terms) -->
                       <div v-if="simpleEditor.termType === 'external'" class="mb-3">
                         <label for="externalRepo" class="form-label fw-bold">External Repository</label>
-                        <input id="externalRepo" v-model="simpleEditor.externalRepo" @input="syncSimpleToTechnical"
+                        <input id="externalRepo" v-model="simpleEditor.externalRepo" @input="syncSimpleToTechnicalDebounced"
                           class="form-control" placeholder="e.g., keri-spec, did-core" required>
                         <div class="form-text">The name of the external specification or repository.</div>
                       </div>
@@ -149,7 +149,7 @@
                       <!-- Main Term -->
                       <div class="mb-3">
                         <label for="mainTerm" class="form-label fw-bold">Main Term</label>
-                        <input id="mainTerm" v-model="simpleEditor.mainTerm" @input="syncSimpleToTechnical"
+                        <input id="mainTerm" v-model="simpleEditor.mainTerm" @input="syncSimpleToTechnicalDebounced"
                           class="form-control" placeholder="e.g., identifier, credential, proof" required>
                         <div class="form-text">The primary term being defined or referenced.</div>
                       </div>
@@ -228,7 +228,7 @@
                       <div class="mb-3">
                         <label for="definitionContent" class="form-label fw-bold">Definition</label>
                         <textarea id="definitionContent" ref="definitionEditor" v-model="simpleEditor.definition"
-                          @input="syncSimpleToTechnical" class="form-control" rows="12"
+                          @input="onDefinitionInput" class="form-control" rows="12"
                           style="font-family: 'Consolas', 'Monaco', 'Courier New', monospace;"
                           placeholder="Enter the definition content here. Each line will automatically be prefixed with '~' in the technical format.&#10;&#10;You can use:&#10;- **bold text**&#10;- *italic text*&#10;- `code snippets`&#10;- [links](url)&#10;- [[ref: term]] for local references&#10;- [[xref: spec, term]] for external references"></textarea>
                         <div class="form-text">
@@ -242,49 +242,47 @@
               </div>
             </div>
 
-            <!-- Technical Edit Mode -->
-            <div v-else-if="editMode === 'edit'" class="position-relative">
-              <div class="editor-toolbar p-2 border-bottom bg-light">
-                <div class="btn-group btn-group-sm" role="group">
-                  <button @click="insertText('**', '**')" class="btn btn-outline-secondary" title="Bold">
-                    <i class="bi bi-type-bold"></i>
-                  </button>
-                  <button @click="insertText('*', '*')" class="btn btn-outline-secondary" title="Italic">
-                    <i class="bi bi-type-italic"></i>
-                  </button>
-                  <button @click="insertText('`', '`')" class="btn btn-outline-secondary" title="Code">
-                    <i class="bi bi-code"></i>
-                  </button>
-                  <button @click="insertText('[', '](url)')" class="btn btn-outline-secondary" title="Link">
-                    <i class="bi bi-link"></i>
-                  </button>
-                  <button @click="insertHeading" class="btn btn-outline-secondary" title="Heading">
-                    <i class="bi bi-type-h1"></i>
-                  </button>
-                  <button @click="insertList" class="btn btn-outline-secondary" title="List">
-                    <i class="bi bi-list-ul"></i>
-                  </button>
-                  <button @click="showTermsModal" class="btn btn-outline-info" title="Insert Term Reference">
-                    <i class="bi bi-bookmark"></i>
-                  </button>
-                  <button @click="showAddTermModal" class="btn btn-outline-success" title="Add New Term">
-                    <i class="bi bi-plus-circle"></i>
-                    Term
-                  </button>
-                  <button @click="showHelpModal" class="btn btn-outline-info" title="Editor Help">
-                    <i class="bi bi-question-circle"></i>
-                    Help
-                  </button>
+              <!-- Technical Edit Mode -->
+              <div v-else-if="editMode === 'edit'" class="position-relative">
+                <div class="editor-toolbar p-2 border-bottom bg-light">
+                  <div class="btn-group btn-group-sm" role="group">
+                    <button @click="insertText('**', '**')" class="btn btn-outline-secondary" title="Bold">
+                      <i class="bi bi-type-bold"></i>
+                    </button>
+                    <button @click="insertText('*', '*')" class="btn btn-outline-secondary" title="Italic">
+                      <i class="bi bi-type-italic"></i>
+                    </button>
+                    <button @click="insertText('`', '`')" class="btn btn-outline-secondary" title="Code">
+                      <i class="bi bi-code"></i>
+                    </button>
+                    <button @click="insertText('[', '](url)')" class="btn btn-outline-secondary" title="Link">
+                      <i class="bi bi-link"></i>
+                    </button>
+                    <button @click="insertHeading" class="btn btn-outline-secondary" title="Heading">
+                      <i class="bi bi-type-h1"></i>
+                    </button>
+                    <button @click="insertList" class="btn btn-outline-secondary" title="List">
+                      <i class="bi bi-list-ul"></i>
+                    </button>
+                    <button @click="showTermsModal" class="btn btn-outline-info" title="Insert Term Reference">
+                      <i class="bi bi-bookmark"></i>
+                    </button>
+                    <button @click="showAddTermModal" class="btn btn-outline-success" title="Add New Term">
+                      <i class="bi bi-plus-circle"></i>
+                      Term
+                    </button>
+                    <button @click="showHelpModal" class="btn btn-outline-info" title="Editor Help">
+                      <i class="bi bi-question-circle"></i>
+                      Help
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              <textarea ref="editor" v-model="content" @input="handleContentChange" @keyup="handleContentChange"
-                class="form-control border-0"
-                style="min-height: 600px; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; resize: vertical;"
-                placeholder="Start editing your content here..."></textarea>
-            </div>
-
-            <!-- Preview Mode -->
+                <textarea ref="editor" v-model="content" @input="onTechnicalEditorInput" @keyup="onTechnicalEditorInput"
+                  class="form-control border-0"
+                  style="min-height: 600px; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; resize: vertical;"
+                  placeholder="Start editing your content here..."></textarea>
+              </div>            <!-- Preview Mode -->
             <div v-else class="p-4" style="min-height: 600px;">
               <div v-if="isMarkdown" v-html="renderedContent" class="markdown-preview"></div>
               <pre v-else class="text-wrap">{{ content }}</pre>
@@ -629,6 +627,7 @@ export default {
     })
     const definitionEditor = ref(null)
     const isTermsModalFromSimpleEditor = ref(false) // Track if modal opened from simple editor
+    const isSyncing = ref(false) // Track if we're currently syncing to prevent loops
 
     // Helper function to check authentication and redirect if needed
     const checkAuthAndRedirect = (error) => {
@@ -1070,43 +1069,51 @@ export default {
 
     // Simple editor methods
     const syncSimpleToTechnical = async () => {
-      // Generate the technical content from simple editor values
-      const termLine = generatedTermLine.value
+      if (isSyncing.value) return // Prevent sync loops
       
-      if (!termLine.trim()) {
-        content.value = ''
-        await validateContent()
-        return
-      }
+      isSyncing.value = true
       
-      // Convert definition to technical format (add ~ prefix to each line)
-      let definitionContent = ''
-      if (simpleEditor.value.definition.trim()) {
-        const definitionLines = simpleEditor.value.definition
-          .split('\n')
-          .map(line => {
-            const trimmed = line.trim()
-            if (trimmed === '') {
-              return ''  // Preserve empty lines
-            }
-            // Add ~ prefix if not already present
-            return line.startsWith('~') ? line : `~ ${line}`
-          })
+      try {
+        // Generate the technical content from simple editor values
+        const termLine = generatedTermLine.value
         
-        definitionContent = definitionLines.join('\n')
-      }
+        if (!termLine.trim()) {
+          content.value = ''
+          await validateContent()
+          return
+        }
+        
+        // Convert definition to technical format (add ~ prefix to each line)
+        let definitionContent = ''
+        if (simpleEditor.value.definition.trim()) {
+          const definitionLines = simpleEditor.value.definition
+            .split('\n')
+            .map(line => {
+              const trimmed = line.trim()
+              if (trimmed === '') {
+                return ''  // Preserve empty lines
+              }
+              // Add ~ prefix if not already present
+              return line.startsWith('~') ? line : `~ ${line}`
+            })
+          
+          definitionContent = definitionLines.join('\n')
+        }
 
-      // Combine term line and definition with proper spacing
-      const parts = [termLine]
-      if (definitionContent.trim()) {
-        parts.push('') // Empty line separator
-        parts.push(definitionContent)
+        // Combine term line and definition with proper spacing
+        const parts = [termLine]
+        if (definitionContent.trim()) {
+          parts.push('') // Empty line separator
+          parts.push(definitionContent)
+        }
+        
+        content.value = parts.join('\n')
+        
+        // Trigger validation
+        await validateContent()
+      } finally {
+        isSyncing.value = false
       }
-      
-      content.value = parts.join('\n')
-      
-      // Trigger validation
-      await validateContent()
     }
 
     const syncTechnicalToSimple = () => {
@@ -1206,13 +1213,13 @@ export default {
 
     const addAlias = () => {
       simpleEditor.value.aliases.push('')
-      syncSimpleToTechnical()
+      syncSimpleToTechnicalDebounced()
     }
 
     const removeAlias = (index) => {
       if (simpleEditor.value.aliases.length > 1) {
         simpleEditor.value.aliases.splice(index, 1)
-        syncSimpleToTechnical()
+        syncSimpleToTechnicalDebounced()
       }
     }
 
@@ -1222,7 +1229,7 @@ export default {
           simpleEditor.value.aliases[index].trim()) {
         simpleEditor.value.aliases.push('')
       }
-      syncSimpleToTechnical()
+      syncSimpleToTechnicalDebounced()
     }
 
     const insertDefinitionText = async (before, after = '') => {
@@ -1275,7 +1282,7 @@ export default {
         simpleEditor.value.aliases = ['']
       }
 
-      // Sync to technical editor
+      // Sync to technical editor immediately (not debounced for user actions)
       syncSimpleToTechnical()
 
       // Hide modal
@@ -1289,9 +1296,63 @@ export default {
     }
 
     const handleContentChange = async () => {
+      // Skip if we're currently syncing to prevent loops
+      if (isSyncing.value) return
+      
       error.value = ''
       success.value = ''
       await validateContent()
+    }
+
+    const onTechnicalEditorInput = async () => {
+      // Handle technical editor input without triggering sync to simple editor
+      if (isSyncing.value) return
+      
+      error.value = ''
+      success.value = ''
+      await validateContent()
+    }
+
+    // Debounced handler for simple editor definition input
+    let definitionInputTimeout = null
+    const onDefinitionInput = () => {
+      // Clear existing timeout
+      if (definitionInputTimeout) {
+        clearTimeout(definitionInputTimeout)
+      }
+      
+      // Set new timeout to sync after user stops typing
+      definitionInputTimeout = setTimeout(async () => {
+        if (!isSyncing.value && editMode.value === 'simple') {
+          await syncSimpleToTechnical()
+        }
+      }, 500) // 500ms delay to allow for natural typing
+    }
+
+    // Debounced handler for simple editor form fields (faster sync)
+    let formInputTimeout = null
+    const syncSimpleToTechnicalDebounced = () => {
+      // Clear existing timeout
+      if (formInputTimeout) {
+        clearTimeout(formInputTimeout)
+      }
+      
+      // Set new timeout to sync after user stops typing (shorter delay for form fields)
+      formInputTimeout = setTimeout(async () => {
+        if (!isSyncing.value && editMode.value === 'simple') {
+          await syncSimpleToTechnical()
+        }
+      }, 200) // 200ms delay for form fields
+    }
+
+    const handleDefinitionEnter = async (event) => {
+      // Allow normal enter key behavior (create newline)
+      // Don't prevent default - let the textarea handle the newline
+      
+      // Debounce sync to avoid too frequent updates
+      setTimeout(async () => {
+        await syncSimpleToTechnical()
+      }, 100)
     }
 
     const insertText = async (before, after = '') => {
@@ -2235,26 +2296,29 @@ export default {
 
     // Watch for content changes to trigger validation
     watch(content, async () => {
-      if (!loading.value) {
+      if (!loading.value && !isSyncing.value) {
         await validateContent()
       }
     }, { flush: 'post' })
 
     // Watch for edit mode changes to sync between simple and technical editors
-    watch(editMode, (newMode) => {
-      if (newMode === 'simple' && isTermsFile.value) {
-        // Switching to simple mode - parse technical content
-        syncTechnicalToSimple()
+    watch(editMode, (newMode, oldMode) => {
+      if (isTermsFile.value && !isSyncing.value) {
+        if (newMode === 'simple' && oldMode !== 'simple') {
+          // Switching TO simple mode - sync technical content to simple editor
+          syncTechnicalToSimple()
+        } else if (oldMode === 'simple' && newMode !== 'simple') {
+          // Switching FROM simple mode - sync simple editor to technical content
+          syncSimpleToTechnical()
+        }
       }
     })
 
     // Initialize simple editor when content loads for terms files
+    // This watcher is more conservative and only runs during initial setup
     watch(content, () => {
-      if (isTermsFile.value && !loading.value) {
-        if (editMode.value === 'simple') {
-          syncTechnicalToSimple()
-        }
-        // Set default to simple mode for terms files if not already set
+      if (isTermsFile.value && !loading.value && !isSyncing.value) {
+        // Set default to simple mode for terms files if not already set and this looks like terms content
         if (editMode.value === 'edit' && (content.value.includes('[[def:') || content.value.includes('[[tref:'))) {
           editMode.value = 'simple'
           nextTick(() => syncTechnicalToSimple())
@@ -2290,6 +2354,7 @@ export default {
       onUseExternalTermClick,
       selectExternalTermForSimpleEditor,
       syncSimpleToTechnical,
+      syncSimpleToTechnicalDebounced,
       syncTechnicalToSimple,
       addAlias,
       removeAlias,
@@ -2298,6 +2363,8 @@ export default {
       // New file mode
       isNewFile,
       handleContentChange,
+      onTechnicalEditorInput,
+      onDefinitionInput,
       insertText,
       insertHeading,
       insertList,
