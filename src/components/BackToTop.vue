@@ -66,8 +66,8 @@ export default {
   color: white;
   font-size: 1.2rem;
   cursor: pointer;
-  z-index: 1050;
-  /* Above Bootstrap modals */
+  z-index: 1030;
+  /* Below Bootstrap modals but above other fixed elements */
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   transition: all 0.3s ease;
   display: flex;

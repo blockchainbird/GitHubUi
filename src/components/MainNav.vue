@@ -81,43 +81,43 @@
         </div>
       </div>
     </div>
-    <Modal v-if="showModal" @close="showModal = false">
-      <template #header>
-        <h2>About Spec-Up-T Editor</h2>
-      </template>
-      <template #body>
-        <p>
-          <strong>Spec-Up-T Editor</strong> is a web-based tool designed to help users create and manage specifications
-          in a
-          user-friendly manner. It provides an intuitive interface for editing, validating, and visualizing
-          specifications, making it easier for teams to collaborate and maintain their documentation.
-        </p>
-        <ul style="font-size: 0.95em; margin-bottom: 0.5em;">
-          <li>
-            <a href="https://github.com/blockchainbird/GitHubUi" target="_blank" rel="noopener">Repository for this
-              web-app</a>
-          </li>
-          <li>
-            <a href="https://github.com/blockchainbird/spec-up-t" target="_blank" rel="noopener">Repository for
-              Spec-Up-T</a>
-          </li>
-          <li>
-            <a href="https://blockchainbird.github.io/spec-up-t-website/" target="_blank" rel="noopener">Spec-Up-T
-              documentation website</a>
-          </li>
-        </ul>
-        <p style="font-size: 0.9em; color: #888;">
-          <a href="https://blockchainbird.github.io/spec-up-t-website/docs/introduction/how-it-came-to-be/"
-            target="_blank" rel="noopener">Read more</a>
-        </p>
-        <div class="build-info mt-3 pt-3 border-top">
-          <small class="text-muted">
-            <strong>Build Date:</strong> {{ buildInfo.buildDate }}
-          </small>
-        </div>
-      </template>
-    </Modal>
   </nav>
+  <Modal v-if="showModal" @close="showModal = false">
+    <template #header>
+      <h2>About Spec-Up-T Editor</h2>
+    </template>
+    <template #body>
+      <p>
+        <strong>Spec-Up-T Editor</strong> is a web-based tool designed to help users create and manage specifications
+        in a
+        user-friendly manner. It provides an intuitive interface for editing, validating, and visualizing
+        specifications, making it easier for teams to collaborate and maintain their documentation.
+      </p>
+      <ul style="font-size: 0.95em; margin-bottom: 0.5em;">
+        <li>
+          <a href="https://github.com/blockchainbird/GitHubUi" target="_blank" rel="noopener">Repository for this
+            web-app</a>
+        </li>
+        <li>
+          <a href="https://github.com/blockchainbird/spec-up-t" target="_blank" rel="noopener">Repository for
+            Spec-Up-T</a>
+        </li>
+        <li>
+          <a href="https://blockchainbird.github.io/spec-up-t-website/" target="_blank" rel="noopener">Spec-Up-T
+            documentation website</a>
+        </li>
+      </ul>
+      <p style="font-size: 0.9em; color: #888;">
+        <a href="https://blockchainbird.github.io/spec-up-t-website/docs/introduction/how-it-came-to-be/"
+          target="_blank" rel="noopener">Read more</a>
+      </p>
+      <div class="build-info mt-3 pt-3 border-top">
+        <small class="text-muted">
+          <strong>Build Date:</strong> {{ buildInfo.buildDate }}
+        </small>
+      </div>
+    </template>
+  </Modal>
 </template>
 
 <script>

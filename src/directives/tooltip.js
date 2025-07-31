@@ -51,7 +51,7 @@ export const vTooltip = {
         line-height: 1.2;
         max-width: 200px;
         word-wrap: break-word;
-        z-index: 1050;
+        z-index: 1080;
         box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
         opacity: 0;
         pointer-events: none;
