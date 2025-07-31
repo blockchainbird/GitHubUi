@@ -1,13 +1,7 @@
 <template>
   <div class="tooltip-wrapper" ref="referenceRef">
     <slot />
-    <div
-      v-if="isVisible"
-      ref="floatingRef"
-      :style="floatingStyles"
-      class="tooltip-content"
-      role="tooltip"
-    >
+    <div v-if="isVisible" ref="floatingRef" :style="floatingStyles" class="tooltip-content" role="tooltip">
       {{ content }}
     </div>
   </div>
@@ -60,7 +54,7 @@ export default {
 
     const showTooltip = () => {
       if (props.disabled || isTouchDevice.value) return;
-      
+
       clearTimeout(hideTimeout);
       showTimeout = setTimeout(() => {
         isVisible.value = true;
@@ -138,6 +132,7 @@ export default {
     opacity: 0;
     transform: translateY(4px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);

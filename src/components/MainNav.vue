@@ -25,7 +25,7 @@
             Create Project
           </button> -->
           <button v-if="showRepoRelatedButtons" @click="navigateToAdminAndClose" class="nav-link btn btn-link">
-            <i class="bi bi-gear"></i>
+            <i class="bi bi-shield-lock"></i>
             Admin
           </button>
           <button v-if="showRepoRelatedButtons"
@@ -42,13 +42,14 @@
           <button v-if="showRepoRelatedButtons" @click="navigateToHealthCheckAndClose" class="nav-link btn btn-link"
             title="Run Health Check">
             <i class="bi bi-heart-pulse"></i>
-            Health Check
+            Health
           </button>
           <button @click="showModalAndClose" class="nav-link btn btn-link">
             <i class="bi bi-info-circle"></i>
             About
           </button>
-          <a title="Go to documentation website" href="https://blockchainbird.github.io/spec-up-t-website/docs/tools/spec-up-t-editor-user-guide/"
+          <a title="Go to documentation website"
+            href="https://blockchainbird.github.io/spec-up-t-website/docs/tools/spec-up-t-editor-user-guide/"
             target="_blank" rel="noopener" class="nav-link" @click="closeNavbar">
             <i class="bi bi-box-arrow-up-right"></i>
             Help
@@ -64,14 +65,15 @@
           <!-- Authentication UI -->
           <div class="nav-item d-flex align-items-center ms-2">
             <div v-if="isAuthenticated" class="d-flex align-items-center">
-              <span class="navbar-text me-3">{{ user.login }}</span>
-              <button @click="handleLogout" class="btn btn-outline-primary btn-sm">
+              <span class="visually-hidden">{{ user.login }}</span>
+              <button :title="user.login" @click="handleLogout" class="btn btn-outline-primary btn-sm">
                 <i class="bi bi-box-arrow-right"></i> Logout
               </button>
             </div>
             <div v-else class="d-flex align-items-center">
-              <span class="navbar-text me-3 text-muted">Not logged in</span>
-              <button @click="navigateAndClose('/login')" class="btn btn-outline-secondary btn-sm">
+              <span class="visually-hidden">Not logged in</span>
+              <button title="Not logged in" @click="navigateAndClose('/login')"
+                class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-box-arrow-in-right"></i> Login
               </button>
             </div>
@@ -353,14 +355,14 @@ export default {
     border-top: 1px solid #dee2e6;
     margin-top: 1rem;
   }
-  
+
   .navbar-nav .nav-link {
     margin: 0.25rem 0;
     padding: 0.75rem 1rem;
     border: 1px solid #dee2e6;
     background-color: #fff;
   }
-  
+
   .navbar-nav .nav-link:hover {
     background-color: #f8f9fa;
     border-color: #0d6efd;
@@ -402,11 +404,11 @@ export default {
   .navbar-nav {
     flex-direction: row;
   }
-  
+
   .navbar-nav .nav-item {
     margin-left: 0.5rem;
   }
-  
+
   /* Ensure navbar is always visible on desktop */
   .navbar-collapse {
     display: flex !important;

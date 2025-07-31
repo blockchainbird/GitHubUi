@@ -20,24 +20,24 @@ class GoogleAnalytics {
     }
 
     this.measurementId = measurementId
-    
+
     // Load gtag script
     this.loadGtagScript()
-    
+
     // Initialize gtag
     window.dataLayer = window.dataLayer || []
-    window.gtag = function() {
+    window.gtag = function () {
       window.dataLayer.push(arguments)
     }
-    
+
     // Configure GA4
     window.gtag('js', new Date())
     window.gtag('config', measurementId, {
       debug_mode: this.debug
     })
-    
+
     this.isInitialized = true
-    
+
     if (this.debug) {
       console.log(`Google Analytics initialized with ID: ${measurementId}`)
     }

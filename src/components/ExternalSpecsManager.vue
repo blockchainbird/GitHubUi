@@ -73,7 +73,8 @@
                           <input v-model="spec.gh_page" type="url" class="form-control form-control-sm"
                             placeholder="https://example.github.io/spec/" @input="markAsChanged"
                             :class="{ 'is-invalid': !spec.gh_page || !isValidUrl(spec.gh_page) }">
-                          <a v-if="isValidUrl(spec.gh_page)" :href="spec.gh_page" target="_blank" rel="noopener" class="btn btn-link btn-sm px-1" title="Open GitHub Page">
+                          <a v-if="isValidUrl(spec.gh_page)" :href="spec.gh_page" target="_blank" rel="noopener"
+                            class="btn btn-link btn-sm px-1" title="Open GitHub Page">
                             <i class="bi bi-box-arrow-up-right"></i>
                           </a>
                           <div v-if="!spec.gh_page" class="invalid-feedback">
@@ -88,7 +89,8 @@
                             <input v-model="spec.url" type="url" class="form-control form-control-sm"
                               placeholder="https://github.com/user/repo" @input="markAsChanged"
                               :class="{ 'is-invalid': !spec.url || !isValidUrl(spec.url) }">
-                            <a v-if="isValidUrl(spec.url)" :href="spec.url" target="_blank" rel="noopener" class="btn btn-link btn-sm px-1" title="Open Repository">
+                            <a v-if="isValidUrl(spec.url)" :href="spec.url" target="_blank" rel="noopener"
+                              class="btn btn-link btn-sm px-1" title="Open Repository">
                               <i class="bi bi-box-arrow-up-right"></i>
                             </a>
                           </div>
@@ -124,12 +126,13 @@
                   <div class="d-flex justify-content-between align-items-center">
                     <h6 class="mb-0">Add External Specifications</h6>
                     <div class="btn-group btn-group-sm" role="group">
-                      <input type="radio" class="btn-check" name="addMode" id="singleMode" value="single" v-model="addMode">
+                      <input type="radio" class="btn-check" name="addMode" id="singleMode" value="single"
+                        v-model="addMode">
                       <label class="btn btn-outline-primary" for="singleMode">Single</label>
-                      
+
                       <input type="radio" class="btn-check" name="addMode" id="bulkMode" value="bulk" v-model="addMode">
                       <label class="btn btn-outline-primary" for="bulkMode">Bulk Import</label>
-                      
+
                       <input type="radio" class="btn-check" name="addMode" id="setsMode" value="sets" v-model="addMode">
                       <label class="btn btn-outline-primary" for="setsMode">Reference Sets</label>
                     </div>
@@ -181,11 +184,11 @@
                   <div v-else-if="addMode === 'bulk'">
                     <div class="mb-4">
                       <div class="nav nav-tabs" role="tablist">
-                        <button class="nav-link" :class="{ active: bulkImportMode === 'json' }" 
+                        <button class="nav-link" :class="{ active: bulkImportMode === 'json' }"
                           @click="bulkImportMode = 'json'" type="button">
                           <i class="bi bi-code"></i> JSON Input
                         </button>
-                        <button class="nav-link" :class="{ active: bulkImportMode === 'url' }" 
+                        <button class="nav-link" :class="{ active: bulkImportMode === 'url' }"
                           @click="bulkImportMode = 'url'" type="button">
                           <i class="bi bi-link-45deg"></i> GitHub URL
                         </button>
@@ -195,13 +198,12 @@
                     <!-- JSON Input Tab -->
                     <div v-if="bulkImportMode === 'json'" class="mb-4">
                       <label for="jsonInput" class="form-label">External Specs JSON</label>
-                      <textarea id="jsonInput" v-model="jsonInput" class="form-control font-monospace" 
-                        rows="8" :readonly="false"
-                        :placeholder="jsonInputFocused ? '' : exampleJsonPlaceholder"
+                      <textarea id="jsonInput" v-model="jsonInput" class="form-control font-monospace" rows="8"
+                        :readonly="false" :placeholder="jsonInputFocused ? '' : exampleJsonPlaceholder"
                         @focus="jsonInputFocused = true" @blur="jsonInputFocused = false"
-                        @input="onJsonInputChange"
-                      ></textarea>
-                      <div class="form-text">Paste a JSON array of external specifications - validation happens automatically</div>
+                        @input="onJsonInputChange"></textarea>
+                      <div class="form-text">Paste a JSON array of external specifications - validation happens
+                        automatically</div>
                       <div v-if="jsonError" class="text-danger small mt-1">{{ jsonError }}</div>
                       <div v-if="autoPreviewStatus" class="text-info small mt-1">
                         <i class="bi bi-info-circle"></i> {{ autoPreviewStatus }}
@@ -229,17 +231,17 @@
                         <button type="button" @click="resetBulkImport" class="btn btn-outline-secondary">
                           Clear
                         </button>
-                        <button type="button" @click="previewBulkImport" class="btn btn-outline-primary" 
+                        <button type="button" @click="previewBulkImport" class="btn btn-outline-primary"
                           :disabled="bulkImportLoading">
                           <i class="bi bi-arrow-clockwise"></i>
                           {{ bulkImportLoading ? 'Validating...' : 'Refresh Preview' }}
                         </button>
-                        <button type="button" @click="importBulkSpecs" class="btn btn-success" 
+                        <button type="button" @click="importBulkSpecs" class="btn btn-success"
                           :disabled="!bulkPreviewData.length || bulkImportLoading || bulkPreviewData.some(spec => spec._isInvalid)">
                           <i class="bi bi-upload"></i>
-                          {{ bulkPreviewData.filter(spec => !spec._isInvalid).length > 0 
-                             ? `Import ${bulkPreviewData.filter(spec => !spec._isInvalid).length} Valid Specs` 
-                             : 'No Valid Specs to Import' }}
+                          {{bulkPreviewData.filter(spec => !spec._isInvalid).length > 0
+                            ? `Import ${bulkPreviewData.filter(spec => !spec._isInvalid).length} Valid Specs`
+                            : 'No Valid Specs to Import'}}
                         </button>
                       </div>
                     </div>
@@ -263,17 +265,19 @@
                               :class="{ 'table-warning': spec._isDuplicate, 'table-danger': spec._isInvalid }">
                               <td>
                                 <span v-if="!spec._isDuplicate && !spec._isInvalid">{{ spec.external_spec }}</span>
-                                <input v-else-if="spec._isDuplicate" v-model="spec.external_spec" class="form-control form-control-sm" 
-                                  placeholder="Enter new unique ID">
+                                <input v-else-if="spec._isDuplicate" v-model="spec.external_spec"
+                                  class="form-control form-control-sm" placeholder="Enter new unique ID">
                                 <span v-else class="text-danger">{{ spec.external_spec || 'Missing' }}</span>
                               </td>
                               <td class="text-truncate" style="max-width: 200px;">
-                                <span :class="{ 'text-danger': spec._isInvalid && (!spec.gh_page || !isValidUrl(spec.gh_page)) }">
+                                <span
+                                  :class="{ 'text-danger': spec._isInvalid && (!spec.gh_page || !isValidUrl(spec.gh_page)) }">
                                   {{ spec.gh_page || 'Missing' }}
                                 </span>
                               </td>
                               <td class="text-truncate" style="max-width: 200px;">
-                                <span :class="{ 'text-danger': spec._isInvalid && (!spec.url || !isValidUrl(spec.url)) }">
+                                <span
+                                  :class="{ 'text-danger': spec._isInvalid && (!spec.url || !isValidUrl(spec.url)) }">
                                   {{ spec.url || 'Missing' }}
                                 </span>
                               </td>
@@ -304,7 +308,7 @@
                   <div v-else-if="addMode === 'sets'">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                       <label class="form-label mb-0">Available Reference Sets</label>
-                      <button type="button" @click="loadReferenceSets" class="btn btn-outline-primary btn-sm" 
+                      <button type="button" @click="loadReferenceSets" class="btn btn-outline-primary btn-sm"
                         :disabled="referenceSetsLoading">
                         <i class="bi bi-arrow-clockwise"></i>
                         {{ referenceSetsLoading ? 'Loading...' : 'Refresh Sets' }}
@@ -328,7 +332,8 @@
                     <!-- Reference Sets Grid -->
                     <div v-else-if="referenceSets.length > 0" class="row">
                       <div v-for="set in referenceSets" :key="set.identifier" class="col-md-6 mb-3">
-                        <div class="card h-100" :class="{ 'border-primary': selectedReferenceSet?.identifier === set.identifier }">
+                        <div class="card h-100"
+                          :class="{ 'border-primary': selectedReferenceSet?.identifier === set.identifier }">
                           <div class="card-body d-flex flex-column">
                             <h6 class="card-title">{{ set.title }}</h6>
                             <p class="card-text small text-muted flex-grow-1">{{ set.description }}</p>
@@ -338,11 +343,11 @@
                               <div><strong>References:</strong> {{ set.references?.length || 0 }} specifications</div>
                             </div>
                             <div class="d-flex gap-2">
-                              <button type="button" @click="selectReferenceSet(set)" 
+                              <button type="button" @click="selectReferenceSet(set)"
                                 class="btn btn-outline-primary btn-sm flex-grow-1">
                                 <i class="bi bi-eye"></i> Preview
                               </button>
-                              <button type="button" @click="selectedReferenceSet = set; importReferenceSet()" 
+                              <button type="button" @click="selectedReferenceSet = set; importReferenceSet()"
                                 class="btn btn-success btn-sm">
                                 <i class="bi bi-plus-circle"></i> Import
                               </button>
@@ -359,7 +364,8 @@
                     </div>
 
                     <!-- Reference Set Preview Modal -->
-                    <div v-if="showReferenceSetPreview && selectedReferenceSet" class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+                    <div v-if="showReferenceSetPreview && selectedReferenceSet" class="modal show d-block" tabindex="-1"
+                      style="background-color: rgba(0,0,0,0.5);">
                       <div class="modal-dialog modal-lg">
                         <div class="modal-content">
                           <div class="modal-header">
@@ -375,7 +381,7 @@
                                 <div><strong>Type:</strong> {{ selectedReferenceSet.type }}</div>
                               </div>
                             </div>
-                            
+
                             <h6>References ({{ selectedReferenceSet.references?.length || 0 }})</h6>
                             <div v-if="selectedReferenceSet.references?.length > 0" class="table-responsive">
                               <table class="table table-sm">
@@ -390,8 +396,10 @@
                                 <tbody>
                                   <tr v-for="ref in selectedReferenceSet.references" :key="ref.external_spec">
                                     <td>{{ ref.external_spec }}</td>
-                                    <td><a :href="ref.gh_page" target="_blank" class="text-truncate d-block" style="max-width: 200px;">{{ ref.gh_page }}</a></td>
-                                    <td><a :href="ref.url" target="_blank" class="text-truncate d-block" style="max-width: 200px;">{{ ref.url }}</a></td>
+                                    <td><a :href="ref.gh_page" target="_blank" class="text-truncate d-block"
+                                        style="max-width: 200px;">{{ ref.gh_page }}</a></td>
+                                    <td><a :href="ref.url" target="_blank" class="text-truncate d-block"
+                                        style="max-width: 200px;">{{ ref.url }}</a></td>
                                     <td>{{ ref.terms_dir }}</td>
                                   </tr>
                                 </tbody>
@@ -400,7 +408,8 @@
                             <div v-else class="text-muted">No references available</div>
                           </div>
                           <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" @click="resetReferenceSetSelection">Close</button>
+                            <button type="button" class="btn btn-secondary"
+                              @click="resetReferenceSetSelection">Close</button>
                             <button type="button" class="btn btn-success" @click="importReferenceSet">
                               <i class="bi bi-plus-circle"></i> Import References
                             </button>
@@ -708,7 +717,7 @@ export default {
           }
 
           const rawUrl = convertGithubUrlToRaw(githubUrlInput.value)
-          
+
           try {
             const response = await fetch(rawUrl)
             if (!response.ok) {
@@ -734,10 +743,10 @@ export default {
 
         const validSpecs = []
         const invalidSpecs = []
-        
+
         specsData.forEach((spec, index) => {
           console.log(`Validating spec ${index}:`, spec)
-          
+
           // Detailed validation debugging
           const validationChecks = {
             exists: !!spec,
@@ -749,15 +758,15 @@ export default {
             validGhPageUrl: spec.gh_page ? isValidUrl(spec.gh_page) : false,
             validUrl: spec.url ? isValidUrl(spec.url) : false
           }
-          
+
           console.log(`Validation checks for spec ${index}:`, validationChecks)
-          
+
           if (validateExternalSpec(spec)) {
             console.log(`Spec ${index} is VALID`)
             validSpecs.push(spec)
           } else {
             console.log(`Spec ${index} is INVALID`)
-            invalidSpecs.push({...spec, _isInvalid: true})
+            invalidSpecs.push({ ...spec, _isInvalid: true })
           }
         })
 
@@ -804,7 +813,7 @@ export default {
     const importBulkSpecs = () => {
       // Filter out invalid specs
       const validSpecs = bulkPreviewData.value.filter(spec => !spec._isInvalid)
-      
+
       if (validSpecs.length === 0) {
         alert('No valid specifications to import. Please fix the validation errors first.')
         return
@@ -814,9 +823,9 @@ export default {
       const duplicates = validSpecs.filter(spec => spec._isDuplicate)
       if (duplicates.length > 0) {
         // Check if duplicates have new IDs
-        const unresolved = duplicates.filter(spec => !spec.external_spec || 
+        const unresolved = duplicates.filter(spec => !spec.external_spec ||
           externalSpecs.value.some(existing => existing.external_spec === spec.external_spec))
-        
+
         if (unresolved.length > 0) {
           alert('Please resolve all duplicate specification IDs before importing')
           return
@@ -896,14 +905,14 @@ export default {
 
       const setReferences = selectedReferenceSet.value.references || []
       const validSpecs = setReferences.filter(spec => validateExternalSpec(spec))
-      
+
       if (validSpecs.length === 0) {
         alert('No valid specifications found in the selected reference set.')
         return
       }
 
       // Check for duplicates
-      const duplicates = validSpecs.filter(spec => 
+      const duplicates = validSpecs.filter(spec =>
         externalSpecs.value.some(existing => existing.external_spec === spec.external_spec)
       )
 
@@ -915,7 +924,7 @@ export default {
       }
 
       // Add non-duplicate specs
-      const nonDuplicateSpecs = validSpecs.filter(spec => 
+      const nonDuplicateSpecs = validSpecs.filter(spec =>
         !externalSpecs.value.some(existing => existing.external_spec === spec.external_spec)
       )
 
@@ -929,7 +938,7 @@ export default {
       const importedCount = nonDuplicateSpecs.length
       const skippedCount = duplicates.length
       let message = `Successfully imported ${importedCount} specification${importedCount === 1 ? '' : 's'} from ${selectedReferenceSet.value.title}!`
-      
+
       if (skippedCount > 0) {
         message += ` (${skippedCount} duplicate${skippedCount === 1 ? '' : 's'} skipped)`
       }

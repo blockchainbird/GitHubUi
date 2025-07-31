@@ -97,7 +97,7 @@
           </form>
         </div>
       </div>
-      
+
       <!-- Create New Project Section -->
       <div class="card mt-4">
         <div class="card-body text-center">
@@ -114,7 +114,7 @@
           </router-link>
         </div>
       </div>
-      
+
       <!-- Google Analytics Demo Section -->
       <!-- <div class="mt-4">
         <GoogleAnalyticsDemo />
@@ -398,7 +398,7 @@ export default {
     // Load visited repositories when component mounts
     onMounted(() => {
       loadRepos()
-      
+
       // Check for query parameters to auto-load a repository
       if (route.query.owner && route.query.name) {
         owner.value = route.query.owner
@@ -438,7 +438,7 @@ export default {
       formatDate
     }
   },
-  components: { 
+  components: {
     Modal
     // GoogleAnalyticsDemo 
   }

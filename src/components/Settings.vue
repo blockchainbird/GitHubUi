@@ -119,7 +119,7 @@ export default {
         await new Promise(resolve => setTimeout(resolve, 500))
         
         // Close modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('confirmClearModal'))
+        const modal = bootstrap.Modal.gFetInstance(document.getElementById('confirmClearModal'))
         modal.hide()
         
         // Redirect to login page

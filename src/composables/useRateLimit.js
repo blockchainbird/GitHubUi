@@ -45,10 +45,10 @@ export function useRateLimit() {
   const formatTimeRemaining = computed(() => {
     const time = timeUntilReset.value
     if (!time) return 'Unknown'
-    
+
     const minutes = Math.floor(time / 60000)
     const seconds = Math.floor((time % 60000) / 1000)
-    
+
     if (minutes > 0) {
       return `${minutes}m ${seconds}s`
     }

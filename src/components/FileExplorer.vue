@@ -33,11 +33,12 @@
               Spec Directory: {{ currentDirectory }}
             </h5>
             <div class="d-flex gap-2">
-              <button v-if="isRootDirectory && hasUnsavedChanges" @click="saveOrder" class="btn btn-primary btn-sm" title="Save Order">
+              <button v-if="isRootDirectory && hasUnsavedChanges" @click="saveOrder" class="btn btn-primary btn-sm"
+                title="Save Order">
                 <i class="bi bi-save"></i>
                 Save Order
               </button>
-              <button @click="showActionModal" class="btn btn-warning btn-sm me-2" 
+              <button @click="showActionModal" class="btn btn-warning btn-sm me-2"
                 title="Trigger GitHub Actions Workflow" :disabled="triggeringWorkflow">
                 <span v-if="triggeringWorkflow">
                   <span class="spinner-border spinner-border-sm me-1" role="status"></span>
@@ -120,9 +121,7 @@
             </p>
           </div>
 
-          <div v-else class="list-group list-group-flush"
-            @dragover="onListDragOver"
-            @drop="onListDrop">
+          <div v-else class="list-group list-group-flush" @dragover="onListDragOver" @drop="onListDrop">
             <!-- Show items in their dragged order -->
             <div v-for="(item, index) in orderedItems" :key="item.path" class="position-relative">
               <!-- Drop zone indicator at the top -->
@@ -131,62 +130,54 @@
                 <div class="drop-line"></div>
                 <span class="drop-text">Drop here</span>
               </div>
-              
+
               <button @click="item.type === 'folder' ? openFolder(item) : openFile(item)"
-                class="list-group-item list-group-item-action d-flex align-items-center"
-                :class="{ 
+                class="list-group-item list-group-item-action d-flex align-items-center" :class="{
                   'recently-created': item.type === 'file' && item.name === recentlyCreatedFile,
                   'drag-over': isRootDirectory && isDragging && dragOverIndex === index && dragPosition === 'on',
                   'being-dragged': isRootDirectory && isDragging && draggedIndex === index
-                }"
-                @dragover="onDragOver($event, index, item.type)"
-                @drop="onDrop($event, index, item.type)"
-                @dragenter="onDragEnter($event, index)"
-                @dragleave="onDragLeave($event)">
-                <i v-if="isRootDirectory" 
-                  class="bi bi-grip-vertical me-2 drag-handle"
-                  draggable="true"
-                  @dragstart="onDragStart($event, item, item.type, index)"
-                  @dragend="onDragEnd"
-                  @click.stop></i>
-              <i v-if="item.type === 'folder'" class="bi bi-folder-fill me-3" style="color: #ffc107;"></i>
-              <i v-else class="bi bi-file-text me-3" style="color: #0d6efd;"></i>
-              <div class="flex-grow-1">
-                <div class="fw-medium">
-                  {{ item.name }}
-                  <span v-if="item.type === 'file' && item.name === recentlyCreatedFile" class="badge bg-primary ms-2">New</span>
-                  <span v-if="item.type === 'file' && item.name.startsWith('_')" 
-                    title="If a file has an underscore at the beginning of the file name, it is a draft version."
-                    class="badge bg-warning text-dark ms-2">Draft</span>
-                  <span v-if="item.type === 'file' && item.hasExternalRefs" 
-                    title="This file has an external reference." 
-                    class="badge bg-success ms-2">External</span>
+                }" @dragover="onDragOver($event, index, item.type)" @drop="onDrop($event, index, item.type)"
+                @dragenter="onDragEnter($event, index)" @dragleave="onDragLeave($event)">
+                <i v-if="isRootDirectory" class="bi bi-grip-vertical me-2 drag-handle" draggable="true"
+                  @dragstart="onDragStart($event, item, item.type, index)" @dragend="onDragEnd" @click.stop></i>
+                <i v-if="item.type === 'folder'" class="bi bi-folder-fill me-3" style="color: #ffc107;"></i>
+                <i v-else class="bi bi-file-text me-3" style="color: #0d6efd;"></i>
+                <div class="flex-grow-1">
+                  <div class="fw-medium">
+                    {{ item.name }}
+                    <span v-if="item.type === 'file' && item.name === recentlyCreatedFile"
+                      class="badge bg-primary ms-2">New</span>
+                    <span v-if="item.type === 'file' && item.name.startsWith('_')"
+                      title="If a file has an underscore at the beginning of the file name, it is a draft version."
+                      class="badge bg-warning text-dark ms-2">Draft</span>
+                    <span v-if="item.type === 'file' && item.hasExternalRefs"
+                      title="This file has an external reference." class="badge bg-success ms-2">External</span>
+                  </div>
+                  <small class="text-muted">{{ item.path }}</small>
                 </div>
-                <small class="text-muted">{{ item.path }}</small>
+                <div v-if="item.type === 'file'" class="d-flex align-items-center gap-2">
+                  <button @click.stop="showDeleteModal(item)" class="btn btn-outline-danger btn-sm" title="Delete File">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                  <i class="bi bi-chevron-right"></i>
+                </div>
+                <i v-else class="bi bi-chevron-right"></i>
+              </button>
+
+              <!-- Drop zone indicator at the bottom of last item -->
+              <div v-if="isRootDirectory && isDragging && dragOverIndex === index && dragPosition === 'after'"
+                class="drop-zone-indicator drop-zone-after">
+                <div class="drop-line"></div>
+                <span class="drop-text">Drop here</span>
               </div>
-              <div v-if="item.type === 'file'" class="d-flex align-items-center gap-2">
-                <button @click.stop="showDeleteModal(item)" class="btn btn-outline-danger btn-sm" title="Delete File">
-                  <i class="bi bi-trash"></i>
-                </button>
-                <i class="bi bi-chevron-right"></i>
-              </div>
-              <i v-else class="bi bi-chevron-right"></i>
-            </button>
-            
-            <!-- Drop zone indicator at the bottom of last item -->
-            <div v-if="isRootDirectory && isDragging && dragOverIndex === index && dragPosition === 'after'"
+            </div>
+
+            <!-- Final drop zone at the very end of the list -->
+            <div v-if="isRootDirectory && isDragging && dragOverIndex === -2"
               class="drop-zone-indicator drop-zone-after">
               <div class="drop-line"></div>
-              <span class="drop-text">Drop here</span>
+              <span class="drop-text">Drop at end</span>
             </div>
-          </div>
-          
-          <!-- Final drop zone at the very end of the list -->
-          <div v-if="isRootDirectory && isDragging && dragOverIndex === -2"
-            class="drop-zone-indicator drop-zone-after">
-            <div class="drop-line"></div>
-            <span class="drop-text">Drop at end</span>
-          </div>
           </div>
         </div>
       </div>
@@ -254,8 +245,7 @@
 
     <!-- GitHub Actions Modal -->
     <div v-if="showActionsModal" class="modal fade show d-block" tabindex="-1"
-      style="background-color: rgba(0,0,0,0.5);" @click.self="closeActionsModal"
-      @keyup.escape="closeActionsModal">
+      style="background-color: rgba(0,0,0,0.5);" @click.self="closeActionsModal" @keyup.escape="closeActionsModal">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
@@ -277,48 +267,44 @@
             <div class="mb-3">
               <label class="form-label">Action Type</label>
               <div class="form-check">
-                <input v-model="selectedAction" class="form-check-input" type="radio" 
-                  value="render" id="action-render">
+                <input v-model="selectedAction" class="form-check-input" type="radio" value="render" id="action-render">
                 <label class="form-check-label" for="action-render">
                   <strong>Render Specification</strong><br>
                   <small class="text-muted">Generate HTML output from markdown files</small>
                 </label>
               </div>
               <div class="form-check">
-                <input v-model="selectedAction" class="form-check-input" type="radio" 
-                  value="topdf" id="action-topdf">
+                <input v-model="selectedAction" class="form-check-input" type="radio" value="topdf" id="action-topdf">
                 <label class="form-check-label" for="action-topdf">
                   <strong>Generate PDF</strong><br>
                   <small class="text-muted">Create a PDF version of the specification</small>
                 </label>
               </div>
               <div class="form-check">
-                <input v-model="selectedAction" class="form-check-input" type="radio" 
-                  value="todocx" id="action-todocx">
+                <input v-model="selectedAction" class="form-check-input" type="radio" value="todocx" id="action-todocx">
                 <label class="form-check-label" for="action-todocx">
                   <strong>Generate DOCX</strong><br>
                   <small class="text-muted">Create a Word document version</small>
                 </label>
               </div>
               <div class="form-check">
-                <input v-model="selectedAction" class="form-check-input" type="radio" 
-                  value="freeze" id="action-freeze">
+                <input v-model="selectedAction" class="form-check-input" type="radio" value="freeze" id="action-freeze">
                 <label class="form-check-label" for="action-freeze">
                   <strong>Freeze Specification</strong><br>
                   <small class="text-muted">Lock the current version and commit changes</small>
                 </label>
               </div>
               <div class="form-check">
-                <input v-model="selectedAction" class="form-check-input" type="radio" 
-                  value="custom-update" id="action-custom">
+                <input v-model="selectedAction" class="form-check-input" type="radio" value="custom-update"
+                  id="action-custom">
                 <label class="form-check-label" for="action-custom">
                   <strong>Custom Update</strong><br>
                   <small class="text-muted">Run custom specification updates</small>
                 </label>
               </div>
               <div class="form-check">
-                <input v-model="selectedAction" class="form-check-input" type="radio" 
-                  value="collectExternalReferences" id="action-external">
+                <input v-model="selectedAction" class="form-check-input" type="radio" value="collectExternalReferences"
+                  id="action-external">
                 <label class="form-check-label" for="action-external">
                   <strong>Collect External References</strong><br>
                   <small class="text-muted">Gather and process external term references</small>
@@ -388,8 +374,7 @@
           </div>
           <div class="modal-footer">
             <button @click="closeDeleteFileModal" type="button" class="btn btn-secondary">Cancel</button>
-            <button @click="deleteFile" type="button" class="btn btn-danger"
-              :disabled="deletingFile">
+            <button @click="deleteFile" type="button" class="btn btn-danger" :disabled="deletingFile">
               <span v-if="deletingFile">
                 <span class="spinner-border spinner-border-sm me-2" role="status"></span>
                 Deleting...
@@ -527,17 +512,17 @@ export default {
       if (!isRootDirectory.value) {
         // If not in root, use default order (folders first, then files)
         const items = []
-        
+
         // Add filtered folders first
         filteredFolders.value.forEach(folder => {
           items.push({ ...folder, type: 'folder' })
         })
-        
+
         // Then add filtered files
         filteredFiles.value.forEach(file => {
           items.push({ ...file, type: 'file' })
         })
-        
+
         return items
       }
 
@@ -550,26 +535,26 @@ export default {
             return filteredFiles.value.some(f => f.name === item.name)
           }
         })
-        
+
         return filtered;
       } else {
         // Initialize with default order - but only when files/folders are actually loaded
         if (files.value.length === 0 && folders.value.length === 0) {
           return [];
         }
-        
+
         const items = []
-        
+
         // Add filtered folders first  
         filteredFolders.value.forEach(folder => {
           items.push({ ...folder, type: 'folder' })
         })
-        
+
         // Then add filtered files
         filteredFiles.value.forEach(file => {
           items.push({ ...file, type: 'file' })
         })
-        
+
         // Set this as the initial drag items - but don't modify during computed execution
         // Use nextTick to avoid infinite loops
         if (isRootDirectory.value && items.length > 0) {
@@ -580,7 +565,7 @@ export default {
             }
           });
         }
-        
+
         return items
       }
     })
@@ -603,7 +588,7 @@ export default {
         const token = localStorage.getItem('github_token')
         console.log('GitHub token exists:', !!token)
         console.log('Props:', { owner: props.owner, repo: props.repo, branch: props.branch })
-        
+
         const config = {
           headers: {
             'Authorization': `token ${token}`,
@@ -614,7 +599,7 @@ export default {
         // Try to get specs.json from repository root, with branch
         const specsUrl = `https://api.github.com/repos/${props.owner}/${props.repo}/contents/specs.json?ref=${props.branch}`
         console.log('Loading specs config from:', specsUrl)
-        
+
         const response = await axios.get(specsUrl, config)
         console.log('Specs config loaded successfully')
 
@@ -622,23 +607,23 @@ export default {
         const content = JSON.parse(atob(response.data.content))
         specsConfig.value = content
         console.log('Specs config content:', content)
-        
+
         // Get spec_directory from the first item in specs array
         if (Array.isArray(content.specs) && content.specs.length > 0) {
           // Remove leading ./ if present to normalize the path
           const rawSpecDir = content.specs[0].spec_directory || 'spec'
           specDirectory.value = rawSpecDir.replace(/^\.\//, '')
-          
+
           const rawTermsDir = content.specs[0].spec_terms_directory || 'terms-definitions'
           specTermsDirectory.value = rawTermsDir.replace(/^\.\//, '')
         } else {
           specDirectory.value = 'spec'
           specTermsDirectory.value = 'terms-definitions'
         }
-        
+
         console.log('Spec directory set to:', specDirectory.value)
         console.log('Spec terms directory set to:', specTermsDirectory.value)
-        
+
         // Check if we have a directory query parameter to navigate to
         const targetDir = route.query.dir
         if (targetDir) {
@@ -648,7 +633,7 @@ export default {
           currentDirectory.value = specDirectory.value
           console.log('Using default spec directory:', currentDirectory.value)
         }
-        
+
         console.log('About to load spec files from:', currentDirectory.value)
         await loadSpecFiles(currentDirectory.value)
 
@@ -667,7 +652,7 @@ export default {
           error.value = 'specs.json file not found in repository root. Using default "specs" directory.'
           specDirectory.value = 'specs'
           specTermsDirectory.value = 'terms-definitions'
-          
+
           // Check if we have a directory query parameter to navigate to
           const targetDir = route.query.dir
           if (targetDir) {
@@ -675,7 +660,7 @@ export default {
           } else {
             currentDirectory.value = specDirectory.value
           }
-          
+
           console.log('Loading files from default directory:', currentDirectory.value)
           await loadSpecFiles(currentDirectory.value)
         } else {
@@ -716,13 +701,13 @@ export default {
     const loadSpecFiles = async (directory, retryCount = 0) => {
       try {
         loading.value = true
-        loadingMessage.value = retryCount > 0 ? 
-          `Refreshing directory contents (attempt ${retryCount + 1})...` : 
+        loadingMessage.value = retryCount > 0 ?
+          `Refreshing directory contents (attempt ${retryCount + 1})...` :
           'Loading directory contents...'
         error.value = ''
-        
+
         console.log('Loading files from directory:', directory, 'retry count:', retryCount)
-        
+
         const token = localStorage.getItem('github_token')
         const config = {
           headers: {
@@ -730,26 +715,26 @@ export default {
             'Accept': 'application/vnd.github.v3+json'
           }
         }
-        
+
         // Only add cache-busting headers and timestamp for retry attempts
         if (retryCount > 0) {
           config.headers['Cache-Control'] = 'no-cache'
           config.headers['If-None-Match'] = ''
         }
-        
+
         // Get files and folders from the given directory, with branch
         let url = `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${directory}?ref=${props.branch}`
-        
+
         // Add timestamp to URL only for retry attempts to prevent caching
         if (retryCount > 0) {
           const timestamp = Date.now()
           url += `&t=${timestamp}`
         }
-        
+
         console.log('Making API request to:', url)
         const response = await axios.get(url, config)
         console.log('API response received:', response.data?.length, 'items')
-        
+
         // Folders
         folders.value = response.data
           .filter(item => item.type === 'dir')
@@ -758,13 +743,13 @@ export default {
             path: folder.path
           }))
         console.log('Found folders:', folders.value.length)
-        
+
         // Files
         const textFileExtensions = ['.md']
         const filteredFiles = response.data
           .filter(file => file.type === 'file')
           .filter(file => textFileExtensions.some(ext => file.name.toLowerCase().endsWith(ext)))
-        
+
         console.log('Found .md files:', filteredFiles.length)
 
         // Check each file for external references
@@ -782,13 +767,13 @@ export default {
         )
 
         files.value = filesWithExternalRefs
-        
+
         console.log('Files set in reactive array:', files.value.length)
         currentDirectory.value = directory
-        
+
         console.log('Current directory set to:', currentDirectory.value)
         console.log('Is root directory:', isRootDirectory.value)
-        
+
         // If we're in root directory and have specs config, apply saved order from markdown_paths
         if (isRootDirectory.value && specsConfig.value) {
           console.log('Applying saved order...')
@@ -824,19 +809,19 @@ export default {
           console.log(`File ${deletedFileName} still visible, retrying in ${delay}ms...`)
           await new Promise(resolve => setTimeout(resolve, delay))
         }
-        
+
         await loadSpecFiles(currentDirectory.value, attempt)
-        
+
         // Check if the deleted file is still in the list
         const fileStillExists = files.value.some(f => f.name === deletedFileName)
-        
+
         if (!fileStillExists) {
           // File successfully removed from the list
           console.log(`File ${deletedFileName} successfully removed after ${attempt + 1} attempts`)
           return
         }
       }
-      
+
       // If we get here, the file is still visible after all retries
       console.warn(`File ${deletedFileName} still visible after ${maxRetries} attempts. This may be due to GitHub API caching.`)
       loadingMessage.value = ''
@@ -852,12 +837,12 @@ export default {
           console.log(`File ${createdFileName} not visible yet, retrying in ${delay}ms...`)
           await new Promise(resolve => setTimeout(resolve, delay))
         }
-        
+
         await loadSpecFiles(currentDirectory.value, attempt)
-        
+
         // Check if the created file is now in the list
         const fileExists = files.value.some(f => f.name === createdFileName)
-        
+
         if (fileExists) {
           // File successfully found in the list
           console.log(`File ${createdFileName} successfully found after ${attempt + 1} attempts`)
@@ -866,7 +851,7 @@ export default {
           return
         }
       }
-      
+
       // If we get here, the file is still not visible after all retries
       console.warn(`File ${createdFileName} still not visible after ${maxRetries} attempts. This may be due to GitHub API caching.`)
       loadingMessage.value = ''
@@ -875,7 +860,7 @@ export default {
     // Helper function to refresh file list after rename (publish/unpublish) with retry logic
     const refreshAfterRename = async (renameInfo, maxRetries = 5) => {
       const { oldName, newName, action } = renameInfo
-      
+
       for (let attempt = 0; attempt < maxRetries; attempt++) {
         if (attempt > 0) {
           loadingMessage.value = `Verifying ${action} operation... (attempt ${attempt + 1}/${maxRetries})`
@@ -884,13 +869,13 @@ export default {
           console.log(`File rename from ${oldName} to ${newName} not reflected yet, retrying in ${delay}ms...`)
           await new Promise(resolve => setTimeout(resolve, delay))
         }
-        
+
         await loadSpecFiles(currentDirectory.value, attempt)
-        
+
         // Check if the rename was successful: old file gone, new file present
         const oldFileExists = files.value.some(f => f.name === oldName)
         const newFileExists = files.value.some(f => f.name === newName)
-        
+
         if (!oldFileExists && newFileExists) {
           // Rename successfully completed
           console.log(`File rename from ${oldName} to ${newName} successfully completed after ${attempt + 1} attempts`)
@@ -899,7 +884,7 @@ export default {
           return
         }
       }
-      
+
       // If we get here, the rename is still not reflected after all retries
       console.warn(`File rename from ${oldName} to ${newName} still not reflected after ${maxRetries} attempts. This may be due to GitHub API caching.`)
       loadingMessage.value = ''
@@ -908,7 +893,7 @@ export default {
     const openFile = (file) => {
       // Don't navigate if we're in the middle of a drag operation
       if (isDragging.value) return;
-      
+
       const encodedPath = encodeURIComponent(file.path)
       const encodedDir = encodeURIComponent(currentDirectory.value)
       router.push(`/editor/${props.owner}/${props.repo}/${props.branch}/${encodedPath}?dir=${encodedDir}`)
@@ -917,12 +902,12 @@ export default {
     const openFolder = (folder) => {
       // Don't navigate if we're in the middle of a drag operation
       if (isDragging.value) return;
-      
+
       recentlyCreatedFile.value = '' // Clear when navigating to different folder
       localStorage.removeItem('recentlyCreatedFile') // Also clear from localStorage
       hasUnsavedChanges.value = false // Reset unsaved changes when navigating away from root
       draggedItems.value = [] // Reset drag items when leaving root
-      
+
       // Update URL with new directory
       const encodedDir = encodeURIComponent(folder.path)
       router.push(`/files/${props.owner}/${props.repo}/${props.branch}?dir=${encodedDir}`)
@@ -991,12 +976,12 @@ export default {
         const encodedDir = encodeURIComponent(currentDirectory.value || specDirectory.value)
         const encodedContent = encodeURIComponent(contentToPass)
         const encodedCommitMessage = encodeURIComponent(commitMessageToPass)
-        
+
         const finalUrl = `/editor/${props.owner}/${props.repo}/${props.branch}/${encodedPath}?dir=${encodedDir}&new=true&content=${encodedContent}&commitMessage=${encodedCommitMessage}`
-        
+
         // Close modal AFTER capturing the values
         closeCreateFileModal()
-        
+
         router.push(finalUrl)
 
       } catch (err) {
@@ -1027,32 +1012,32 @@ export default {
       selectedAction.value = 'render' // Default selection
       actionError.value = ''
       selectedWorkflow.value = '' // Clear previous workflow info
-      
+
       // Try to determine which workflow will be used
       try {
         const token = localStorage.getItem('github_token')
         if (!token) return
-        
+
         const config = {
           headers: {
             'Authorization': `token ${token}`,
             'Accept': 'application/vnd.github.v3+json'
           }
         }
-        
+
         const workflowsResponse = await axios.get(
           `https://api.github.com/repos/${props.owner}/${props.repo}/actions/workflows`,
           config
         )
-        
+
         const workflows = workflowsResponse.data.workflows.filter(w => w.state === 'active')
-        
+
         // Find spec-related workflow
         const specWorkflow = workflows.find(w => {
           const name = w.name.toLowerCase()
           return name.includes('spec-up') || name === 'spec-up-t render'
         })
-        
+
         if (specWorkflow) {
           selectedWorkflow.value = specWorkflow.name
         } else {
@@ -1128,10 +1113,10 @@ export default {
 
         // Optimistically remove the file from UI immediately for better UX
         files.value = files.value.filter(f => f.name !== deletedFileName)
-        
+
         // Also remove from dragged items if in root directory
         if (isRootDirectory.value) {
-          draggedItems.value = draggedItems.value.filter(item => 
+          draggedItems.value = draggedItems.value.filter(item =>
             !(item.type === 'file' && item.name === deletedFileName)
           )
         }
@@ -1199,13 +1184,13 @@ export default {
       try {
         triggeringWorkflow.value = true
         loadingMessage.value = 'Triggering GitHub Actions workflow...'
-        
+
         const token = localStorage.getItem('github_token')
         if (!token) {
           actionError.value = 'GitHub token not found. Please log in again.'
           return
         }
-        
+
         const config = {
           headers: {
             'Authorization': `token ${token}`,
@@ -1224,7 +1209,7 @@ export default {
 
         const workflows = workflowsResponse.data.workflows
         console.log(`📋 Found ${workflows.length} workflows:`, workflows.map(w => w.name))
-        
+
         if (workflows.length === 0) {
           actionError.value = 'No GitHub Actions workflows found in this repository. Please add a workflow file to .github/workflows/ first.'
           return
@@ -1233,24 +1218,24 @@ export default {
         // Check each workflow to see if it supports workflow_dispatch
         let targetWorkflow = null
         const candidateWorkflows = []
-        
+
         for (const workflow of workflows) {
           if (workflow.state !== 'active') {
             console.log(`⏭️ Skipping inactive workflow: ${workflow.name}`)
             continue
           }
-          
+
           try {
             console.log(`🔍 Checking workflow: ${workflow.name} (${workflow.path})`)
-            
+
             // Get the workflow file content to check for workflow_dispatch
             const workflowFileResponse = await axios.get(
               `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${workflow.path}?ref=${props.branch}`,
               config
             )
-            
+
             const workflowContent = atob(workflowFileResponse.data.content)
-            
+
             // Check if workflow supports workflow_dispatch
             if (workflowContent.includes('workflow_dispatch')) {
               console.log(`✅ Found workflow with manual trigger support: ${workflow.name}`)
@@ -1263,30 +1248,30 @@ export default {
             continue
           }
         }
-        
+
         if (candidateWorkflows.length === 0) {
           actionError.value = 'No workflows found that support manual triggering (workflow_dispatch). Please add workflow_dispatch to a workflow\'s "on" triggers.'
           return
         }
-        
+
         // Prefer spec-related workflows with more specific matching
         const specWorkflows = candidateWorkflows.filter(({ workflow }) => {
           const name = workflow.name.toLowerCase()
           const path = workflow.path.toLowerCase()
-          
+
           // Prioritize workflows that are clearly spec-related
-          return name.includes('spec-up') || 
-                 name.includes('render') && (name.includes('spec') || path.includes('spec')) ||
-                 name === 'spec-up-t render' ||
-                 path.includes('render-spec') ||
-                 path.includes('spec-render')
+          return name.includes('spec-up') ||
+            name.includes('render') && (name.includes('spec') || path.includes('spec')) ||
+            name === 'spec-up-t render' ||
+            path.includes('render-spec') ||
+            path.includes('spec-render')
         })
-        
+
         const buildWorkflows = candidateWorkflows.filter(({ workflow }) => {
           const name = workflow.name.toLowerCase()
           return name.includes('build') || name.includes('deploy')
         })
-        
+
         if (specWorkflows.length > 0) {
           targetWorkflow = specWorkflows[0].workflow
           console.log(`🎯 Using spec-related workflow: ${targetWorkflow.name}`)
@@ -1309,32 +1294,32 @@ export default {
         // Get the workflow content to determine what inputs it expects
         const selectedWorkflowData = candidateWorkflows.find(({ workflow }) => workflow.id === targetWorkflow.id)
         const workflowContent = selectedWorkflowData?.content || ''
-        
+
         // Build inputs based on what the workflow expects
         let inputs = {}
-        
+
         // Check if workflow expects specific inputs by looking for input definitions
         const hasInputSection = workflowContent.includes('inputs:')
-        
+
         if (hasInputSection) {
           // Only add inputs that seem to be defined in the workflow
           if (workflowContent.includes('action_type:') || workflowContent.includes('action_type')) {
             inputs.action_type = selectedAction.value || 'render'
           }
-          
+
           if (workflowContent.includes('repository:') || workflowContent.includes('repository')) {
             inputs.repository = `${props.owner}/${props.repo}`
           }
-          
+
           if (workflowContent.includes('branch:') || workflowContent.includes('branch')) {
             inputs.branch = props.branch
           }
-          
+
           if (workflowContent.includes('triggered_by:') || workflowContent.includes('triggered_by')) {
-            inputs.triggered_by = 'GitHubUI'  
+            inputs.triggered_by = 'GitHubUI'
           }
         }
-        
+
         console.log(`📋 Workflow inputs section found: ${hasInputSection}`)
         console.log(`📋 Inputs to send:`, inputs)
 
@@ -1351,16 +1336,16 @@ export default {
           dispatchData,
           config
         )
-        
+
         // Clear any previous errors and show success message
         error.value = ''
         actionError.value = ''
         console.log(`✅ Successfully triggered workflow: "${targetWorkflow.name}" with action "${selectedAction.value}" on branch ${props.branch}`)
         console.log(`View workflow runs: https://github.com/${props.owner}/${props.repo}/actions`)
-        
+
         // Close the modal on success
         closeActionsModal()
-        
+
         // Show temporary success message in loading area
         loadingMessage.value = `✅ Successfully triggered ${selectedAction.value} action`
         setTimeout(() => {
@@ -1368,7 +1353,7 @@ export default {
             loadingMessage.value = ''
           }
         }, 5000)
-        
+
       } catch (err) {
         console.error('❌ Error triggering workflow:', err)
         console.error('Response details:', {
@@ -1377,15 +1362,15 @@ export default {
           data: err.response?.data,
           headers: err.response?.headers
         })
-        
+
         if (checkAuthAndRedirect(err)) return
-        
+
         if (err.response?.status === 404) {
           actionError.value = 'Workflow not found or this repository has no GitHub Actions workflows set up.'
         } else if (err.response?.status === 422) {
           const errorMsg = err.response?.data?.message || ''
           console.log('422 Error message:', errorMsg)
-          
+
           if (errorMsg.includes('Unexpected inputs')) {
             actionError.value = `Workflow "${targetWorkflow?.name || 'selected'}" doesn't accept the inputs we tried to send. This workflow may not be designed for this interface.`
           } else if (errorMsg.includes('workflow_dispatch')) {
@@ -1414,7 +1399,7 @@ export default {
     const handleVisibilityChange = () => {
       if (!document.hidden && route.path.includes('/files/') && (currentDirectory.value || specDirectory.value)) {
         console.log('Page became visible, checking if we need to refresh file list...')
-        
+
         // Check if we have a recently renamed file (publish/unpublish operation)
         const storedRenameInfo = localStorage.getItem('recentlyRenamedFile')
         if (storedRenameInfo) {
@@ -1436,7 +1421,7 @@ export default {
             localStorage.removeItem('recentlyRenamedFile')
           }
         }
-        
+
         // Check if we have a recently created file that might not be in the current list
         const storedRecentFile = localStorage.getItem('recentlyCreatedFile')
         if (storedRecentFile && !files.value.some(f => f.name === storedRecentFile)) {
@@ -1496,7 +1481,7 @@ export default {
         // Small delay to ensure component is fully mounted
         setTimeout(() => {
           if (currentDirectory.value || specDirectory.value) {
-            
+
             // Check if we have a recently renamed file (publish/unpublish operation)
             const storedRenameInfo = localStorage.getItem('recentlyRenamedFile')
             if (storedRenameInfo) {
@@ -1518,7 +1503,7 @@ export default {
                 localStorage.removeItem('recentlyRenamedFile')
               }
             }
-            
+
             const storedRecentFile = localStorage.getItem('recentlyCreatedFile')
             if (storedRecentFile) {
               // If we have a recently created file, use creation retry logic
@@ -1578,14 +1563,14 @@ export default {
         if (normalizeDir(parent).startsWith(root)) {
           hasUnsavedChanges.value = false; // Reset unsaved changes when navigating
           draggedItems.value = []; // Reset drag items when navigating
-          
+
           // Update URL with new directory
           const encodedDir = encodeURIComponent(parent)
           router.push(`/files/${props.owner}/${props.repo}/${props.branch}?dir=${encodedDir}`)
         } else {
           hasUnsavedChanges.value = false; // Reset unsaved changes when navigating
           draggedItems.value = []; // Reset drag items when navigating
-          
+
           // Update URL with root directory
           const encodedDir = encodeURIComponent(root)
           router.push(`/files/${props.owner}/${props.repo}/${props.branch}?dir=${encodedDir}`)
@@ -1593,7 +1578,7 @@ export default {
       } else {
         hasUnsavedChanges.value = false; // Reset unsaved changes when navigating
         draggedItems.value = []; // Reset drag items when navigating
-        
+
         // Update URL with root directory
         const encodedDir = encodeURIComponent(root)
         router.push(`/files/${props.owner}/${props.repo}/${props.branch}?dir=${encodedDir}`)
@@ -1619,13 +1604,13 @@ export default {
     // Drag and drop methods
     const onDragStart = (event, item, type, index) => {
       if (!isRootDirectory.value) return;
-      
+
       isDragging.value = true;
       draggedIndex.value = index;
       event.dataTransfer.effectAllowed = 'move';
-      event.dataTransfer.setData('text/plain', JSON.stringify({ 
-        item, 
-        type, 
+      event.dataTransfer.setData('text/plain', JSON.stringify({
+        item,
+        type,
         originalIndex: index
       }));
       event.target.style.opacity = '0.5';
@@ -1633,12 +1618,12 @@ export default {
 
     const onDragEnter = (event, index) => {
       if (!isRootDirectory.value || !isDragging.value) return;
-      
+
       event.preventDefault();
       const rect = event.currentTarget.getBoundingClientRect();
       const y = event.clientY - rect.top;
       const height = rect.height;
-      
+
       // Determine if we're in the top, middle, or bottom third
       if (y < height * 0.33) {
         dragPosition.value = 'before';
@@ -1647,18 +1632,18 @@ export default {
       } else {
         dragPosition.value = 'on';
       }
-      
+
       dragOverIndex.value = index;
     };
 
     const onDragLeave = (event) => {
       if (!isRootDirectory.value || !isDragging.value) return;
-      
+
       // Only clear if we're really leaving the element (not entering a child)
       const rect = event.currentTarget.getBoundingClientRect();
       const x = event.clientX;
       const y = event.clientY;
-      
+
       if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
         dragOverIndex.value = -1;
         dragPosition.value = '';
@@ -1667,15 +1652,15 @@ export default {
 
     const onDragOver = (event, index, type) => {
       if (!isRootDirectory.value) return;
-      
+
       event.preventDefault();
       event.dataTransfer.dropEffect = 'move';
-      
+
       // Update position based on mouse position
       const rect = event.currentTarget.getBoundingClientRect();
       const y = event.clientY - rect.top;
       const height = rect.height;
-      
+
       if (y < height * 0.33) {
         dragPosition.value = 'before';
       } else if (y > height * 0.67) {
@@ -1683,18 +1668,18 @@ export default {
       } else {
         dragPosition.value = 'on';
       }
-      
+
       dragOverIndex.value = index;
     };
 
     const onDrop = (event, dropIndex, dropType) => {
       if (!isRootDirectory.value) return;
-      
+
       event.preventDefault();
-      
+
       const dragData = JSON.parse(event.dataTransfer.getData('text/plain'));
       const originalIndex = dragData.originalIndex;
-      
+
       // Calculate the actual target index based on position
       let targetIndex = dropIndex;
       if (dragPosition.value === 'after') {
@@ -1705,29 +1690,29 @@ export default {
         // 'on' position - place after the target item
         targetIndex = dropIndex + 1;
       }
-      
+
       if (originalIndex !== targetIndex && Math.abs(originalIndex - targetIndex) > 0) {
         // Reorder the items
         const newItems = [...draggedItems.value];
         const [movedItem] = newItems.splice(originalIndex, 1);
-        
+
         // Adjust target index if we removed an item before it
         let adjustedTargetIndex = targetIndex;
         if (originalIndex < targetIndex) {
           adjustedTargetIndex--;
         }
-        
+
         // Ensure we don't go out of bounds
         adjustedTargetIndex = Math.max(0, Math.min(adjustedTargetIndex, newItems.length));
-        
+
         newItems.splice(adjustedTargetIndex, 0, movedItem);
-        
+
         draggedItems.value = newItems;
-        
+
         // Update files and folders arrays to maintain consistency
         const newFolders = [];
         const newFiles = [];
-        
+
         draggedItems.value.forEach(item => {
           if (item.type === 'folder') {
             newFolders.push({ name: item.name, path: item.path });
@@ -1736,13 +1721,13 @@ export default {
             newFiles.push(fileItem);
           }
         });
-        
+
         folders.value = newFolders;
         files.value = newFiles;
-        
+
         hasUnsavedChanges.value = true;
       }
-      
+
       // Clear drag state
       dragOverIndex.value = -1;
       dragPosition.value = '';
@@ -1754,7 +1739,7 @@ export default {
       draggedIndex.value = -1;
       dragOverIndex.value = -1;
       dragPosition.value = '';
-      
+
       // Small delay to prevent click event from firing immediately after drag
       setTimeout(() => {
         isDragging.value = false;
@@ -1764,20 +1749,20 @@ export default {
     // Handle dragging over the list container (for dropping at the end)
     const onListDragOver = (event) => {
       if (!isRootDirectory.value || !isDragging.value) return;
-      
+
       event.preventDefault();
       event.dataTransfer.dropEffect = 'move';
-      
+
       // Check if we're dragging over empty space at the bottom
       const rect = event.currentTarget.getBoundingClientRect();
       const y = event.clientY - rect.top;
       const listItems = event.currentTarget.querySelectorAll('.position-relative');
-      
+
       if (listItems.length > 0) {
         const lastItem = listItems[listItems.length - 1];
         const lastItemRect = lastItem.getBoundingClientRect();
         const relativeY = event.clientY - lastItemRect.bottom;
-        
+
         // If we're below the last item, show the end drop zone
         if (relativeY > 10) {
           dragOverIndex.value = -2; // Special value for end of list
@@ -1789,26 +1774,26 @@ export default {
     // Handle dropping at the end of the list
     const onListDrop = (event) => {
       if (!isRootDirectory.value || !isDragging.value) return;
-      
+
       event.preventDefault();
-      
+
       if (dragOverIndex.value === -2) {
         // Drop at the end of the list
         const dragData = JSON.parse(event.dataTransfer.getData('text/plain'));
         const originalIndex = dragData.originalIndex;
         const targetIndex = draggedItems.value.length; // End of list
-        
+
         if (originalIndex !== targetIndex - 1) { // Don't move if already at the end
           const newItems = [...draggedItems.value];
           const [movedItem] = newItems.splice(originalIndex, 1);
           newItems.push(movedItem); // Add to end
-          
+
           draggedItems.value = newItems;
-          
+
           // Update files and folders arrays to maintain consistency
           const newFolders = [];
           const newFiles = [];
-          
+
           draggedItems.value.forEach(item => {
             if (item.type === 'folder') {
               newFolders.push({ name: item.name, path: item.path });
@@ -1817,14 +1802,14 @@ export default {
               newFiles.push(fileItem);
             }
           });
-          
+
           folders.value = newFolders;
           files.value = newFiles;
-          
+
           hasUnsavedChanges.value = true;
         }
       }
-      
+
       // Clear drag state
       dragOverIndex.value = -1;
       dragPosition.value = '';
@@ -1832,11 +1817,11 @@ export default {
 
     const saveOrder = async () => {
       if (!isRootDirectory.value || !hasUnsavedChanges.value) return;
-      
+
       try {
         loading.value = true;
         loadingMessage.value = 'Saving file order...';
-        
+
         const token = localStorage.getItem('github_token');
         const config = {
           headers: {
@@ -1844,18 +1829,18 @@ export default {
             'Accept': 'application/vnd.github.v3+json'
           }
         };
-        
+
         // Get current specs.json
         const response = await axios.get(
           `https://api.github.com/repos/${props.owner}/${props.repo}/contents/specs.json?ref=${props.branch}`,
           config
         );
-        
+
         const currentContent = JSON.parse(atob(response.data.content));
-        
+
         // Build markdown_paths array
         const markdownPaths = [];
-        
+
         draggedItems.value.forEach(item => {
           if (item.type === 'folder') {
             // Special handling for spec_terms_directory
@@ -1872,12 +1857,12 @@ export default {
             }
           }
         });
-        
+
         // Update the specs configuration
         if (currentContent.specs && currentContent.specs.length > 0) {
           currentContent.specs[0].markdown_paths = markdownPaths;
         }
-        
+
         // Save back to GitHub
         const updateData = {
           message: `Update file order in markdown_paths`,
@@ -1885,16 +1870,16 @@ export default {
           branch: props.branch,
           sha: response.data.sha
         };
-        
+
         await axios.put(
           `https://api.github.com/repos/${props.owner}/${props.repo}/contents/specs.json`,
           updateData,
           config
         );
-        
+
         hasUnsavedChanges.value = false;
         originalOrder.value = [...draggedItems.value];
-        
+
       } catch (err) {
         console.error('Error saving file order:', err);
         if (checkAuthAndRedirect(err)) {
@@ -1911,10 +1896,10 @@ export default {
       if (!specsConfig.value?.specs?.[0]?.markdown_paths) {
         return; // No saved order, use default
       }
-      
+
       const savedPaths = specsConfig.value.specs[0].markdown_paths;
       const orderedItems = [];
-      
+
       // Process each item in the saved order
       savedPaths.forEach(path => {
         if (path === 'terms-and-definitions-intro.md') {
@@ -1937,20 +1922,20 @@ export default {
           }
         }
       });
-      
+
       // Add any items not in the saved order at the end
       folders.value.forEach(folder => {
         if (!orderedItems.find(item => item.type === 'folder' && item.name === folder.name)) {
           orderedItems.push({ ...folder, type: 'folder' });
         }
       });
-      
+
       files.value.forEach(file => {
         if (!orderedItems.find(item => item.type === 'file' && item.name === file.name)) {
           orderedItems.push({ ...file, type: 'file' });
         }
       });
-      
+
       // Set the ordered items
       if (orderedItems.length > 0) {
         draggedItems.value = orderedItems;
@@ -2177,10 +2162,13 @@ export default {
 
 /* Animations */
 @keyframes pulse-line {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0.8;
     transform: scaleY(1);
   }
+
   50% {
     opacity: 1;
     transform: scaleY(1.2);
@@ -2188,10 +2176,13 @@ export default {
 }
 
 @keyframes pulse-text {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   }
+
   50% {
     transform: scale(1.05);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
