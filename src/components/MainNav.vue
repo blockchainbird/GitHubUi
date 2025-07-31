@@ -24,13 +24,10 @@
             <i class="bi bi-plus-circle"></i>
             Create Project
           </button> -->
-          <button v-if="showRepoRelatedButtons" @click="navigateToFilesAndClose" class="nav-link btn btn-link" title="Browse Repository Files" >
+          <button v-if="showRepoRelatedButtons" @click="navigateToFilesAndClose" class="nav-link btn btn-link"
+            title="Browse Repository Files">
             <i class="bi bi-folder"></i>
             Files
-          </button>
-          <button v-if="showRepoRelatedButtons" @click="navigateToAdminAndClose" class="nav-link btn btn-link">
-            <i class="bi bi-shield-lock"></i>
-            Admin
           </button>
           <button v-if="showRepoRelatedButtons"
             @click="navigateAndClose(`/external-specs/${route.params.owner}/${route.params.repo}/${route.params.branch}`)"
@@ -38,19 +35,11 @@
             <i class="bi bi-link-45deg"></i>
             External
           </button>
-          <button v-if="showRepoRelatedButtons" @click="closeNavbar" 
-            class="nav-link btn btn-link"
-            data-bs-toggle="modal" 
-            data-bs-target="#termsPreviewModal"
-            title="Preview All Terms and Definitions">
+          <button v-if="showRepoRelatedButtons" @click="closeNavbar" class="nav-link btn btn-link"
+            data-bs-toggle="modal" data-bs-target="#termsPreviewModal" title="Preview All Terms and Definitions">
             <i class="bi bi-book"></i>
             Preview
           </button>
-          <a v-if="showRepoRelatedButtons" :href="githubRepoUrl" target="_blank" rel="noopener" class="nav-link"
-            title="View Repository on GitHub" @click="closeNavbar">
-            <i class="bi bi-github"></i>
-            GitHub
-          </a>
           <button v-if="showRepoRelatedButtons" @click="navigateToHealthCheckAndClose" class="nav-link btn btn-link"
             title="Run Health Check">
             <i class="bi bi-heart-pulse"></i>
@@ -60,12 +49,21 @@
             <i class="bi bi-info-circle"></i>
             About
           </button>
+          <a v-if="showRepoRelatedButtons" :href="githubRepoUrl" target="_blank" rel="noopener" class="nav-link"
+            title="View Repository on GitHub" @click="closeNavbar">
+            <i class="bi bi-github"></i>
+            GitHub <i class="ms-1 bi bi-box-arrow-up-right"></i>
+          </a>
           <a title="Go to documentation website"
             href="https://blockchainbird.github.io/spec-up-t-website/docs/tools/spec-up-t-editor-user-guide/"
             target="_blank" rel="noopener" class="nav-link" @click="closeNavbar">
             <i class="bi bi-box-arrow-up-right"></i>
             Help
           </a>
+          <button v-if="showRepoRelatedButtons" @click="navigateToAdminAndClose" class="nav-link btn btn-link">
+            <i class="bi bi-shield-lock"></i>
+            Admin
+          </button>
           <button @click="navigateAndClose('/settings')" class="nav-link btn btn-link" title="Application Settings">
             <i class="bi bi-gear"></i>
             Settings
@@ -130,12 +128,9 @@
       </div>
     </template>
   </Modal>
-  
+
   <!-- Terms Preview Modal -->
-  <TermsPreview 
-    v-if="showRepoRelatedButtons"
-    :owner="route.params.owner"
-    :repo="route.params.repo"
+  <TermsPreview v-if="showRepoRelatedButtons" :owner="route.params.owner" :repo="route.params.repo"
     :branch="route.params.branch" />
 </template>
 
