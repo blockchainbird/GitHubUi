@@ -24,6 +24,10 @@
             <i class="bi bi-plus-circle"></i>
             Create Project
           </button> -->
+          <button v-if="showRepoRelatedButtons" @click="navigateToFilesAndClose" class="nav-link btn btn-link" title="Browse Repository Files">
+            <i class="bi bi-folder"></i>
+            Files
+          </button>
           <button v-if="showRepoRelatedButtons" @click="navigateToAdminAndClose" class="nav-link btn btn-link">
             <i class="bi bi-shield-lock"></i>
             Admin
@@ -212,6 +216,17 @@ export default {
       closeNavbar();
     };
 
+    const navigateToFiles = () => {
+      if (route.params.owner && route.params.repo && route.params.branch) {
+        router.push(`/files/${route.params.owner}/${route.params.repo}/${route.params.branch}`);
+      }
+    };
+
+    const navigateToFilesAndClose = () => {
+      navigateToFiles();
+      closeNavbar();
+    };
+
     const handleLogout = () => {
       console.log('MainNav: Logout clicked');
       emit('logout');
@@ -276,6 +291,8 @@ export default {
       navigateToHealthCheckAndClose,
       navigateToAdmin,
       navigateToAdminAndClose,
+      navigateToFiles,
+      navigateToFilesAndClose,
       handleLogout,
       buildInfo,
       isAuthenticated,
