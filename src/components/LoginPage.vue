@@ -34,7 +34,7 @@
               <div class="mb-3">
                 <label for="token" class="form-label">GitHub Personal Access Token</label>
                 <input type="password" id="token" v-model="token" class="form-control"
-                  placeholder="Enter your GitHub token" required>
+                  placeholder="Enter your GitHub token" required autocomplete="new-password">
                 <div class="form-text">
                   <small>
                     <a href="https://github.com/settings/tokens" target="_blank" class="text-decoration-none">
