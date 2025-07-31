@@ -195,7 +195,6 @@ export const autoEnhanceTooltips = (app) => {
               const childrenWithTitle = node.querySelectorAll ? node.querySelectorAll('[title]') : [];
               childrenWithTitle.forEach(child => {
                 if (!child._tooltipData) {
-                  console.log('Enhancing child element:', child);
                   vTooltip.mounted(child, { value: null, modifiers: {}, arg: null });
                 }
               });
