@@ -62,9 +62,46 @@ export function useFileContent(props) {
   // Load file content from GitHub
   const loadFileContent = async () => {
     try {
+      // Check if this is a new file being created
       if (route.query.new === 'true') {
         isNewFile.value = true
+        
+        // Decode the initial content and commit message from query params
+        try {
+          // Handle content parameter - ensure we properly decode even empty content
+          const newFileInitialContent = route.query.content !== undefined 
+            ? decodeURIComponent(route.query.content) 
+            : ''
+          const newFileCommitMessage = route.query.commitMessage 
+            ? decodeURIComponent(route.query.commitMessage) 
+            : `Create ${filename.value}`
+          
+          // Set up the editor with initial content
+          content.value = newFileInitialContent
+          originalContent.value = '' // New file has no original content
+          commitMessage.value = newFileCommitMessage
+          
+          // No SHA for new file
+          fileSha.value = ''
+          
+        } catch (decodeError) {
+          console.warn('Error decoding query parameters:', decodeError)
+          content.value = ''
+          commitMessage.value = `Create ${filename.value}`
+        }
+        
         loading.value = false
+        
+        // Add a small delay to ensure everything is initialized properly
+        setTimeout(() => {
+          // Additional safeguard: re-set content if it was lost
+          const expectedContent = route.query.content !== undefined 
+            ? decodeURIComponent(route.query.content) : ''
+          if (!content.value && expectedContent) {
+            content.value = expectedContent
+          }
+        }, 100)
+        
         return
       }
 
@@ -139,9 +176,12 @@ export function useFileContent(props) {
         success.value = 'File created and committed successfully!'
         isNewFile.value = false
         
+        // Store recently created file info for FileExplorer to detect
         const fileName = decodedPath.value.split('/').pop()
         localStorage.setItem('recentlyCreatedFile', fileName)
+        console.log('Set recentlyCreatedFile in localStorage:', fileName)
 
+        // Update the URL to remove new file query parameters
         const newRoute = `/editor/${props.owner}/${props.repo}/${props.branch}/${encodeURIComponent(decodedPath.value)}`
         const queryParams = new URLSearchParams()
         if (route.query.dir) {
