@@ -40,7 +40,7 @@
               <div class="col-md-4">
                 <select class="form-select" v-model="filterType" @change="filterTerms">
                   <option value="all">All Terms</option>
-                  <option value="local">Local Terms (Terms Dir)</option>
+                  <option value="local">Local Terms</option>
                   <option value="external">External Terms</option>
                 </select>
               </div>
