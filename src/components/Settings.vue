@@ -110,21 +110,17 @@ export default {
 
     const confirmClearStorage = async () => {
       isClearing.value = true
-      
       try {
         // Clear all localStorage
         localStorage.clear()
-        
         // Small delay for user feedback
         await new Promise(resolve => setTimeout(resolve, 500))
-        
         // Close modal
-        const modal = bootstrap.Modal.gFetInstance(document.getElementById('confirmClearModal'))
+        const modalElement = document.getElementById('confirmClearModal')
+        const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement)
         modal.hide()
-        
         // Redirect to login page
         router.push('/login')
-        
       } catch (error) {
         console.error('Error clearing localStorage:', error)
       } finally {
