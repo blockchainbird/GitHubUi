@@ -1,18 +1,6 @@
 <template>
   <div>
-    <MainNav 
-      :isAuthenticated="isAuthenticated" 
-      :user="user" 
-      @logout="handleLogout" 
-    />
-    <nav class="navbar navbar-dark bg-dark">
-      <div class="container-fluid">
-        <a class="navbar-brand" href="#">
-          <i class="bi bi-github"></i>
-          Spec-Up-T Editor
-        </a>
-      </div>
-    </nav>
+    <MainNav style="filter: invert(1);" :isAuthenticated="isAuthenticated" :user="user" @logout="handleLogout" />
     <main class="container-fluid mt-3">
       <router-view @login="handleLogin" @logout="handleLogout"></router-view>
     </main>
@@ -34,7 +22,7 @@ export default {
     const router = useRouter()
     const isAuthenticated = ref(false)
     const user = ref({})
-    
+
     const handleLogin = (userData) => {
       console.log('App: handleLogin called with:', userData);
       isAuthenticated.value = true
@@ -46,7 +34,7 @@ export default {
         user: user.value
       });
     }
-    
+
     const handleLogout = () => {
       console.log('App: handleLogout called');
       isAuthenticated.value = false
@@ -59,12 +47,12 @@ export default {
         user: user.value
       });
     }
-    
+
     onMounted(() => {
       // Check if user is already logged in
       const token = localStorage.getItem('github_token')
       const userData = localStorage.getItem('github_user')
-      
+
       if (token && userData) {
         try {
           const parsedUser = JSON.parse(userData)
@@ -85,7 +73,7 @@ export default {
         }
       }
     })
-    
+
     return {
       isAuthenticated,
       user,
