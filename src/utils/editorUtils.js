@@ -174,9 +174,6 @@ export const processTermReferences = (content, terms = []) => {
     </div>`
   })
 
-  // Convert line breaks to HTML
-  html = html.replace(/\n/g, '<br>')
-
   return html
 }
 
