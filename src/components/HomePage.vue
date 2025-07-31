@@ -1,6 +1,25 @@
 <template>
   <div class="row justify-content-center">
     <div class="col-md-8 col-lg-6">
+      <!-- Create New Project Section -->
+      <div class="card mb-4">
+        <div class="card-body text-center">
+          <h5 class="card-title">
+            <i class="bi bi-plus-circle"></i>
+            Create New Spec-Up-T Repository
+          </h5>
+          <p class="card-text text-muted">
+            Start a new specification repository with our guided setup wizard
+          </p>
+          <router-link to="/create-project" class="btn btn-success">
+            <i class="bi bi-rocket"></i>
+            Create Repository
+          </router-link>
+        </div>
+      </div>
+
+
+      <!-- Repository Access Section -->
       <div class="card">
         <div class="card-body">
           <h2 class="card-title text-center mb-4">
@@ -86,32 +105,15 @@
               <button type="submit" class="btn btn-primary" :disabled="!owner || !repo || loading">
                 <span v-if="loading">
                   <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-                  Accessing Repository...
+                  Accessing Existing Repository...
                 </span>
                 <span v-else>
                   <i class="bi bi-folder2-open"></i>
-                  Access Repository
+                  Access Existing Repository
                 </span>
               </button>
             </div>
           </form>
-        </div>
-      </div>
-
-      <!-- Create New Project Section -->
-      <div class="card mt-4">
-        <div class="card-body text-center">
-          <h5 class="card-title">
-            <i class="bi bi-plus-circle"></i>
-            Create New Spec-Up-T Project
-          </h5>
-          <p class="card-text text-muted">
-            Start a new specification project with our guided setup wizard
-          </p>
-          <router-link to="/create-project" class="btn btn-success">
-            <i class="bi bi-rocket"></i>
-            Create Project
-          </router-link>
         </div>
       </div>
 
