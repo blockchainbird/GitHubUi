@@ -15,6 +15,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
   const termsError = ref('')
   const specsConfig = ref(null)
   const referenceType = ref('auto')
+  const proxyInfo = ref('')
   
   // Definition collapse state
   const definitionsCollapsed = ref(true)
@@ -193,6 +194,131 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
     return null
   }
 
+  // Load external specs and extract terms
+  const loadExternalSpecs = async (externalSpecs) => {
+    const externalTerms = []
+
+    const basePath = import.meta.env.VITE_BASE_PATH || '/';
+    let proxyPath;
+    if (import.meta.env.VITE_PROXY_URL) {
+      proxyPath = import.meta.env.VITE_PROXY_URL;
+    } else {
+      proxyPath = basePath.endsWith('/') ? basePath + 'proxy.php?url=' : basePath + '/proxy.php?url=';
+    }
+
+    const corsProxies = [
+      proxyPath
+      // Fallback proxies commented out for now - can be enabled if needed
+      // ,
+      // 'https://api.allorigins.win/raw?url=',
+      // 'https://corsproxy.io/?',
+      // 'https://api.codetabs.com/v1/proxy?quest=',
+      // 'https://thingproxy.freeboard.io/fetch/'
+    ]
+
+    for (const spec of externalSpecs) {
+      let success = false
+
+      for (let proxyIndex = 0; proxyIndex < corsProxies.length && !success; proxyIndex++) {
+        try {
+          const proxyUrl = corsProxies[proxyIndex]
+          const targetUrl = proxyUrl === 'https://thingproxy.freeboard.io/fetch/'
+            ? spec.gh_page
+            : encodeURIComponent(spec.gh_page)
+
+          // Check if first proxy (our PHP proxy) is responsive
+          if (proxyIndex === 0) {
+            try {
+              console.log(`🔄 Checking proxy status for ${spec.external_spec}...`)
+              const statusResponse = await axios.get(`${proxyUrl.replace('?url=', '?status=1&url=')}${targetUrl}`, {
+                timeout: 2000
+              })
+              if (statusResponse.data?.status === 'proxy_active') {
+                console.log(`✅ Proxy is responsive for ${spec.external_spec}`)
+              }
+            } catch (statusErr) {
+              console.warn(`⚠️ Proxy status check failed for ${spec.external_spec}, proceeding anyway`)
+            }
+          }
+
+          console.log(`Loading external spec: ${spec.external_spec} from ${spec.gh_page} (proxy ${proxyIndex + 1}/${corsProxies.length})`)
+
+          const response = await axios.get(`${proxyUrl}${targetUrl}`, {
+            headers: {
+              'Accept': 'text/html'
+            },
+            timeout: 15000 // Increased timeout to 15 seconds
+          })
+
+          // Parse the HTML to extract terms from the dl.terms-and-definitions-list
+          const parser = new DOMParser()
+          const doc = parser.parseFromString(response.data, 'text/html')
+          const termsList = doc.querySelector('dl.terms-and-definitions-list')
+
+          if (termsList) {
+            const dtElements = termsList.querySelectorAll('dt')
+
+            dtElements.forEach(dt => {
+              const termId = dt.textContent?.trim()
+              if (termId) {
+                // Collect all dd elements that follow this dt until the next dt
+                const ddElements = []
+                let nextElement = dt.nextElementSibling
+
+                while (nextElement && nextElement.tagName.toLowerCase() === 'dd') {
+                  ddElements.push(nextElement.outerHTML)
+                  nextElement = nextElement.nextElementSibling
+                }
+
+                if (ddElements.length > 0) {
+                  const definitionHtml = `<dl>${ddElements.join('')}</dl>`
+                  const definitionText = ddElements
+                    .map(dd => {
+                      const tempDiv = document.createElement('div')
+                      tempDiv.innerHTML = dd
+                      return tempDiv.textContent || tempDiv.innerText || ''
+                    })
+                    .join(' ')
+                    .trim()
+
+                  externalTerms.push({
+                    id: termId,
+                    aliases: [],
+                    file: spec.gh_page,
+                    definition: definitionHtml,
+                    definitionText: definitionText,
+                    external: true,
+                    externalSpec: spec.external_spec,
+                    source: `External: ${spec.external_spec}`
+                  })
+                }
+              }
+            })
+
+            console.log(`✅ Successfully loaded ${dtElements.length} terms from ${spec.external_spec} using proxy ${proxyIndex + 1}`)
+            success = true
+          } else {
+            console.warn(`No terms-and-definitions-list found in ${spec.gh_page} using proxy ${proxyIndex + 1}`)
+            // Try next proxy even if HTML was fetched but no terms found
+          }
+        } catch (err) {
+          console.warn(`❌ Proxy ${proxyIndex + 1} failed for ${spec.external_spec}:`, err.message)
+
+          // If this is the last proxy, log final failure
+          if (proxyIndex === corsProxies.length - 1) {
+            console.error(`🔴 All proxies failed for external spec ${spec.external_spec}. Skipping.`)
+          }
+        }
+      }
+
+      if (!success) {
+        console.error(`🔴 Unable to load external spec ${spec.external_spec} from ${spec.gh_page} - all proxy methods failed`)
+      }
+    }
+
+    return externalTerms
+  }
+
   // Load terms from repository
   const loadTermsFromRepository = async () => {
     loadingTerms.value = true
@@ -241,6 +367,13 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
             termsData.push(term)
           }
         })
+      }
+
+      // Load external specs if they exist
+      if (config.external_specs && Array.isArray(config.external_specs)) {
+        proxyInfo.value = 'Loading external specifications...'
+        const externalTerms = await loadExternalSpecs(config.external_specs)
+        termsData.push(...externalTerms)
       }
 
       termsData.sort((a, b) => a.id.localeCompare(b.id))
@@ -301,6 +434,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
     definitionsCollapsed,
     individualTermsExpanded,
     specsConfig,
+    proxyInfo,
     
     // Methods
     filterTerms,
