@@ -251,6 +251,16 @@
   to { transform: rotate(360deg); }
 }
 
+/* Alert styling for loading feedback */
+.alert-sm {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.alert-sm .bi {
+  font-size: 0.875rem;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .term-card .card-header {
@@ -269,5 +279,10 @@
   
   .search-controls {
     padding: 0.75rem;
+  }
+  
+  .alert-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
   }
 }

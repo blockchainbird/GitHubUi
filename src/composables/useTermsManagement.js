@@ -5,6 +5,7 @@
 
 import { ref, computed } from 'vue'
 import axios from 'axios'
+import { consoleMessages } from '../utils/loadingMessages.js'
 
 export function useTermsManagement(props, checkAuthAndRedirect) {
   // Terms state
@@ -114,7 +115,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
           return true
         }
       } catch (err) {
-        console.error('Error parsing stored terms:', err)
+        console.error(consoleMessages.errorParsingStoredTerms(err.message))
       }
     }
     return false
@@ -150,7 +151,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
       const lines = content.split('\n')
       const extractedTerms = []
 
-      console.log(`🔍 Scanning file ${filePath} for terms...`)
+      console.log(consoleMessages.scanningFile(filePath))
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim()
@@ -177,7 +178,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
               `<dl><dd>${definitionLines.join('</dd><dd>')}</dd></dl>` : ''
 
             if (termId) {
-              console.log(`✅ Found term "${termId}" in ${filePath}`)
+              console.log(consoleMessages.foundTerm(termId, filePath))
               extractedTerms.push({
                 id: termId,
                 aliases: aliases,
@@ -193,12 +194,12 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
       }
 
       if (extractedTerms.length > 0) {
-        console.log(`📋 Extracted ${extractedTerms.length} terms from ${filePath}`)
+        console.log(consoleMessages.extractedTerms(extractedTerms.length, filePath))
       }
 
       return extractedTerms.length > 0 ? extractedTerms : null
     } catch (err) {
-      console.error(`Error loading file ${filePath}:`, err)
+      console.error(consoleMessages.errorLoadingFile(filePath, err.message))
       if (checkAuthAndRedirect(err)) {
         return null
       }
@@ -209,6 +210,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
   // Load external specs and extract terms
   const loadExternalSpecs = async (externalSpecs) => {
     const externalTerms = []
+    let processedSpecs = 0
 
     const basePath = import.meta.env.VITE_BASE_PATH || '/';
     let proxyPath;
@@ -229,6 +231,9 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
     ]
 
     for (const spec of externalSpecs) {
+      processedSpecs++
+      proxyInfo.value = `Loading external spec ${processedSpecs}/${externalSpecs.length}: ${spec.external_spec}...`
+      
       let success = false
 
       for (let proxyIndex = 0; proxyIndex < corsProxies.length && !success; proxyIndex++) {
@@ -241,19 +246,21 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
           // Check if first proxy (our PHP proxy) is responsive
           if (proxyIndex === 0) {
             try {
-              console.log(`🔄 Checking proxy status for ${spec.external_spec}...`)
+              console.log(consoleMessages.checkingProxy(spec.external_spec))
+              proxyInfo.value = `Checking proxy connectivity for ${spec.external_spec}...`
               const statusResponse = await axios.get(`${proxyUrl.replace('?url=', '?status=1&url=')}${targetUrl}`, {
                 timeout: 2000
               })
               if (statusResponse.data?.status === 'proxy_active') {
-                console.log(`✅ Proxy is responsive for ${spec.external_spec}`)
+                console.log(consoleMessages.proxyResponsive(spec.external_spec))
               }
             } catch (statusErr) {
-              console.warn(`⚠️ Proxy status check failed for ${spec.external_spec}, proceeding anyway`)
+              console.warn(consoleMessages.proxyCheckFailed(spec.external_spec))
             }
           }
 
-          console.log(`Loading external spec: ${spec.external_spec} from ${spec.gh_page} (proxy ${proxyIndex + 1}/${corsProxies.length})`)
+          console.log(consoleMessages.loadingExternalSpec(spec.external_spec, spec.gh_page, proxyIndex + 1, corsProxies.length))
+          proxyInfo.value = `Fetching ${spec.external_spec} (attempt ${proxyIndex + 1}/${corsProxies.length})...`
 
           const response = await axios.get(`${proxyUrl}${targetUrl}`, {
             headers: {
@@ -262,6 +269,8 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
             timeout: 15000 // Increased timeout to 15 seconds
           })
 
+          proxyInfo.value = `Processing terms from ${spec.external_spec}...`
+          
           // Parse the HTML to extract terms from the dl.terms-and-definitions-list
           const parser = new DOMParser()
           const doc = parser.parseFromString(response.data, 'text/html')
@@ -307,25 +316,38 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
               }
             })
 
-            console.log(`✅ Successfully loaded ${dtElements.length} terms from ${spec.external_spec} using proxy ${proxyIndex + 1}`)
+            console.log(consoleMessages.loadedExternalTerms(dtElements.length, spec.external_spec, proxyIndex + 1))
+            proxyInfo.value = `Successfully loaded ${dtElements.length} terms from ${spec.external_spec}`
             success = true
           } else {
-            console.warn(`No terms-and-definitions-list found in ${spec.gh_page} using proxy ${proxyIndex + 1}`)
+            console.warn(consoleMessages.noTermsFound(spec.gh_page, proxyIndex + 1))
+            proxyInfo.value = `No terms found in ${spec.external_spec}, trying alternative method...`
             // Try next proxy even if HTML was fetched but no terms found
           }
         } catch (err) {
-          console.warn(`❌ Proxy ${proxyIndex + 1} failed for ${spec.external_spec}:`, err.message)
+          console.warn(consoleMessages.proxyFailed(proxyIndex + 1, spec.external_spec, err.message))
+          proxyInfo.value = `Connection failed for ${spec.external_spec} (attempt ${proxyIndex + 1}), retrying...`
 
           // If this is the last proxy, log final failure
           if (proxyIndex === corsProxies.length - 1) {
-            console.error(`🔴 All proxies failed for external spec ${spec.external_spec}. Skipping.`)
+            console.error(consoleMessages.allProxiesFailed(spec.external_spec))
+            proxyInfo.value = `Failed to load ${spec.external_spec} - all connection attempts failed`
           }
         }
       }
 
       if (!success) {
-        console.error(`🔴 Unable to load external spec ${spec.external_spec} from ${spec.gh_page} - all proxy methods failed`)
+        console.error(consoleMessages.unableToLoad(spec.external_spec, spec.gh_page))
       }
+      
+      // Brief pause between specs to allow UI updates
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
+
+    if (externalTerms.length > 0) {
+      proxyInfo.value = `Successfully loaded ${externalTerms.length} external terms from ${processedSpecs} spec(s)`
+    } else {
+      proxyInfo.value = `Completed external spec processing - no terms found`
     }
 
     return externalTerms
@@ -358,6 +380,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
       
       // Load terms from the traditional terms directory
       try {
+        proxyInfo.value = 'Loading local terms from repository...'
         const response = await axios.get(
           `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${fullTermsPath}?ref=${props.branch}`,
           requestConfig
@@ -370,6 +393,10 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
             item.name.toLowerCase().endsWith('.rst') ||
             item.name.toLowerCase().endsWith('.adoc'))
         )
+
+        if (files.length > 0) {
+          proxyInfo.value = `Reading ${files.length} term definition files...`
+        }
 
         const batchSize = 5
         for (let i = 0; i < files.length; i += batchSize) {
@@ -385,16 +412,36 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
           })
         }
         
-        console.log(`✅ Loaded ${termsData.length} terms from terms directory`)
+        console.log(consoleMessages.loadedLocalTerms(termsData.length))
+        if (termsData.length > 0) {
+          proxyInfo.value = `Found ${termsData.length} local terms`
+        }
       } catch (err) {
-        console.warn('Terms directory not found or inaccessible:', err.message)
+        console.warn(consoleMessages.termsDirectoryNotFound(err.message))
+        proxyInfo.value = 'No local terms directory found'
       }
 
       // Load external specs if they exist
       if (config.external_specs && Array.isArray(config.external_specs)) {
-        proxyInfo.value = 'Loading external specifications...'
+        proxyInfo.value = 'Preparing to load external specifications...'
         const externalTerms = await loadExternalSpecs(config.external_specs)
         termsData.push(...externalTerms)
+        // Show final summary briefly before clearing
+        if (externalTerms.length > 0) {
+          proxyInfo.value = `✓ Loading complete - ${termsData.length} total terms (${termsData.length - externalTerms.length} local, ${externalTerms.length} external)`
+        } else {
+          proxyInfo.value = `✓ Loading complete - ${termsData.length} total terms`
+        }
+        // Clear proxy info after showing summary
+        setTimeout(() => {
+          proxyInfo.value = ''
+        }, 3000)
+      } else if (termsData.length > 0) {
+        // Show summary for local-only loading
+        proxyInfo.value = `✓ Loading complete - ${termsData.length} local terms`
+        setTimeout(() => {
+          proxyInfo.value = ''
+        }, 2000)
       }
 
       termsData.sort((a, b) => a.id.localeCompare(b.id))
@@ -404,7 +451,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
       saveTermsToStorage(termsData)
 
     } catch (err) {
-      console.error('Error loading terms:', err)
+      console.error(consoleMessages.errorLoadingTerms(err.message))
       if (checkAuthAndRedirect(err)) {
         return
       }
@@ -447,7 +494,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
       try {
         await loadTermsFromRepository()
       } catch (error) {
-        console.warn('Failed to load terms during initialization:', error)
+        console.warn(consoleMessages.initializationFailed(error.message))
         termsError.value = 'Failed to load terms'
       } finally {
         loadingTerms.value = false
@@ -458,10 +505,15 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
 
   // Refresh terms (clear cache and reload)
   const refreshTerms = async () => {
+    console.log(consoleMessages.refreshingTerms())
     const storageKey = `terms_${props.owner}_${props.repo}_${props.branch}`
     localStorage.removeItem(storageKey)
+    // Clear proxy info when starting refresh
+    proxyInfo.value = ''
+    console.log(consoleMessages.cacheCleared())
     await loadTermsFromRepository()
     filterTerms()
+    console.log(consoleMessages.refreshComplete(terms.value.length))
   }
 
   return {

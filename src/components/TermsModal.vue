@@ -49,9 +49,21 @@
           <!-- Loading State -->
           <div v-if="loading" class="text-center py-4">
             <div class="spinner-border" role="status">
-              <span class="visually-hidden">Loading...</span>
+              <span class="visually-hidden">{{ loadingMessage }}</span>
             </div>
-            <p class="mt-2">{{ proxyInfo || 'Loading terms...' }}</p>
+            <p class="mt-2">{{ loadingMessage }}</p>
+            
+            <!-- Progress indicator for external specs -->
+            <div v-if="proxyInfo && proxyInfo.includes('external spec')" class="mt-3">
+              <div class="alert alert-info d-flex align-items-center">
+                <i class="bi bi-info-circle me-2"></i>
+                <div>
+                  <small class="text-muted d-block">
+                    Fetching external references may take a moment...
+                  </small>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Error State -->
@@ -127,6 +139,7 @@
 
 <script>
 import { computed } from 'vue'
+import { getLoadingMessage } from '../utils/loadingMessages.js'
 
 export default {
   name: 'TermsModal',
@@ -178,6 +191,8 @@ export default {
     'insert-term'
   ],
   setup(props, { emit }) {
+    const loadingMessage = computed(() => getLoadingMessage(props.proxyInfo))
+    
     const displayedTerms = computed(() => {
       if (props.isFromSimpleEditor) {
         // Show only external terms for simple editor
@@ -197,6 +212,7 @@ export default {
     })
 
     return {
+      loadingMessage,
       displayedTerms,
       searchFilter,
       referenceType

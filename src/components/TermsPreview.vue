@@ -13,7 +13,7 @@
               class="btn btn-outline-secondary btn-sm me-2 refresh-btn"
               @click="refreshPreview"
               :disabled="loading"
-              title="Refresh terms">
+              :title="loading ? 'Refreshing terms...' : 'Clear cache and reload all terms'">
               <i class="bi" :class="loading ? 'bi-arrow-clockwise spin' : 'bi-arrow-clockwise'"></i>
             </button>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -50,9 +50,24 @@
           <!-- Loading State -->
           <div v-if="loading" class="empty-state">
             <div class="loading-spinner spinner-border" role="status">
-              <span class="visually-hidden">Loading terms...</span>
+              <span class="visually-hidden">{{ loadingMessage }}</span>
             </div>
-            <p class="loading-text mt-3">Loading terms and definitions...</p>
+            <p class="loading-text mt-3">{{ loadingMessage }}</p>
+            
+            <!-- Progress indicator for external specs -->
+            <div v-if="proxyInfo && specsConfig?.specs?.[0]?.external_specs?.length" class="mt-3">
+              <div class="alert alert-info d-flex align-items-center">
+                <i class="bi bi-info-circle me-2"></i>
+                <div>
+                  <small class="text-muted d-block">
+                    Loading external specifications may take a moment...
+                  </small>
+                  <small class="text-muted">
+                    Found {{ specsConfig.specs[0].external_specs.length }} external spec(s) to process
+                  </small>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Error State -->
@@ -90,6 +105,22 @@
                     @click="viewMode = 'detailed'">
                     <i class="bi bi-card-text"></i> Detailed
                   </button>
+                </div>
+              </div>
+              
+              <!-- Show loading completion summary -->
+              <div v-if="proxyInfo && !loading" class="mt-2">
+                <div class="alert alert-success alert-sm d-flex align-items-center">
+                  <i class="bi bi-check-circle me-2"></i>
+                  <small>{{ proxyInfo }}</small>
+                </div>
+              </div>
+              
+              <!-- Show refresh success message -->
+              <div v-if="refreshSuccess && !loading" class="mt-2">
+                <div class="alert alert-info alert-sm d-flex align-items-center">
+                  <i class="bi bi-arrow-clockwise me-2"></i>
+                  <small>Terms refreshed successfully! Cache cleared and reloaded {{ allTerms.length }} terms.</small>
                 </div>
               </div>
             </div>
@@ -227,6 +258,7 @@
 <script>
 import { ref, computed, onMounted } from 'vue'
 import { useTermsManagement } from '../composables/useTermsManagement.js'
+import { getLoadingMessage } from '../utils/loadingMessages.js'
 import '../styles/terms-preview.css'
 
 export default {
@@ -262,18 +294,23 @@ export default {
     const viewMode = ref('compact')
     const allTerms = ref([])
     const filteredTerms = ref([])
+    const refreshSuccess = ref(false)
 
     // Use terms management composable
     const { 
       initializeTerms,
       terms: managedTerms,
       loadingTerms,
-      termsError
+      termsError,
+      proxyInfo,
+      specsConfig,
+      refreshTerms
     } = useTermsManagement(props, checkAuthAndRedirect)
 
     // Use loading and error states from composable
     const loading = computed(() => loadingTerms.value)
     const error = computed(() => termsError.value)
+    const loadingMessage = computed(() => getLoadingMessage(proxyInfo.value))
 
     // Filter terms based on search and type
     const filterTerms = () => {
@@ -336,8 +373,25 @@ export default {
     }
 
     // Watch for changes and re-filter
-    const refreshPreview = () => {
-      loadAllTerms()
+    const refreshPreview = async () => {
+      console.log('🔄 Refresh preview clicked - clearing cache and reloading...')
+      refreshSuccess.value = false
+      try {
+        // Clear cache and force reload from repository
+        await refreshTerms()
+        // Update local state with the fresh data
+        allTerms.value = [...managedTerms.value]
+        filterTerms()
+        console.log(`✅ Refresh completed - loaded ${allTerms.value.length} terms`)
+        
+        // Show success feedback briefly
+        refreshSuccess.value = true
+        setTimeout(() => {
+          refreshSuccess.value = false
+        }, 3000)
+      } catch (err) {
+        console.error('❌ Error refreshing terms for preview:', err)
+      }
     }
 
     // Set up modal event listeners
@@ -356,6 +410,7 @@ export default {
           filterType.value = 'all'
           allTerms.value = []
           filteredTerms.value = []
+          refreshSuccess.value = false
         })
       }
     })
@@ -369,6 +424,10 @@ export default {
       filteredTerms,
       loading,
       error,
+      loadingMessage,
+      proxyInfo,
+      specsConfig,
+      refreshSuccess,
       
       // Methods
       filterTerms,
