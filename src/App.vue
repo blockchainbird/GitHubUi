@@ -5,6 +5,7 @@
       <router-view @login="handleLogin" @logout="handleLogout"></router-view>
     </main>
     <BackToTop />
+    <VersionNotification />
   </div>
 </template>
 
@@ -14,10 +15,14 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import MainNav from './components/MainNav.vue'
 import BackToTop from './components/BackToTop.vue'
+// Choose one of these notification components:
+import VersionNotification from './components/VersionNotification.vue'           // Simple: Auto-reload
+// import EnhancedVersionNotification from './components/EnhancedVersionNotification.vue'  // Enhanced: User choice
 
 export default {
   name: 'App',
-  components: { MainNav, BackToTop },
+  components: { MainNav, BackToTop, VersionNotification },
+  // If switching to enhanced, change to: components: { MainNav, BackToTop, EnhancedVersionNotification },
   setup() {
     const router = useRouter()
     const isAuthenticated = ref(false)
