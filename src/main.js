@@ -10,6 +10,7 @@ import HealthCheck from './components/HealthCheck.vue'
 import AdminScreen from './components/AdminScreen.vue'
 import CreateSpecUpProject from './components/CreateSpecUpProject.vue'
 import Settings from './components/Settings.vue'
+import { autoEnhanceTooltips } from './directives/tooltip.js'
 
 import * as bootstrap from 'bootstrap/dist/js/bootstrap.bundle.min.js'
 import 'bootstrap-icons/font/bootstrap-icons.css'
@@ -111,7 +112,30 @@ axios.interceptors.response.use(
 
 const app = createApp(App)
 app.use(router)
+
+// Register tooltip directive
+const enhanceTooltips = autoEnhanceTooltips(app)
+
 app.mount('#app')
+
+// Enhanced tooltips after DOM is fully ready
+const initTooltips = () => {
+  console.log('Initializing tooltips...');
+  enhanceTooltips();
+  
+  // Also run after Vue's nextTick to ensure all components are rendered
+  setTimeout(() => {
+    console.log('Running secondary tooltip enhancement...');
+    enhanceTooltips();
+  }, 500);
+};
+
+// Multiple ways to ensure DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initTooltips);
+} else {
+  setTimeout(initTooltips, 100);
+}
 
 // Track initial page view after the app is mounted
 if (measurementId && googleAnalytics.isEnabled()) {

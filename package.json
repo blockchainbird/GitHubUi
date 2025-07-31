@@ -20,6 +20,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@floating-ui/dom": "^1.7.3",
+    "@floating-ui/vue": "^1.1.8",
     "@vitejs/plugin-vue": "^6.0.0",
     "axios": "^1.10.0",
     "bootstrap": "^5.3.7",
