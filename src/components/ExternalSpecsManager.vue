@@ -438,6 +438,11 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { addToVisitedRepos } from '../utils/visitedRepos.js'
+import { useSpecsManager } from '../composables/useSpecsManager.js'
+import { useSpecsValidation } from '../composables/useSpecsValidation.js'
+import { useBulkImport } from '../composables/useBulkImport.js'
+import { useReferenceSets } from '../composables/useReferenceSets.js'
+import { useNotifications } from '../composables/useNotifications.js'
 
 export default {
   name: 'ExternalSpecsManager',
@@ -445,629 +450,181 @@ export default {
     const router = useRouter()
     const route = useRoute()
 
-    // Props from route
+    // Route parameters
     const owner = ref(route.params.owner)
     const repo = ref(route.params.repo)
     const branch = ref(route.params.branch)
 
-    // State
-    const loading = ref(true)
-    const saving = ref(false)
-    const error = ref('')
-    const externalSpecs = ref([])
-    const originalSpecsJson = ref(null)
-    const hasChanges = ref(false)
+    // Composables
+    const specsManager = useSpecsManager()
+    const validation = useSpecsValidation()
+    const bulkImport = useBulkImport()
+    const referenceSets = useReferenceSets()
+    const { notifySuccess, notifyError, notifyWarning, confirmAction } = useNotifications()
 
-    // Helper function to check authentication and redirect if needed
-    const checkAuthAndRedirect = (error) => {
-      if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-        // Token is invalid or expired, clear it and redirect to login
-        localStorage.removeItem('github_token')
-        localStorage.removeItem('github_user')
-        router.push('/login')
-        return true
-      }
-      return false
-    }
-
-    // New spec form
-    const newSpec = ref({
-      external_spec: '',
-      gh_page: '',
-      url: '',
-      terms_dir: 'spec/terms-definitions'
-    })
-
-    // Bulk import state
+    // UI state
     const addMode = ref('single')
-    const bulkImportMode = ref('json')
-    const jsonInput = ref('')
-    const githubUrlInput = ref('')
-    const jsonError = ref('')
-    const urlError = ref('')
-    const bulkImportLoading = ref(false)
-    const bulkPreviewData = ref([])
-    const jsonInputFocused = ref(false)
-    const exampleJsonPlaceholder = '[\n  {\n    "external_spec": "toip1",\n    "gh_page": "https://example.github.io/spec/",\n    "url": "https://github.com/user/repo",\n    "terms_dir": "spec/terms-definitions"\n  }\n]'
-    const autoPreviewStatus = ref('')
-    const autoPreviewTimeout = ref(null)
 
-    // Reference sets state
-    const referenceSets = ref([])
-    const referenceSetsLoading = ref(false)
-    const referenceSetsError = ref('')
-    const selectedReferenceSet = ref(null)
-    const showReferenceSetPreview = ref(false)
+    // Enhanced methods
+    const handleAddNewSpec = () => {
+      const result = specsManager.addNewSpec(
+        specsManager.newSpec.value,
+        specsManager.externalSpecs.value,
+        validation.checkForDuplicateId,
+        validation.validateNewSpec
+      )
 
-    const resetNewSpec = () => {
-      newSpec.value = {
-        external_spec: '',
-        gh_page: '',
-        url: '',
-        terms_dir: 'spec/terms-definitions'
+      if (result.success) {
+        notifySuccess('Specification added successfully!')
+      } else {
+        notifyError(result.message)
       }
     }
 
-    const resetBulkImport = () => {
-      jsonInput.value = ''
-      githubUrlInput.value = ''
-      jsonError.value = ''
-      urlError.value = ''
-      bulkPreviewData.value = []
-      autoPreviewStatus.value = ''
-      if (autoPreviewTimeout.value) {
-        clearTimeout(autoPreviewTimeout.value)
-        autoPreviewTimeout.value = null
+    const handleRemoveSpec = (index) => {
+      if (confirmAction('Are you sure you want to remove this external specification?')) {
+        specsManager.removeSpec(index)
       }
     }
 
-    const resetReferenceSetSelection = () => {
-      selectedReferenceSet.value = null
-      showReferenceSetPreview.value = false
-      referenceSetsError.value = ''
-    }
-
-    const onJsonInputChange = () => {
-      // Clear previous timeout
-      if (autoPreviewTimeout.value) {
-        clearTimeout(autoPreviewTimeout.value)
-      }
-
-      // Clear errors and status
-      jsonError.value = ''
-      autoPreviewStatus.value = ''
-
-      // If input is empty, clear preview
-      if (!jsonInput.value.trim()) {
-        bulkPreviewData.value = []
-        return
-      }
-
-      // Set a timeout to auto-preview after user stops typing
-      autoPreviewTimeout.value = setTimeout(() => {
-        autoPreviewStatus.value = 'Validating JSON...'
-        previewBulkImport()
-      }, 1000) // Wait 1 second after user stops typing
-    }
-
-    const markAsChanged = () => {
-      hasChanges.value = true
-    }
-
-    const isValidUrl = (url) => {
-      try {
-        const result = new URL(url)
-        console.log(`URL validation for "${url}":`, { valid: true, parsed: result.href })
-        return true
-      } catch (err) {
-        console.log(`URL validation for "${url}":`, { valid: false, error: err.message })
-        return false
-      }
-    }
-
-    const loadSpecs = async () => {
-      try {
-        loading.value = true
-        error.value = ''
-
-        const token = localStorage.getItem('github_token')
-        if (!token) {
-          throw new Error('No GitHub token found')
-        }
-
-        // Fetch specs.json
-        const response = await fetch(
-          `https://api.github.com/repos/${owner.value}/${repo.value}/contents/specs.json?ref=${branch.value}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Accept': 'application/vnd.github.v3+json'
-            }
-          }
-        )
-
-        if (!response.ok) {
-          throw new Error(`Failed to load specs.json: ${response.statusText}`)
-        }
-
-        const data = await response.json()
-        const content = JSON.parse(atob(data.content))
-
-        // Store original for saving later
-        originalSpecsJson.value = {
-          content: content,
-          sha: data.sha
-        }
-
-        // Extract external_specs from the first spec (assuming single spec structure)
-        if (content.specs && content.specs.length > 0 && content.specs[0].external_specs) {
-          externalSpecs.value = [...content.specs[0].external_specs]
-        } else {
-          externalSpecs.value = []
-        }
-
-      } catch (err) {
-        console.error('Error loading specs:', err)
-        if (checkAuthAndRedirect(err)) {
-          return
-        }
-        error.value = err.message
-      } finally {
-        loading.value = false
-      }
-    }
-
-    const addNewSpec = () => {
-      // Validate required fields
-      if (!newSpec.value.external_spec || !newSpec.value.gh_page ||
-        !newSpec.value.url || !newSpec.value.terms_dir) {
-        alert('Please fill in all required fields')
-        return
-      }
-
-      // Validate URLs
-      if (!isValidUrl(newSpec.value.gh_page) || !isValidUrl(newSpec.value.url)) {
-        alert('Please enter valid URLs for GitHub Page and Repository URL')
-        return
-      }
-
-      // Check for duplicate spec IDs
-      if (externalSpecs.value.some(spec => spec.external_spec === newSpec.value.external_spec)) {
-        alert('Specification ID already exists. Please choose a unique identifier.')
-        return
-      }
-
-      // Add new spec
-      externalSpecs.value.push({ ...newSpec.value })
-      resetNewSpec()
-      markAsChanged()
-    }
-
-    const removeSpec = (index) => {
-      if (confirm('Are you sure you want to remove this external specification?')) {
-        externalSpecs.value.splice(index, 1)
-        markAsChanged()
-      }
-    }
-
-    const convertGithubUrlToRaw = (url) => {
-      try {
-        const urlObj = new URL(url)
-        if (urlObj.hostname === 'github.com' && urlObj.pathname.includes('/blob/')) {
-          return url.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/')
-        }
-        return url
-      } catch {
-        return url
-      }
-    }
-
-    const validateExternalSpec = (spec) => {
-      return spec &&
-        typeof spec === 'object' &&
-        spec.external_spec &&
-        spec.gh_page &&
-        spec.url &&
-        spec.terms_dir &&
-        isValidUrl(spec.gh_page) &&
-        isValidUrl(spec.url)
-    }
-
-    const checkForDuplicates = (specs) => {
-      const existingIds = externalSpecs.value.map(spec => spec.external_spec)
-      return specs.map(spec => ({
-        ...spec,
-        _isDuplicate: existingIds.includes(spec.external_spec)
-      }))
-    }
-
-    const previewBulkImport = async () => {
-      bulkImportLoading.value = true
-      jsonError.value = ''
-      urlError.value = ''
-      autoPreviewStatus.value = ''
+    const handlePreviewBulkImport = async () => {
+      bulkImport.bulkImportLoading.value = true
+      bulkImport.clearErrorsAndStatus()
 
       try {
-        let specsData = []
+        let specsData = null
 
-        if (bulkImportMode.value === 'json') {
-          if (!jsonInput.value.trim()) {
-            jsonError.value = 'Please enter JSON data'
-            bulkPreviewData.value = []
-            return
-          }
-
-          try {
-            specsData = JSON.parse(jsonInput.value)
-            autoPreviewStatus.value = 'JSON parsed successfully'
-          } catch (err) {
-            jsonError.value = 'Invalid JSON format'
-            bulkPreviewData.value = []
-            return
-          }
-        } else if (bulkImportMode.value === 'url') {
-          if (!githubUrlInput.value.trim()) {
-            urlError.value = 'Please enter a GitHub URL'
-            return
-          }
-
-          if (!isValidUrl(githubUrlInput.value)) {
-            urlError.value = 'Please enter a valid URL'
-            return
-          }
-
-          const rawUrl = convertGithubUrlToRaw(githubUrlInput.value)
-
-          try {
-            const response = await fetch(rawUrl)
-            if (!response.ok) {
-              throw new Error(`Failed to fetch: ${response.statusText}`)
-            }
-            specsData = await response.json()
-          } catch (err) {
-            urlError.value = `Error fetching URL: ${err.message}`
-            return
-          }
+        if (bulkImport.bulkImportMode.value === 'json') {
+          specsData = bulkImport.parseJsonData()
+        } else if (bulkImport.bulkImportMode.value === 'url') {
+          specsData = await bulkImport.fetchDataFromUrl(validation.isValidUrl)
         }
 
-        if (!Array.isArray(specsData)) {
-          const errorMsg = 'Data must be an array of external specifications'
-          if (bulkImportMode.value === 'json') {
-            jsonError.value = errorMsg
-          } else {
-            urlError.value = errorMsg
-          }
-          bulkPreviewData.value = []
+        if (!specsData) {
+          bulkImport.bulkPreviewData.value = []
           return
         }
 
-        const validSpecs = []
-        const invalidSpecs = []
+        if (!bulkImport.validateArrayData(specsData)) {
+          bulkImport.bulkPreviewData.value = []
+          return
+        }
 
-        specsData.forEach((spec, index) => {
-          console.log(`Validating spec ${index}:`, spec)
-
-          // Detailed validation debugging
-          const validationChecks = {
-            exists: !!spec,
-            isObject: typeof spec === 'object',
-            hasExternalSpec: !!spec.external_spec,
-            hasGhPage: !!spec.gh_page,
-            hasUrl: !!spec.url,
-            hasTermsDir: !!spec.terms_dir,
-            validGhPageUrl: spec.gh_page ? isValidUrl(spec.gh_page) : false,
-            validUrl: spec.url ? isValidUrl(spec.url) : false
-          }
-
-          console.log(`Validation checks for spec ${index}:`, validationChecks)
-
-          if (validateExternalSpec(spec)) {
-            console.log(`Spec ${index} is VALID`)
-            validSpecs.push(spec)
-          } else {
-            console.log(`Spec ${index} is INVALID`)
-            invalidSpecs.push({ ...spec, _isInvalid: true })
-          }
-        })
-
-        console.log('Total specs in JSON:', specsData.length)
-        console.log('Valid specs after filtering:', validSpecs.length)
-        console.log('Invalid specs:', invalidSpecs.length)
-        console.log('Valid specs:', validSpecs)
+        const { validSpecs, invalidSpecs } = bulkImport.categorizeSpecs(specsData, validation.validateExternalSpec)
 
         if (validSpecs.length === 0) {
-          const errorMsg = `No valid external specifications found. Please check your JSON format. Expected fields: external_spec, gh_page (valid URL), url (valid URL), terms_dir`
-          if (bulkImportMode.value === 'json') {
-            jsonError.value = errorMsg
-          } else {
-            urlError.value = errorMsg
-          }
-          // Show only invalid specs in preview
-          bulkPreviewData.value = invalidSpecs
+          bulkImport.handleNoValidSpecs(invalidSpecs)
           return
         }
 
-        // Combine valid specs (with duplicate check) and invalid specs
-        const validSpecsWithDuplicateCheck = checkForDuplicates(validSpecs)
-        bulkPreviewData.value = [...validSpecsWithDuplicateCheck, ...invalidSpecs]
-
-        // Update status for successful auto-preview
-        if (bulkImportMode.value === 'json' && validSpecs.length > 0) {
-          autoPreviewStatus.value = `Found ${validSpecs.length} valid specification${validSpecs.length === 1 ? '' : 's'} ready to import`
-        }
+        const validSpecsWithDuplicateCheck = validation.markSpecsWithDuplicates(validSpecs, specsManager.externalSpecs.value)
+        bulkImport.bulkPreviewData.value = [...validSpecsWithDuplicateCheck, ...invalidSpecs]
+        bulkImport.updateAutoPreviewStatus(validSpecs)
 
       } catch (err) {
-        console.error('Preview error:', err)
         const errorMsg = `Error processing data: ${err.message}`
-        if (bulkImportMode.value === 'json') {
-          jsonError.value = errorMsg
-        } else {
-          urlError.value = errorMsg
-        }
-        bulkPreviewData.value = []
+        bulkImport.setError(bulkImport.bulkImportMode.value, errorMsg)
+        bulkImport.bulkPreviewData.value = []
       } finally {
-        bulkImportLoading.value = false
+        bulkImport.bulkImportLoading.value = false
       }
     }
 
-    const importBulkSpecs = () => {
-      // Filter out invalid specs
-      const validSpecs = bulkPreviewData.value.filter(spec => !spec._isInvalid)
+    const handleImportBulkSpecs = () => {
+      const validSpecs = bulkImport.bulkPreviewData.value.filter(spec => !spec._isInvalid)
 
       if (validSpecs.length === 0) {
-        alert('No valid specifications to import. Please fix the validation errors first.')
+        notifyError('No valid specifications to import. Please fix the validation errors first.')
         return
       }
 
-      // Check for any remaining duplicates in valid specs
       const duplicates = validSpecs.filter(spec => spec._isDuplicate)
       if (duplicates.length > 0) {
-        // Check if duplicates have new IDs
-        const unresolved = duplicates.filter(spec => !spec.external_spec ||
-          externalSpecs.value.some(existing => existing.external_spec === spec.external_spec))
+        const unresolved = duplicates.filter(spec => 
+          !spec.external_spec ||
+          specsManager.externalSpecs.value.some(existing => existing.external_spec === spec.external_spec)
+        )
 
         if (unresolved.length > 0) {
-          alert('Please resolve all duplicate specification IDs before importing')
+          notifyError('Please resolve all duplicate specification IDs before importing')
           return
         }
       }
 
-      // Add valid specs to main list
       validSpecs.forEach(spec => {
         const cleanSpec = { ...spec }
         delete cleanSpec._isDuplicate
         delete cleanSpec._isInvalid
-        externalSpecs.value.push(cleanSpec)
+        specsManager.externalSpecs.value.push(cleanSpec)
       })
 
-      // Reset bulk import
-      resetBulkImport()
+      bulkImport.resetBulkImport()
       addMode.value = 'single'
-      markAsChanged()
+      specsManager.markAsChanged()
 
-      alert(`Successfully imported ${validSpecs.length} valid external specifications!`)
+      notifySuccess(`Successfully imported ${validSpecs.length} valid external specifications!`)
     }
 
-    const loadReferenceSets = async () => {
-      try {
-        referenceSetsLoading.value = true
-        referenceSetsError.value = ''
+    const handleImportReferenceSet = () => {
+      const validation_result = referenceSets.validateReferenceSetImport(
+        referenceSets.selectedReferenceSet.value,
+        specsManager.externalSpecs.value,
+        validation.validateExternalSpec
+      )
 
-        // Fetch directory listing from the external reference sets repository
-        const response = await fetch(
-          'https://api.github.com/repos/blockchainbird/spec-up-gs/contents/external-reference-sets'
-        )
-
-        if (!response.ok) {
-          throw new Error(`Failed to load reference sets: ${response.statusText}`)
-        }
-
-        const files = await response.json()
-        const jsonFiles = files.filter(file => file.name.endsWith('.json'))
-
-        // Load metadata for each set
-        const setsPromises = jsonFiles.map(async (file) => {
-          try {
-            const setResponse = await fetch(file.download_url)
-            if (!setResponse.ok) {
-              throw new Error(`Failed to load ${file.name}`)
-            }
-            const setData = await setResponse.json()
-            return {
-              ...setData,
-              filename: file.name,
-              downloadUrl: file.download_url
-            }
-          } catch (err) {
-            console.error(`Error loading ${file.name}:`, err)
-            return null
-          }
-        })
-
-        const sets = await Promise.all(setsPromises)
-        referenceSets.value = sets.filter(set => set !== null)
-
-      } catch (err) {
-        console.error('Error loading reference sets:', err)
-        referenceSetsError.value = err.message
-      } finally {
-        referenceSetsLoading.value = false
-      }
-    }
-
-    const selectReferenceSet = (set) => {
-      selectedReferenceSet.value = set
-      showReferenceSetPreview.value = true
-    }
-
-    const importReferenceSet = () => {
-      if (!selectedReferenceSet.value) return
-
-      const setReferences = selectedReferenceSet.value.references || []
-      const validSpecs = setReferences.filter(spec => validateExternalSpec(spec))
-
-      if (validSpecs.length === 0) {
-        alert('No valid specifications found in the selected reference set.')
+      if (!validation_result.valid) {
+        notifyError(validation_result.message || 'Invalid reference set')
         return
       }
 
-      // Check for duplicates
-      const duplicates = validSpecs.filter(spec =>
-        externalSpecs.value.some(existing => existing.external_spec === spec.external_spec)
-      )
+      const { validSpecs, duplicates } = validation_result
 
       if (duplicates.length > 0) {
         const duplicateIds = duplicates.map(spec => spec.external_spec).join(', ')
-        if (!confirm(`The following specification IDs already exist: ${duplicateIds}. Do you want to skip duplicates and import the rest?`)) {
+        if (!confirmAction(`The following specification IDs already exist: ${duplicateIds}. Do you want to skip duplicates and import the rest?`)) {
           return
         }
       }
 
-      // Add non-duplicate specs
       const nonDuplicateSpecs = validSpecs.filter(spec =>
-        !externalSpecs.value.some(existing => existing.external_spec === spec.external_spec)
+        !specsManager.externalSpecs.value.some(existing => existing.external_spec === spec.external_spec)
       )
 
       nonDuplicateSpecs.forEach(spec => {
-        externalSpecs.value.push({ ...spec })
+        specsManager.externalSpecs.value.push({ ...spec })
       })
 
-      markAsChanged()
-      resetReferenceSetSelection()
+      specsManager.markAsChanged()
+      referenceSets.resetReferenceSetSelection()
 
-      const importedCount = nonDuplicateSpecs.length
-      const skippedCount = duplicates.length
-      let message = `Successfully imported ${importedCount} specification${importedCount === 1 ? '' : 's'} from ${selectedReferenceSet.value.title}!`
-
-      if (skippedCount > 0) {
-        message += ` (${skippedCount} duplicate${skippedCount === 1 ? '' : 's'} skipped)`
-      }
-
-      alert(message)
+      const message = referenceSets.createImportMessage(
+        nonDuplicateSpecs.length,
+        duplicates.length,
+        referenceSets.selectedReferenceSet.value.title
+      )
+      notifySuccess(message)
     }
 
-    const saveSpecs = async (retryCount = 0) => {
-      const maxRetries = 2
-
-      try {
-        // Validate all external specs before saving
-        const invalidSpecs = externalSpecs.value.filter(spec =>
-          !spec.external_spec || !spec.gh_page || !spec.url || !spec.terms_dir ||
-          !isValidUrl(spec.gh_page) || !isValidUrl(spec.url)
-        )
-
-        if (invalidSpecs.length > 0) {
-          alert('Please fix validation errors before saving. All fields are required and URLs must be valid.')
-          return
-        }
-
-        // Check for duplicate spec IDs
-        const specIds = externalSpecs.value.map(spec => spec.external_spec)
-        const duplicates = specIds.filter((id, index) => specIds.indexOf(id) !== index)
-        if (duplicates.length > 0) {
-          alert(`Duplicate specification IDs found: ${duplicates.join(', ')}. Please ensure all spec IDs are unique.`)
-          return
-        }
-
-        saving.value = true
-        error.value = ''
-
-        const token = localStorage.getItem('github_token')
-        if (!token) {
-          throw new Error('No GitHub token found')
-        }
-
-        // If this is a retry due to conflict, refresh the file state first
-        if (retryCount > 0) {
-          await refreshFileState()
-        }
-
-        // Prepare updated content
-        const updatedContent = { ...originalSpecsJson.value.content }
-        if (updatedContent.specs && updatedContent.specs.length > 0) {
-          updatedContent.specs[0].external_specs = externalSpecs.value
-        }
-
-        // Commit changes
-        const response = await fetch(
-          `https://api.github.com/repos/${owner.value}/${repo.value}/contents/specs.json`,
-          {
-            method: 'PUT',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Accept': 'application/vnd.github.v3+json',
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              message: 'Update external specifications',
-              content: btoa(JSON.stringify(updatedContent, null, 2)),
-              sha: originalSpecsJson.value.sha
-            })
-          }
-        )
-
-        if (!response.ok) {
-          // Handle 409 Conflict - file was modified by someone else
-          if (response.status === 409 && retryCount < maxRetries) {
-            console.log(`File conflict detected, retrying... (attempt ${retryCount + 1}/${maxRetries})`)
-            return await saveSpecs(retryCount + 1)
-          }
-          throw new Error(`Failed to save specs.json: ${response.statusText}`)
-        }
-
-        const result = await response.json()
-        originalSpecsJson.value.sha = result.content.sha
-        hasChanges.value = false
-
-        const retryMessage = retryCount > 0 ? ` (resolved after ${retryCount} retry${retryCount === 1 ? '' : 'ies'})` : ''
-        alert(`External specifications saved successfully!${retryMessage}`)
-
-      } catch (err) {
-        console.error('Error saving specs:', err)
-        if (checkAuthAndRedirect(err)) {
-          return
-        }
-        error.value = err.message
-      } finally {
-        saving.value = false
-      }
-    }
-
-    const refreshFileState = async () => {
-      const token = localStorage.getItem('github_token')
-      if (!token) {
-        throw new Error('No GitHub token found')
-      }
-
-      const response = await fetch(
-        `https://api.github.com/repos/${owner.value}/${repo.value}/contents/specs.json?ref=${branch.value}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          }
-        }
+    const handleSaveSpecs = async () => {
+      const result = await specsManager.saveSpecs(
+        owner.value,
+        repo.value,
+        branch.value,
+        router,
+        validation.validateAllSpecs,
+        validation.checkForDuplicates
       )
 
-      if (!response.ok) {
-        throw new Error(`Failed to refresh file state: ${response.statusText}`)
+      if (result.success) {
+        notifySuccess(result.message)
+      } else {
+        notifyError(result.message)
       }
-
-      const data = await response.json()
-      const content = JSON.parse(atob(data.content))
-
-      // Update the SHA for the next save attempt
-      originalSpecsJson.value = {
-        content: content,
-        sha: data.sha
-      }
-
-      console.log('File state refreshed with new SHA:', data.sha)
     }
 
-    const goBack = () => {
-      if (hasChanges.value) {
-        if (confirm('You have unsaved changes. Are you sure you want to go back?')) {
+    const handleGoBack = () => {
+      if (specsManager.hasChanges.value) {
+        if (confirmAction('You have unsaved changes. Are you sure you want to go back?')) {
           router.push(`/files/${owner.value}/${repo.value}/${branch.value}`)
         }
       } else {
@@ -1076,54 +633,63 @@ export default {
     }
 
     onMounted(() => {
-      // Add this repository to visited history
       addToVisitedRepos(owner.value, repo.value, branch.value)
-
-      loadSpecs()
-      loadReferenceSets()
+      specsManager.loadSpecs(owner.value, repo.value, branch.value, router)
+      referenceSets.loadReferenceSets()
     })
 
     return {
+      // Route parameters
       owner,
       repo,
       branch,
-      loading,
-      saving,
-      error,
-      externalSpecs,
-      newSpec,
-      hasChanges,
+
+      // Manager state
+      loading: specsManager.loading,
+      saving: specsManager.saving,
+      error: specsManager.error,
+      externalSpecs: specsManager.externalSpecs,
+      newSpec: specsManager.newSpec,
+      hasChanges: specsManager.hasChanges,
+
+      // Bulk import state
       addMode,
-      bulkImportMode,
-      jsonInput,
-      githubUrlInput,
-      jsonError,
-      urlError,
-      bulkImportLoading,
-      bulkPreviewData,
-      jsonInputFocused,
-      exampleJsonPlaceholder,
-      autoPreviewStatus,
-      referenceSets,
-      referenceSetsLoading,
-      referenceSetsError,
-      selectedReferenceSet,
-      showReferenceSetPreview,
-      resetNewSpec,
-      resetBulkImport,
-      resetReferenceSetSelection,
-      onJsonInputChange,
-      markAsChanged,
-      isValidUrl,
-      addNewSpec,
-      removeSpec,
-      previewBulkImport,
-      importBulkSpecs,
-      loadReferenceSets,
-      selectReferenceSet,
-      importReferenceSet,
-      saveSpecs,
-      goBack
+      bulkImportMode: bulkImport.bulkImportMode,
+      jsonInput: bulkImport.jsonInput,
+      githubUrlInput: bulkImport.githubUrlInput,
+      jsonError: bulkImport.jsonError,
+      urlError: bulkImport.urlError,
+      bulkImportLoading: bulkImport.bulkImportLoading,
+      bulkPreviewData: bulkImport.bulkPreviewData,
+      jsonInputFocused: bulkImport.jsonInputFocused,
+      exampleJsonPlaceholder: bulkImport.exampleJsonPlaceholder,
+      autoPreviewStatus: bulkImport.autoPreviewStatus,
+
+      // Reference sets state
+      referenceSets: referenceSets.referenceSets,
+      referenceSetsLoading: referenceSets.referenceSetsLoading,
+      referenceSetsError: referenceSets.referenceSetsError,
+      selectedReferenceSet: referenceSets.selectedReferenceSet,
+      showReferenceSetPreview: referenceSets.showReferenceSetPreview,
+
+      // Methods
+      resetNewSpec: specsManager.resetNewSpec,
+      resetBulkImport: bulkImport.resetBulkImport,
+      resetReferenceSetSelection: referenceSets.resetReferenceSetSelection,
+      onJsonInputChange: () => bulkImport.onJsonInputChange(handlePreviewBulkImport),
+      markAsChanged: specsManager.markAsChanged,
+      isValidUrl: validation.isValidUrl,
+
+      // Enhanced handlers
+      addNewSpec: handleAddNewSpec,
+      removeSpec: handleRemoveSpec,
+      previewBulkImport: handlePreviewBulkImport,
+      importBulkSpecs: handleImportBulkSpecs,
+      loadReferenceSets: referenceSets.loadReferenceSets,
+      selectReferenceSet: referenceSets.selectReferenceSet,
+      importReferenceSet: handleImportReferenceSet,
+      saveSpecs: handleSaveSpecs,
+      goBack: handleGoBack
     }
   }
 }
