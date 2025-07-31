@@ -31,7 +31,6 @@ export const vTooltip = {
     // Check if touch device - temporarily disabled for testing
     const isTouchDevice = false; // 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     if (isTouchDevice) {
-      console.log('Touch device detected, skipping tooltip enhancement');
       return;
     }
 
@@ -79,11 +78,9 @@ export const vTooltip = {
           ]
         });
 
-        console.log(`Positioning tooltip at x: ${x}, y: ${y}`);
         tooltip.style.left = `${x}px`;
         tooltip.style.top = `${y}px`;
       } catch (error) {
-        console.error('Error positioning tooltip:', error);
       }
     };
 
@@ -91,7 +88,6 @@ export const vTooltip = {
     const showTooltip = () => {
       clearTimeout(el._tooltipData.hideTimeout);
       el._tooltipData.showTimeout = setTimeout(async () => {
-        console.log('Showing tooltip for element:', el, 'content:', el._tooltipData.content);
         if (!el._tooltipData.tooltipElement) {
           createTooltip();
         }
@@ -105,7 +101,6 @@ export const vTooltip = {
         // Show with animation
         tooltip.style.opacity = '1';
         tooltip.style.transform = 'translateY(0)';
-        console.log('Tooltip shown:', tooltip);
       }, el._tooltipData.delay);
     };
 
@@ -167,12 +162,10 @@ export const autoEnhanceTooltips = (app) => {
   return () => {
     const enhanceExistingTitles = () => {
       const elementsWithTitle = document.querySelectorAll('[title]');
-      console.log(`Found ${elementsWithTitle.length} elements with title attributes`);
       elementsWithTitle.forEach(el => {
         // Skip if already enhanced
         if (el._tooltipData) return;
 
-        console.log('Enhancing element:', el, 'with title:', el.getAttribute('title'));
         // Apply directive programmatically
         vTooltip.mounted(el, { value: null, modifiers: {}, arg: null });
       });
@@ -188,7 +181,6 @@ export const autoEnhanceTooltips = (app) => {
           mutation.addedNodes.forEach((node) => {
             if (node.nodeType === 1) { // Element node
               if (node.hasAttribute && node.hasAttribute('title') && !node._tooltipData) {
-                console.log('Enhancing dynamically added element:', node);
                 vTooltip.mounted(node, { value: null, modifiers: {}, arg: null });
               }
               // Check children too
