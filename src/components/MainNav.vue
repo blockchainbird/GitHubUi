@@ -424,7 +424,8 @@ export default {
   }
 
   .navbar-collapse.show {
-    max-height: 500px;
+    max-height: 100vh;
+    overflow-y: auto;
   }
 }
 
