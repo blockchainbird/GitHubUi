@@ -24,7 +24,7 @@
             <i class="bi bi-plus-circle"></i>
             Create Project
           </button> -->
-          <button v-if="showRepoRelatedButtons" @click="navigateToFilesAndClose" class="nav-link btn btn-link" title="Browse Repository Files">
+          <button v-if="showRepoRelatedButtons" @click="navigateToFilesAndClose" class="nav-link btn btn-link" title="Browse Repository Files" >
             <i class="bi bi-folder"></i>
             Files
           </button>
