@@ -375,7 +375,7 @@ The External Specifications Manager offers three different methods for adding ex
 - **Curated Collections**: Access professionally curated sets of related external specifications
 - **Time Saving**: Import multiple related specifications at once
 - **Quality Assurance**: All references are pre-validated and tested
-- **Community Sharing**: Shared repository allows access to community-contributed sets
+- **Community Sharing**: Shared repository enables access to community-contributed sets
 - **Automatic Updates**: New reference sets become available automatically
 
 ### Managing External Specifications
@@ -616,25 +616,13 @@ Results are organized into categories, each with a color-coded status:
 ### Workflow 6: Using Reference Sets for Quick Setup
 
 1. **Navigate to External Specs Manager** from the repository navigation
-2. **Select "Reference Sets"** option (alongside Single and Bulk Import)
-3. **Review available sets**:
-   - Read the title and description of each set
-   - Check the number of references included
-   - Note the creator and date for quality assessment
-4. **Preview sets of interest**:
-   - Click "Preview" to examine the complete contents
-   - Review the list of specifications included
-   - Check that the repositories and URLs are relevant to your project
-5. **Import selected sets**:
-   - Use "Import" for quick addition without preview
-   - Or use "Import References" from the preview modal
-   - Review the import summary showing what was added and what was skipped
-6. **Verify the import**:
-   - Check the main external specifications list
-   - Ensure all expected references were added
-   - Address any duplicate notifications
-7. **Save your configuration** with a descriptive commit message
-8. **Run a health check** to validate all imported references
+2. **Select "Reference Sets"** option
+3. **Browse and preview sets** to find relevant collections for your project
+4. **Import selected sets** using either quick import or preview-then-import
+5. **Verify the import** results and address any duplicates
+6. **Save your configuration** and run a health check to validate references
+
+For detailed steps on using Reference Sets, see the [Reference Sets Method](#reference-sets-method) section.
 
 ### Workflow 7: Regular Maintenance
 
@@ -651,7 +639,7 @@ Results are organized into categories, each with a color-coded status:
 
 **Problem**: "Invalid token" error message
 
-**Solutions**:
+**Solutions:**
 
 1. Check that your token hasn't expired
 2. Verify you copied the entire token (they're quite long)
@@ -660,7 +648,7 @@ Results are organized into categories, each with a color-coded status:
 
 **Problem**: "Access forbidden" error
 
-**Solutions**:
+**Solutions:**
 
 1. Verify you have permission to access the repository
 2. Check if the repository is private and your token has private repo access
@@ -671,7 +659,7 @@ Results are organized into categories, each with a color-coded status:
 
 **Problem**: No files showing in the explorer
 
-**Solutions**:
+**Solutions:**
 
 1. Check that you entered the correct repository information
 2. Verify the branch name exists
@@ -681,7 +669,7 @@ Results are organized into categories, each with a color-coded status:
 
 **Problem**: Can't save files
 
-**Solutions**:
+**Solutions:**
 
 1. Verify you have write permissions to the repository
 2. Check that the branch isn't protected
@@ -692,7 +680,7 @@ Results are organized into categories, each with a color-coded status:
 
 **Problem**: External specs not loading
 
-**Solutions**:
+**Solutions:**
 
 1. Verify all URLs are correct and accessible
 2. Check that the GitHub repositories are public or you have access
@@ -701,7 +689,7 @@ Results are organized into categories, each with a color-coded status:
 
 **Problem**: Terms not appearing from external specs
 
-**Solutions**:
+**Solutions:**
 
 1. Run a health check to identify configuration issues
 2. Verify the external specification URLs are accessible
@@ -710,7 +698,7 @@ Results are organized into categories, each with a color-coded status:
 
 **Problem**: Reference sets not loading
 
-**Solutions**:
+**Solutions:**
 
 1. Check your internet connection
 2. Click the "Refresh Sets" button to reload available sets
@@ -719,7 +707,7 @@ Results are organized into categories, each with a color-coded status:
 
 **Problem**: Import from reference sets shows "No valid specifications"
 
-**Solutions**:
+**Solutions:**
 
 1. Check that the reference set contains properly formatted specifications
 2. Verify that all URLs in the reference set are accessible
@@ -730,7 +718,7 @@ Results are organized into categories, each with a color-coded status:
 
 **Problem**: Slow loading times
 
-**Solutions**:
+**Solutions:**
 
 1. Check your internet connection speed
 2. Try using a different branch if available
@@ -752,24 +740,15 @@ Remember: Most issues are related to authentication, permissions, or repository 
 
 ---
 
-## Files Created and Their Purpose
+## About This Guide
 
-This user guide (`USER_GUIDE.md`) has been created to provide step-by-step instructions for end users of the Spec-Up-T Editor.
+This comprehensive user guide serves as the primary documentation for end users of the Spec-Up-T Editor. It provides step-by-step instructions, practical workflows, and troubleshooting guidance to help users of all technical levels effectively use the tool.
 
-**Why this file should stay:**
+**Usage Guidelines:**
 
-1. **User-Focused**: Written specifically for end users, not developers or technical implementers
-2. **Step-by-Step Instructions**: Provides detailed, actionable guidance for common tasks
-3. **Workflow Examples**: Shows real-world usage patterns and scenarios
-4. **Troubleshooting**: Addresses common user problems with practical solutions
-5. **Onboarding**: Helps new users get started quickly and successfully
+- **New Users**: Begin with "Getting Started" and "Initial Setup"
+- **Regular Users**: Focus on specific sections as needed
+- **Teams**: Use as training material and reference documentation
+- **Troubleshooting**: Consult the troubleshooting section for common issues
 
-**How to use this file:**
-
-1. **New Users**: Start with "Getting Started" and "Initial Setup" sections
-2. **Occasional Users**: Focus on "Working with Repositories" and "File Management" sections
-3. **Power Users**: Review "Common Workflows" and "Tips and Best Practices"
-4. **Troubleshooting**: Reference the "Troubleshooting" section when problems arise
-5. **Training**: Use as a training manual for teams adopting the tool
-
-This user guide complements the technical documentation by focusing entirely on practical usage, making the Spec-Up-T Editor accessible to users of all technical levels while maintaining comprehensive coverage of all features and capabilities.
+The guide is maintained alongside the application to ensure accuracy and completeness of all documented features and capabilities.
