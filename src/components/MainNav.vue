@@ -34,6 +34,14 @@
             <i class="bi bi-link-45deg"></i>
             External
           </button>
+          <button v-if="showRepoRelatedButtons" @click="closeNavbar" 
+            class="nav-link btn btn-link"
+            data-bs-toggle="modal" 
+            data-bs-target="#termsPreviewModal"
+            title="Preview All Terms and Definitions">
+            <i class="bi bi-book"></i>
+            Terms Preview
+          </button>
           <a v-if="showRepoRelatedButtons" :href="githubRepoUrl" target="_blank" rel="noopener" class="nav-link"
             title="View Repository on GitHub" @click="closeNavbar">
             <i class="bi bi-github"></i>
@@ -118,6 +126,13 @@
       </div>
     </template>
   </Modal>
+  
+  <!-- Terms Preview Modal -->
+  <TermsPreview 
+    v-if="showRepoRelatedButtons"
+    :owner="route.params.owner"
+    :repo="route.params.repo"
+    :branch="route.params.branch" />
 </template>
 
 <script>
@@ -125,10 +140,11 @@ import { computed, ref, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Modal from './Modal.vue';
 import RateLimitIndicator from './RateLimitIndicator.vue';
+import TermsPreview from './TermsPreview.vue';
 
 export default {
   name: 'MainNav',
-  components: { Modal, RateLimitIndicator },
+  components: { Modal, RateLimitIndicator, TermsPreview },
   props: {
     isAuthenticated: {
       type: Boolean,
