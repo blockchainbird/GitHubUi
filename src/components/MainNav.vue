@@ -40,7 +40,7 @@
             data-bs-target="#termsPreviewModal"
             title="Preview All Terms and Definitions">
             <i class="bi bi-book"></i>
-            Terms Preview
+            Preview
           </button>
           <a v-if="showRepoRelatedButtons" :href="githubRepoUrl" target="_blank" rel="noopener" class="nav-link"
             title="View Repository on GitHub" @click="closeNavbar">
