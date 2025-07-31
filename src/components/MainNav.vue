@@ -4,7 +4,7 @@
       <!-- Brand/Logo -->
       <span class="navbar-brand mb-0 h1 d-flex align-items-center">
         <img src="/assets/logo.svg" alt="Spec-Up-T Logo" style="height: 2rem; width: auto; margin-right: 0.5rem;" />
-        Spec-Up-T
+        Spec-Up-T Editor
       </span>
 
       <!-- Hamburger button for mobile -->
