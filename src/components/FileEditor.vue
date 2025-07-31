@@ -19,7 +19,7 @@
           Close
         </button>
         <button @click="togglePublishStatus" class="btn me-2" :class="isDraft ? 'btn-success' : 'btn-warning'"
-          :disabled="saving || isNewFile" 
+          :disabled="saving || isNewFile"
           :title="isNewFile ? 'Create the file first before publishing/unpublishing' : ''">
           <i class="bi" :class="isDraft ? 'bi-eye' : 'bi-eye-slash'"></i>
           {{ isDraft ? 'Publish' : 'Unpublish' }}
@@ -50,7 +50,8 @@
         <i class="bi bi-info-circle-fill me-2 flex-shrink-0 mt-1"></i>
         <div>
           <strong>Creating New File:</strong>
-          This file doesn't exist yet. You can edit and use all toolbar functions. Click "Create & Commit" when you're ready to save it to the repository.
+          This file doesn't exist yet. You can edit and use all toolbar functions. Click "Create & Commit" when you're
+          ready to save it to the repository.
         </div>
       </div>
     </div>
@@ -133,7 +134,8 @@
                 </div>
               </div>
 
-              <textarea ref="editor" v-model="content" @input="handleContentChange" @keyup="handleContentChange" class="form-control border-0"
+              <textarea ref="editor" v-model="content" @input="handleContentChange" @keyup="handleContentChange"
+                class="form-control border-0"
                 style="min-height: 600px; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; resize: vertical;"
                 placeholder="Start editing your content here..."></textarea>
             </div>
@@ -197,8 +199,7 @@
 
             <div class="mb-3 d-flex justify-content-between align-items-center">
               <label class="form-label mb-0">Filter Options</label>
-              <button @click="toggleDefinitionsCollapse" type="button" 
-                class="btn btn-outline-secondary btn-sm"
+              <button @click="toggleDefinitionsCollapse" type="button" class="btn btn-outline-secondary btn-sm"
                 :title="definitionsCollapsed ? 'Expand all definitions' : 'Collapse all definitions'">
                 <i class="bi" :class="definitionsCollapsed ? 'bi-chevron-down' : 'bi-chevron-up'"></i>
                 {{ definitionsCollapsed ? 'Expand' : 'Collapse' }} Definitions
@@ -268,18 +269,16 @@
                       </small>
                     </div>
                     <div class="d-flex align-items-center gap-2">
-                      <button v-if="term.definition" 
-                        @click.stop="toggleIndividualTerm(term)"
+                      <button v-if="term.definition" @click.stop="toggleIndividualTerm(term)"
                         class="btn btn-outline-secondary btn-sm"
-                        :title="isTermDefinitionVisible(term) ? 'Hide definition' : 'Show definition'"
-                        type="button">
+                        :title="isTermDefinitionVisible(term) ? 'Hide definition' : 'Show definition'" type="button">
                         <i class="bi" :class="isTermDefinitionVisible(term) ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
                       </button>
                       <span v-if="term.external" class="badge bg-success">External</span>
                     </div>
                   </div>
-                  <div v-if="term.definition && isTermDefinitionVisible(term)" class="definition-preview w-100 mt-2 pt-2 border-top"
-                    v-html="term.definition"></div>
+                  <div v-if="term.definition && isTermDefinitionVisible(term)"
+                    class="definition-preview w-100 mt-2 pt-2 border-top" v-html="term.definition"></div>
                 </button>
               </div>
             </div>
@@ -423,7 +422,7 @@ export default {
     const termsError = ref('')
     const specsConfig = ref(null)
     const referenceType = ref('auto')
-    
+
     // Definition preview collapse/expand state
     const definitionsCollapsed = ref(false)
     const individualTermsExpanded = ref(new Map()) // Track individual term expansion state
@@ -510,7 +509,7 @@ export default {
       // For existing files, compare with original content
       return content.value !== originalContent.value
     })
-    
+
     // Helper function to get file extension for analytics
     const getFileExtension = (filePath) => {
       const ext = filePath.split('.').pop()?.toLowerCase()
@@ -680,48 +679,48 @@ export default {
         // Check if this is a new file being created
         if (route.query.new === 'true') {
           isNewFile.value = true
-          
+
           // Decode the initial content and commit message from query params
           try {
             // Handle content parameter - ensure we properly decode even empty content
-            newFileInitialContent.value = route.query.content !== undefined 
-              ? decodeURIComponent(route.query.content) 
+            newFileInitialContent.value = route.query.content !== undefined
+              ? decodeURIComponent(route.query.content)
               : ''
-            newFileCommitMessage.value = route.query.commitMessage 
-              ? decodeURIComponent(route.query.commitMessage) 
+            newFileCommitMessage.value = route.query.commitMessage
+              ? decodeURIComponent(route.query.commitMessage)
               : 'Add new file'
           } catch (decodeError) {
             console.warn('Error decoding query parameters:', decodeError)
             newFileInitialContent.value = ''
             newFileCommitMessage.value = 'Add new file'
           }
-          
+
           // Set up the editor with initial content
           content.value = newFileInitialContent.value
           originalContent.value = '' // New file has no original content
           commitMessage.value = newFileCommitMessage.value
-          
+
           // No SHA for new file
           fileSha.value = ''
-          
+
           // Validate content after loading
           await validateContent()
-          
+
           // Track file creation start
           trackFileOperation('create_start', getFileExtension(decodedPath.value))
-          
+
           loading.value = false
-          
+
           // Force validation after a short delay to ensure everything is set up
           setTimeout(async () => {
             await validateContent()
-            
+
             // Additional safeguard: re-set content if it was lost
             if (!content.value && newFileInitialContent.value) {
               content.value = newFileInitialContent.value
             }
           }, 100)
-          
+
           return
         }
 
@@ -742,10 +741,10 @@ export default {
         fileSha.value = response.data.sha
         content.value = atob(response.data.content)
         originalContent.value = content.value
-        
+
         // Validate content after loading
         await validateContent()
-        
+
         // Track file view
         trackFileOperation('view', getFileExtension(decodedPath.value))
 
@@ -781,8 +780,8 @@ export default {
         const normalizedFilePath = decodedPath.value.replace(/^\/+|\/+$/g, '')
 
         // Check if the current file path starts with the terms directory path
-        return normalizedFilePath.startsWith(normalizedTermsPath + '/') || 
-               normalizedFilePath === normalizedTermsPath
+        return normalizedFilePath.startsWith(normalizedTermsPath + '/') ||
+          normalizedFilePath === normalizedTermsPath
       } catch (err) {
         console.error('Error checking if file is in terms directory:', err)
         // If we can't determine, default to not validating to avoid false positives
@@ -792,7 +791,7 @@ export default {
 
     const validateContent = async () => {
       const warnings = []
-      
+
       if (!content.value.trim()) {
         showValidationWarnings.value = false
         validationWarnings.value = []
@@ -801,12 +800,12 @@ export default {
 
       // Check if the current file is in the spec_terms_directory
       const isInTermsDirectory = await checkIfInTermsDirectory()
-      
+
       // Also check if filename suggests it's a terms file (contains common terms patterns)
-      const isLikelyTermsFile = filename.value.toLowerCase().includes('term') || 
-                               content.value.includes('[[def:') || 
-                               content.value.includes('[[tref:')
-      
+      const isLikelyTermsFile = filename.value.toLowerCase().includes('term') ||
+        content.value.includes('[[def:') ||
+        content.value.includes('[[tref:')
+
       if (!isInTermsDirectory && !isLikelyTermsFile) {
         // File is not in terms directory and doesn't look like a terms file, skip validation
         showValidationWarnings.value = false
@@ -816,12 +815,12 @@ export default {
 
       const lines = content.value.split('\n')
       const firstLine = lines[0]?.trim() || ''
-      
+
       // Rule 1: First line must start with [[def: or [[tref:
       if (firstLine && !firstLine.startsWith('[[def:') && !firstLine.startsWith('[[tref:')) {
         warnings.push('First line must start with [[def: or [[tref:')
       }
-      
+
       // Rule 2: [[def: and [[tref: can only exist on the first line
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i]?.trim() || ''
@@ -830,24 +829,24 @@ export default {
           break // Only show this warning once
         }
       }
-      
+
       // Rule 3: [[ref: and [[xref: cannot exist on the first line
       if (firstLine && (firstLine.includes('[[ref:') || firstLine.includes('[[xref:'))) {
         warnings.push('[[ref: and [[xref: cannot exist on the first line')
       }
-      
+
       // Rule 4: Every line after the first line must start with ~
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i]
         // Skip empty lines
         if (line.trim() === '') continue
-        
+
         if (!line.startsWith('~')) {
           warnings.push(`Line ${i + 1} must start with ~ (content lines after the first line must start with ~)`)
           break // Only show this warning for the first violation
         }
       }
-      
+
       validationWarnings.value = warnings
       showValidationWarnings.value = warnings.length > 0
     }
@@ -947,11 +946,11 @@ export default {
 
         fileSha.value = response.data.content.sha
         originalContent.value = content.value
-        
+
         if (isNewFile.value) {
           success.value = 'File created and committed successfully!'
           isNewFile.value = false // Convert to regular file after successful creation
-          
+
           // Track file creation completion
           trackFileOperation('create_complete', getFileExtension(decodedPath.value))
 
@@ -970,7 +969,7 @@ export default {
           await router.replace(finalRoute)
         } else {
           success.value = 'File saved and committed successfully!'
-          
+
           // Track file save
           trackFileOperation('save', getFileExtension(decodedPath.value))
         }
@@ -1012,11 +1011,11 @@ export default {
         const currentPath = decodedPath.value
         const pathParts = currentPath.split('/')
         const currentFilename = pathParts[pathParts.length - 1]
-        
+
         console.log('Current path:', currentPath)
         console.log('Current filename:', currentFilename)
         console.log('Current SHA:', fileSha.value)
-        
+
         // Toggle the underscore prefix
         let newFilename
         if (currentFilename.startsWith('_')) {
@@ -1024,7 +1023,7 @@ export default {
         } else {
           newFilename = '_' + currentFilename // Add underscore
         }
-        
+
         const newPath = pathParts.slice(0, -1).concat(newFilename).join('/')
         const action = currentFilename.startsWith('_') ? 'Published' : 'Unpublished'
         const commitMsg = `${action} ${currentFilename} -> ${newFilename}`
@@ -1038,11 +1037,11 @@ export default {
           `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${currentPath}?ref=${props.branch}`,
           config
         )
-        
+
         const latestSha = currentFileResponse.data.sha
         console.log('Latest SHA from API:', latestSha)
         console.log('SHA matches stored SHA:', latestSha === fileSha.value)
-        
+
         // Update our stored SHA with the latest one
         fileSha.value = latestSha
 
@@ -1082,9 +1081,9 @@ export default {
 
         // Update the file SHA to the new file's SHA
         fileSha.value = createResponse.data.content.sha
-        
+
         success.value = `File ${action.toLowerCase()} successfully!`
-        
+
         // Track the operation
         trackFileOperation(action.toLowerCase(), getFileExtension(newPath))
 
@@ -1099,16 +1098,16 @@ export default {
         // Navigate to the new file path using correct route and encoding
         const encodedNewPath = encodeURIComponent(newPath)
         let newRoute = `/editor/${props.owner}/${props.repo}/${props.branch}/${encodedNewPath}`
-        
+
         // Preserve directory parameter if it exists
         if (route.query.dir) {
           newRoute += `?dir=${encodeURIComponent(route.query.dir)}`
         }
-        
+
         console.log('Navigating to new route:', newRoute)
         console.log('New path:', newPath)
         console.log('Encoded new path:', encodedNewPath)
-        
+
         await router.push(newRoute)
 
       } catch (err) {
@@ -1503,12 +1502,12 @@ export default {
           const basicMatch = term.id.toLowerCase().includes(filter) ||
             term.aliases.some(alias => alias.toLowerCase().includes(filter)) ||
             (term.external && term.externalSpec.toLowerCase().includes(filter))
-          
+
           // Only search in definition text when the definition would be visible
-          const definitionMatch = term.definitionText && 
-            term.definitionText.toLowerCase().includes(filter) && 
+          const definitionMatch = term.definitionText &&
+            term.definitionText.toLowerCase().includes(filter) &&
             isTermDefinitionVisible(term)
-          
+
           return basicMatch || definitionMatch
         })
       }
@@ -1516,13 +1515,13 @@ export default {
 
     const toggleDefinitionsCollapse = () => {
       definitionsCollapsed.value = !definitionsCollapsed.value
-      
+
       // If we're going from collapsed to expanded, clear individual states
       // so all terms show their definitions
       if (!definitionsCollapsed.value) {
         individualTermsExpanded.value.clear()
       }
-      
+
       // Re-filter terms to apply the new visibility rules
       filterTerms()
     }
@@ -1855,6 +1854,7 @@ export default {
 
 <style lang="scss">
 @import '../styles/custom-bootstrap.scss';
+
 .markdown-preview {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.6;
@@ -1945,6 +1945,7 @@ textarea:focus {
   /* background-color: #94c3f1; */
   background-color: $success-color-transparent;
 }
+
 .external-term-reference::before {
   content: 'External';
   // font-weight: bold;

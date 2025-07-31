@@ -27,7 +27,7 @@
           </div>
           <p class="mt-2">Loading configuration from repository...</p>
         </div>
-        
+
         <div v-if="!loading" class="card">
           <div class="card-header">
             <h5>Specs Configuration</h5>
@@ -37,80 +37,45 @@
               <div v-for="(spec, index) in specs" :key="index" class="spec-entry mb-4 p-3 border rounded">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                   <h6>Specification {{ index + 1 }}</h6>
-                  <button type="button" class="btn btn-outline-danger btn-sm" 
-                          @click="removeSpec(index)" v-if="specs.length > 1">
+                  <button type="button" class="btn btn-outline-danger btn-sm" @click="removeSpec(index)"
+                    v-if="specs.length > 1">
                     <i class="bi bi-trash"></i> Remove
                   </button>
                 </div>
-                
+
                 <div class="row">
                   <div class="col-md-6 mb-3">
                     <label :for="`title-${index}`" class="form-label">Title</label>
-                    <input 
-                      type="text" 
-                      class="form-control" 
-                      :id="`title-${index}`"
-                      v-model="spec.title"
-                      required
-                    >
+                    <input type="text" class="form-control" :id="`title-${index}`" v-model="spec.title" required>
                   </div>
                   <div class="col-md-6 mb-3">
                     <label :for="`author-${index}`" class="form-label">Author</label>
-                    <input 
-                      type="text" 
-                      class="form-control" 
-                      :id="`author-${index}`"
-                      v-model="spec.author"
-                      required
-                    >
+                    <input type="text" class="form-control" :id="`author-${index}`" v-model="spec.author" required>
                   </div>
                 </div>
-                
+
                 <div class="mb-3">
                   <label :for="`description-${index}`" class="form-label">Description</label>
-                  <textarea 
-                    class="form-control" 
-                    :id="`description-${index}`"
-                    v-model="spec.description"
-                    rows="3"
-                    required
-                  ></textarea>
+                  <textarea class="form-control" :id="`description-${index}`" v-model="spec.description" rows="3"
+                    required></textarea>
                 </div>
-                
+
                 <div class="row">
                   <div class="col-md-6 mb-3">
                     <label :for="`logo-${index}`" class="form-label">Logo URL</label>
-                    <input 
-                      type="url" 
-                      class="form-control" 
-                      :id="`logo-${index}`"
-                      v-model="spec.logo"
-                      required
-                    >
+                    <input type="url" class="form-control" :id="`logo-${index}`" v-model="spec.logo" required>
                   </div>
                   <div class="col-md-6 mb-3">
                     <label :for="`logo-link-${index}`" class="form-label">Logo Link</label>
-                    <input 
-                      type="url" 
-                      class="form-control" 
-                      :id="`logo-link-${index}`"
-                      v-model="spec.logo_link"
-                      required
-                    >
+                    <input type="url" class="form-control" :id="`logo-link-${index}`" v-model="spec.logo_link" required>
                   </div>
                 </div>
-                
+
                 <div class="mb-3">
                   <label :for="`favicon-${index}`" class="form-label">Favicon URL</label>
-                  <input 
-                    type="url" 
-                    class="form-control" 
-                    :id="`favicon-${index}`"
-                    v-model="spec.favicon"
-                    required
-                  >
+                  <input type="url" class="form-control" :id="`favicon-${index}`" v-model="spec.favicon" required>
                 </div>
-                
+
                 <div class="source-section">
                   <label class="form-label">
                     <i class="bi bi-exclamation-triangle text-warning"></i>
@@ -119,18 +84,14 @@
                   </label>
                   <div class="alert alert-warning" role="alert">
                     <i class="bi bi-exclamation-triangle"></i>
-                    <strong>Danger zone:</strong> Make sure you know what you are doing when modifying source configuration.
+                    <strong>Danger zone:</strong> Make sure you know what you are doing when modifying source
+                    configuration.
                   </div>
-                  
+
                   <div class="row">
                     <div class="col-md-4 mb-3">
                       <label :for="`host-${index}`" class="form-label">Host</label>
-                      <select 
-                        class="form-select" 
-                        :id="`host-${index}`"
-                        v-model="spec.source.host"
-                        required
-                      >
+                      <select class="form-select" :id="`host-${index}`" v-model="spec.source.host" required>
                         <option value="github">GitHub</option>
                         <!-- <option value="gitlab">GitLab</option>
                         <option value="bitbucket">Bitbucket</option> -->
@@ -138,33 +99,22 @@
                     </div>
                     <div class="col-md-4 mb-3">
                       <label :for="`account-${index}`" class="form-label">Account</label>
-                      <input 
-                        type="text" 
-                        class="form-control" 
-                        :id="`account-${index}`"
-                        v-model="spec.source.account"
-                        required
-                      >
+                      <input type="text" class="form-control" :id="`account-${index}`" v-model="spec.source.account"
+                        required>
                     </div>
                     <div class="col-md-4 mb-3">
                       <label :for="`repo-${index}`" class="form-label">Repository</label>
-                      <input 
-                        type="text" 
-                        class="form-control" 
-                        :id="`repo-${index}`"
-                        v-model="spec.source.repo"
-                        required
-                      >
+                      <input type="text" class="form-control" :id="`repo-${index}`" v-model="spec.source.repo" required>
                     </div>
                   </div>
                 </div>
               </div>
-              
+
               <div class="d-flex justify-content-between align-items-center">
                 <!-- <button type="button" class="btn btn-outline-primary" @click="addSpec">
                   <i class="bi bi-plus-circle"></i> Add Specification
                 </button> -->
-                
+
                 <div>
                   <button type="button" class="btn btn-outline-secondary me-2" @click="loadConfiguration">
                     <i class="bi bi-arrow-clockwise"></i> Reload
@@ -179,7 +129,7 @@
             </form>
           </div>
         </div>
-        
+
         <!-- <div class="mt-4">
           <div class="card">
             <div class="card-header">
@@ -249,7 +199,7 @@ export default {
     const loadConfiguration = async () => {
       loading.value = true
       error.value = ''
-      
+
       try {
         const token = localStorage.getItem('github_token')
         if (!token) {
@@ -272,7 +222,7 @@ export default {
         const content = JSON.parse(atob(response.data.content))
         specs.value = content.specs || [createDefaultSpec()]
         currentSha.value = response.data.sha
-        
+
       } catch (err) {
         console.error('Error loading configuration:', err)
         if (checkAuthAndRedirect(err)) {
@@ -294,7 +244,7 @@ export default {
     const saveConfiguration = async () => {
       saving.value = true
       error.value = ''
-      
+
       try {
         const token = localStorage.getItem('github_token')
         if (!token) {
@@ -306,7 +256,7 @@ export default {
             'Authorization': `token ${token}`
           }
         }
-        
+
         const configData = { specs: specs.value }
         const updateData = {
           message: `Update specs.json configuration`,
@@ -318,16 +268,16 @@ export default {
         if (currentSha.value) {
           updateData.sha = currentSha.value
         }
-        
+
         const response = await axios.put(
           `https://api.github.com/repos/${props.owner}/${props.repo}/contents/specs.json`,
           updateData,
           config
         )
-        
+
         currentSha.value = response.data.content.sha
         alert('Configuration saved successfully to repository!')
-        
+
       } catch (err) {
         console.error('Error saving configuration:', err)
         if (checkAuthAndRedirect(err)) {

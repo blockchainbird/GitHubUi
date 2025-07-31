@@ -33,12 +33,12 @@ export const loadVisitedRepos = () => {
 export const addToVisitedRepos = (owner, name, branch) => {
   const repos = loadVisitedRepos()
   const repoKey = `${owner}/${name}/${branch}`
-  
+
   // Remove existing entry if it exists
   const filteredRepos = repos.filter(
     repo => `${repo.owner}/${repo.name}/${repo.branch}` !== repoKey
   )
-  
+
   // Add new entry at the beginning
   const newRepo = {
     owner,
@@ -46,15 +46,15 @@ export const addToVisitedRepos = (owner, name, branch) => {
     branch,
     lastVisited: new Date().toISOString()
   }
-  
+
   filteredRepos.unshift(newRepo)
-  
+
   // Keep only the most recent repositories
   const limitedRepos = filteredRepos.slice(0, MAX_REPOS)
-  
+
   // Save to localStorage
   localStorage.setItem(STORAGE_KEY, JSON.stringify(limitedRepos))
-  
+
   return limitedRepos
 }
 
@@ -69,7 +69,7 @@ export const removeFromVisitedRepos = (owner, name, branch) => {
   const filteredRepos = repos.filter(
     repo => !(repo.owner === owner && repo.name === name && repo.branch === branch)
   )
-  
+
   localStorage.setItem(STORAGE_KEY, JSON.stringify(filteredRepos))
   return filteredRepos
 }
@@ -92,7 +92,7 @@ export const formatVisitedDate = (dateString) => {
   const now = new Date()
   const diffTime = Math.abs(now - date)
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-  
+
   if (diffDays === 1) {
     return 'Today'
   } else if (diffDays === 2) {

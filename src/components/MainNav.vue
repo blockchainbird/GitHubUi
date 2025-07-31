@@ -48,7 +48,8 @@
             <i class="bi bi-info-circle"></i>
             About
           </button>
-          <a title="Go to documentation website" href="https://blockchainbird.github.io/spec-up-t-website/docs/tools/spec-up-t-editor-user-guide/"
+          <a title="Go to documentation website"
+            href="https://blockchainbird.github.io/spec-up-t-website/docs/tools/spec-up-t-editor-user-guide/"
             target="_blank" rel="noopener" class="nav-link" @click="closeNavbar">
             <i class="bi bi-box-arrow-up-right"></i>
             Help
@@ -354,14 +355,14 @@ export default {
     border-top: 1px solid #dee2e6;
     margin-top: 1rem;
   }
-  
+
   .navbar-nav .nav-link {
     margin: 0.25rem 0;
     padding: 0.75rem 1rem;
     border: 1px solid #dee2e6;
     background-color: #fff;
   }
-  
+
   .navbar-nav .nav-link:hover {
     background-color: #f8f9fa;
     border-color: #0d6efd;
@@ -403,11 +404,11 @@ export default {
   .navbar-nav {
     flex-direction: row;
   }
-  
+
   .navbar-nav .nav-item {
     margin-left: 0.5rem;
   }
-  
+
   /* Ensure navbar is always visible on desktop */
   .navbar-collapse {
     display: flex !important;

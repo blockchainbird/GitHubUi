@@ -15,21 +15,21 @@ export function useGoogleAnalytics() {
    */
   const initAnalytics = () => {
     const measurementId = import.meta.env.VITE_GA_MEASUREMENT_ID
-    
+
     if (measurementId) {
       googleAnalytics.init(measurementId)
-      
+
       // Track initial page view
       googleAnalytics.trackPageView(router.currentRoute.value.fullPath)
-      
+
       // Set up route tracking
       const unwatch = router.afterEach((to) => {
         googleAnalytics.trackPageView(to.fullPath, to.meta.title || document.title)
       })
-      
+
       return unwatch
     }
-    
+
     return null
   }
 

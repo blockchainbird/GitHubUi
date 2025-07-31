@@ -1,10 +1,6 @@
 <template>
   <div v-if="rateLimitRemaining !== null" class="rate-limit-indicator">
-    <div 
-      class="rate-limit-badge"
-      :class="badgeClass"
-      :title="tooltipText"
-    >
+    <div class="rate-limit-badge" :class="badgeClass" :title="tooltipText">
       <i class="bi bi-speedometer2"></i>
       <span class="rate-limit-text">{{ rateLimitRemaining }}</span>
     </div>
@@ -34,11 +30,11 @@ export default {
 
     const tooltipText = computed(() => {
       if (rateLimitRemaining.value === null) return ''
-      
+
       const remaining = rateLimitRemaining.value
       const total = rateLimitLimit.value || 'Unknown'
       const resetTime = formatTimeRemaining.value
-      
+
       return `GitHub API: ${remaining}/${total} calls remaining. Resets in ${resetTime}`
     })
 
@@ -97,9 +93,12 @@ export default {
 }
 
 @keyframes pulse-warning {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.7;
   }
@@ -111,7 +110,7 @@ export default {
     padding: 0.2rem 0.4rem;
     font-size: 0.8rem;
   }
-  
+
   .rate-limit-badge i {
     margin-right: 0.25rem;
     font-size: 0.8rem;

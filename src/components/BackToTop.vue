@@ -1,8 +1,7 @@
 <template>
   <Teleport to="body">
     <Transition name="fade">
-      <button v-if="showButton" @click="scrollToTop" type="button" 
-      class="btn btn-primary back-to-top-btn"
+      <button v-if="showButton" @click="scrollToTop" type="button" class="btn btn-primary back-to-top-btn"
         title="Back to top" aria-label="Scroll back to top">
         <i class="bi bi-arrow-up"></i>
       </button>

@@ -19,23 +19,15 @@
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label for="projectName" class="form-label">Project Name <span class="text-danger">*</span></label>
-                  <input 
-                    id="projectName" 
-                    v-model="projectForm.name" 
-                    class="form-control"
-                    placeholder="e.g., my-spec-project"
-                    pattern="[a-zA-Z0-9\-_]+"
-                    title="Only letters, numbers, hyphens, and underscores allowed"
-                    required>
+                  <input id="projectName" v-model="projectForm.name" class="form-control"
+                    placeholder="e.g., my-spec-project" pattern="[a-zA-Z0-9\-_]+"
+                    title="Only letters, numbers, hyphens, and underscores allowed" required>
                   <div class="form-text">Repository name (letters, numbers, hyphens, underscores only)</div>
                 </div>
 
                 <div class="col-md-6 mb-3">
                   <label for="projectDescription" class="form-label">Description</label>
-                  <input 
-                    id="projectDescription" 
-                    v-model="projectForm.description" 
-                    class="form-control"
+                  <input id="projectDescription" v-model="projectForm.description" class="form-control"
                     placeholder="Brief description of your specification">
                   <div class="form-text">Optional description for the repository</div>
                 </div>
@@ -51,10 +43,7 @@
 
                 <div class="col-md-6 mb-3">
                   <div class="form-check mt-4">
-                    <input 
-                      id="enableActions" 
-                      v-model="projectForm.enableActions" 
-                      class="form-check-input" 
+                    <input id="enableActions" v-model="projectForm.enableActions" class="form-check-input"
                       type="checkbox">
                     <label class="form-check-label" for="enableActions">
                       Enable GitHub Actions
@@ -67,9 +56,7 @@
               <!-- Advanced Options -->
               <div class="card mt-4">
                 <div class="card-header">
-                  <button 
-                    type="button" 
-                    class="btn btn-link p-0 text-decoration-none d-flex align-items-center" 
+                  <button type="button" class="btn btn-link p-0 text-decoration-none d-flex align-items-center"
                     @click="showAdvanced = !showAdvanced">
                     <i class="bi" :class="showAdvanced ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
                     <span class="ms-2">Advanced Options</span>
@@ -79,30 +66,21 @@
                   <div class="row">
                     <div class="col-md-6 mb-3">
                       <label for="specTitle" class="form-label">Specification Title</label>
-                      <input 
-                        id="specTitle" 
-                        v-model="projectForm.specTitle" 
-                        class="form-control"
+                      <input id="specTitle" v-model="projectForm.specTitle" class="form-control"
                         placeholder="My Specification">
                       <div class="form-text">Title for your specification document</div>
                     </div>
 
                     <div class="col-md-6 mb-3">
                       <label for="specVersion" class="form-label">Initial Version</label>
-                      <input 
-                        id="specVersion" 
-                        v-model="projectForm.specVersion" 
-                        class="form-control"
+                      <input id="specVersion" v-model="projectForm.specVersion" class="form-control"
                         placeholder="1.0.0">
                       <div class="form-text">Starting version number</div>
                     </div>
 
                     <div class="col-12 mb-3">
                       <label for="authors" class="form-label">Authors</label>
-                      <input 
-                        id="authors" 
-                        v-model="projectForm.authors" 
-                        class="form-control"
+                      <input id="authors" v-model="projectForm.authors" class="form-control"
                         placeholder="John Doe, Jane Smith">
                       <div class="form-text">Comma-separated list of authors</div>
                     </div>
@@ -128,12 +106,8 @@
               </div>
               <h5>Creating Your Spec-Up-T Project</h5>
               <div class="progress mt-3" style="height: 20px;">
-                <div 
-                  class="progress-bar progress-bar-striped progress-bar-animated" 
-                  role="progressbar" 
-                  :style="{ width: `${creationProgress}%` }"
-                  :aria-valuenow="creationProgress" 
-                  aria-valuemin="0" 
+                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+                  :style="{ width: `${creationProgress}%` }" :aria-valuenow="creationProgress" aria-valuemin="0"
                   aria-valuemax="100">
                   {{ creationProgress }}%
                 </div>
@@ -147,7 +121,7 @@
                 <i class="bi bi-check-circle-fill fs-1 text-success"></i>
                 <h4 class="mt-3">Project Created Successfully!</h4>
                 <p class="mb-3">Your new Spec-Up-T project has been created and is ready to use.</p>
-                
+
                 <div class="d-flex justify-content-center gap-3">
                   <button @click="openRepository" class="btn btn-primary">
                     <i class="bi bi-folder-open"></i>
@@ -185,13 +159,16 @@
                     </div>
                     <div class="col-md-6">
                       <p class="mb-2"><strong>Authors:</strong> {{ projectForm.authors || 'Not specified' }}</p>
-                      <p class="mb-2"><strong>Actions:</strong> {{ projectForm.enableActions ? 'Enabled' : 'Disabled' }}</p>
-                      <p class="mb-2"><strong>Visibility:</strong> {{ projectForm.isPrivate ? 'Private' : 'Public' }}</p>
+                      <p class="mb-2"><strong>Actions:</strong> {{ projectForm.enableActions ? 'Enabled' : 'Disabled' }}
+                      </p>
+                      <p class="mb-2"><strong>Visibility:</strong> {{ projectForm.isPrivate ? 'Private' : 'Public' }}
+                      </p>
                     </div>
                   </div>
                   <div class="mt-3">
                     <small class="text-muted">
-                      Click "Open Project Files" above to start editing your specification files, or visit GitHub to set up Pages deployment.
+                      Click "Open Project Files" above to start editing your specification files, or visit GitHub to set
+                      up Pages deployment.
                     </small>
                   </div>
                 </div>
@@ -494,10 +471,10 @@ jobs:
 
       // Upload the workflow file
       await uploadFile(
-        token, 
-        username, 
-        repoName, 
-        '.github/workflows/initialize-spec-up-t.yml', 
+        token,
+        username,
+        repoName,
+        '.github/workflows/initialize-spec-up-t.yml',
         workflowContent,
         'Add project initialization workflow'
       )
@@ -508,7 +485,7 @@ jobs:
       // Try to trigger the workflow with retries
       let workflowTriggered = false
       const maxRetries = 5
-      
+
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
           const response = await fetch(
@@ -532,7 +509,7 @@ jobs:
           } else {
             const errorData = await response.json()
             console.warn(`Workflow trigger attempt ${attempt} failed:`, errorData.message)
-            
+
             if (attempt < maxRetries) {
               // Wait before retrying (exponential backoff)
               await new Promise(resolve => setTimeout(resolve, attempt * 3000))
@@ -542,7 +519,7 @@ jobs:
           }
         } catch (err) {
           console.warn(`Workflow trigger attempt ${attempt} error:`, err.message)
-          
+
           if (attempt < maxRetries) {
             // Wait before retrying
             await new Promise(resolve => setTimeout(resolve, attempt * 3000))
@@ -561,7 +538,7 @@ jobs:
 
     const waitForWorkflowCompletion = async (token, username, repoName, maxWaitTime = 300000) => {
       const startTime = Date.now()
-      
+
       while (Date.now() - startTime < maxWaitTime) {
         try {
           const response = await fetch(
@@ -578,7 +555,7 @@ jobs:
             const data = await response.json()
             if (data.workflow_runs && data.workflow_runs.length > 0) {
               const latestRun = data.workflow_runs[0]
-              
+
               if (latestRun.status === 'completed') {
                 if (latestRun.conclusion === 'success') {
                   return true
@@ -692,10 +669,10 @@ jobs:
 `
 
           await uploadFile(
-            token, 
-            user.login, 
-            projectForm.value.name, 
-            '.github/workflows/build.yml', 
+            token,
+            user.login,
+            projectForm.value.name,
+            '.github/workflows/build.yml',
             buildWorkflow,
             'Add build and deploy workflow'
           )
@@ -717,11 +694,11 @@ jobs:
       } catch (err) {
         console.error('Error creating project:', err)
         isCreating.value = false
-        
+
         if (checkAuthAndRedirect(err)) {
           return
         }
-        
+
         error.value = err.message
         creationProgress.value = 0
         currentStep.value = ''

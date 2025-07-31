@@ -91,11 +91,11 @@ axios.interceptors.response.use(
   },
   (error) => {
     // Update rate limit info even on errors if headers are present
-    if (error.response && error.response.config.url && 
-        error.response.config.url.includes('api.github.com')) {
+    if (error.response && error.response.config.url &&
+      error.response.config.url.includes('api.github.com')) {
       updateRateLimit(error.response.headers)
     }
-    
+
     if (error.response && (error.response.status === 401 || error.response.status === 403)) {
       // Token is invalid or expired, clear it and redirect to login
       localStorage.removeItem('github_token')
@@ -122,7 +122,7 @@ app.mount('#app')
 const initTooltips = () => {
   console.log('Initializing tooltips...');
   enhanceTooltips();
-  
+
   // Also run after Vue's nextTick to ensure all components are rendered
   setTimeout(() => {
     console.log('Running secondary tooltip enhancement...');
