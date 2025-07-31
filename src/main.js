@@ -10,7 +10,6 @@ import HealthCheck from './components/HealthCheck.vue'
 import AdminScreen from './components/AdminScreen.vue'
 import CreateSpecUpProject from './components/CreateSpecUpProject.vue'
 import Settings from './components/Settings.vue'
-import VersionDemo from './components/VersionDemo.vue'
 import { autoEnhanceTooltips } from './directives/tooltip.js'
 
 import * as bootstrap from 'bootstrap/dist/js/bootstrap.bundle.min.js'
@@ -29,7 +28,7 @@ const routes = [
   { path: '/home', component: HomePage },
   { path: '/create-project', component: CreateSpecUpProject },
   { path: '/settings', component: Settings },
-  { path: '/version-demo', component: VersionDemo },
+
   { path: '/admin/:owner/:repo/:branch', component: AdminScreen, props: true },
   { path: '/files/:owner/:repo/:branch', component: FileExplorer, props: true },
   { path: '/editor/:owner/:repo/:branch/:path+', component: FileEditor, props: true },
