@@ -41,7 +41,6 @@
                 <select class="form-select" v-model="filterType" @change="filterTerms">
                   <option value="all">All Terms</option>
                   <option value="local">Local Terms (Terms Dir)</option>
-                  <option value="root">Root Markdown Files</option>
                   <option value="external">External Terms</option>
                 </select>
               </div>
@@ -73,9 +72,6 @@
                   </div>
                   <div class="stats-item" v-if="getTermCounts().local > 0">
                     <i class="bi bi-folder"></i> {{ getTermCounts().local }} Terms Dir
-                  </div>
-                  <div class="stats-item" v-if="getTermCounts().root > 0">
-                    <i class="bi bi-file-earmark-text"></i> {{ getTermCounts().root }} Root
                   </div>
                   <div class="stats-item" v-if="getTermCounts().external > 0">
                     <i class="bi bi-link-45deg"></i> {{ getTermCounts().external }} External
@@ -130,11 +126,6 @@
                             class="badge bg-success">
                             <i class="bi bi-link-45deg"></i> {{ term.externalSpec }}
                           </span>
-                          <span 
-                            v-else-if="term.source && term.source.startsWith('Root:')" 
-                            class="badge bg-info">
-                            <i class="bi bi-file-earmark-text"></i> Root
-                          </span>
                           <span v-else class="badge bg-primary">
                             <i class="bi bi-folder"></i> Terms
                           </span>
@@ -179,11 +170,6 @@
                             v-if="term.external" 
                             class="badge bg-success">
                             <i class="bi bi-link-45deg"></i> {{ term.externalSpec }}
-                          </span>
-                          <span 
-                            v-else-if="term.source && term.source.startsWith('Root:')" 
-                            class="badge bg-info">
-                            <i class="bi bi-file-earmark-text"></i> Root
                           </span>
                           <span v-else class="badge bg-primary">
                             <i class="bi bi-folder"></i> Terms
@@ -295,9 +281,7 @@ export default {
 
       // Filter by type
       if (filterType.value === 'local') {
-        filtered = filtered.filter(term => !term.external && (!term.source || !term.source.startsWith('Root:')))
-      } else if (filterType.value === 'root') {
-        filtered = filtered.filter(term => !term.external && term.source && term.source.startsWith('Root:'))
+        filtered = filtered.filter(term => !term.external)
       } else if (filterType.value === 'external') {
         filtered = filtered.filter(term => term.external)
       }
@@ -329,12 +313,10 @@ export default {
 
     // Get counts of different term types
     const getTermCounts = () => {
-      const counts = { local: 0, root: 0, external: 0 }
+      const counts = { local: 0, external: 0 }
       allTerms.value.forEach(term => {
         if (term.external) {
           counts.external++
-        } else if (term.source && term.source.startsWith('Root:')) {
-          counts.root++
         } else {
           counts.local++
         }

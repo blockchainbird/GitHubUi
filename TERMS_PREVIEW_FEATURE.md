@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Terms Preview feature provides a simple, static view of all terms and definitions in a repository without any editing capabilities or complex interactions. It scans multiple sources for term definitions, including traditional terms directories and root markdown files, giving users a comprehensive overview of all terminology used in the specification.
+The Terms Preview feature provides a simple, static view of all terms and definitions in a repository without any editing capabilities or complex interactions. It scans multiple sources for term definitions, including traditional terms directories and external specifications, giving users a comprehensive overview of all terminology used in the specification.
 
 ## Location
 
@@ -12,7 +12,6 @@ The "Terms Preview" button is located in the main navigation bar, visible only w
 
 ### Multiple Term Sources
 - **Terms Directory**: Traditional `spec/terms-definitions` folder structure
-- **Root Markdown Files**: Terms defined in markdown files in the repository root
 - **External Specifications**: Terms referenced from other specifications
 
 ### Two View Modes
@@ -25,7 +24,6 @@ The "Terms Preview" button is located in the main navigation bar, visible only w
 - **Filter by Source**:
   - All Terms
   - Local Terms (Terms Dir) - from traditional terms directory
-  - Root Markdown Files - from .md files in repository root
   - External Terms - from other specifications
 
 ### Term Information Displayed
@@ -35,8 +33,7 @@ The "Terms Preview" button is located in the main navigation bar, visible only w
 - **Definition**: The full definition content (supports HTML rendering)
 - **Source Badge**: Visual indicator showing term origin:
   - 🗂️ **Terms**: From traditional terms directory (blue)
-  - 📄 **Root**: From root markdown files (light blue)
-  - 🔗 **External**: From external specifications (green)
+  -  **External**: From external specifications (green)
 - **File Location**: Shows which file contains the term definition
 
 ## Implementation Details

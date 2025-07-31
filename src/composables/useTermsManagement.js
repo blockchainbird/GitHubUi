@@ -331,7 +331,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
     return externalTerms
   }
 
-  // Load terms from repository (both from terms directory and root markdown files)
+  // Load terms from repository
   const loadTermsFromRepository = async () => {
     loadingTerms.value = true
     termsError.value = ''
@@ -356,7 +356,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
 
       const termsData = []
       
-      // 1. Load terms from the traditional terms directory
+      // Load terms from the traditional terms directory
       try {
         const response = await axios.get(
           `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${fullTermsPath}?ref=${props.branch}`,
@@ -387,49 +387,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
         
         console.log(`✅ Loaded ${termsData.length} terms from terms directory`)
       } catch (err) {
-        console.warn('Terms directory not found or inaccessible, checking root directory only:', err.message)
-      }
-
-      // 2. Load terms from root markdown files
-      try {
-        const rootResponse = await axios.get(
-          `https://api.github.com/repos/${props.owner}/${props.repo}/contents?ref=${props.branch}`,
-          requestConfig
-        )
-
-        const rootMarkdownFiles = rootResponse.data.filter(item =>
-          item.type === 'file' && item.name.toLowerCase().endsWith('.md')
-        )
-
-        console.log(`🔍 Found ${rootMarkdownFiles.length} markdown files in root:`, rootMarkdownFiles.map(f => f.name))
-
-        // Process root markdown files for terms
-        const rootTermsData = []
-        const batchSize = 5
-        for (let i = 0; i < rootMarkdownFiles.length; i += batchSize) {
-          const batch = rootMarkdownFiles.slice(i, i + batchSize)
-          const promises = batch.map(file => extractTermsFromFile(file.path))
-          const results = await Promise.all(promises)
-          results.forEach(terms => {
-            if (terms && Array.isArray(terms)) {
-              // Mark root terms with a different source indicator
-              terms.forEach(term => {
-                term.source = `Root: ${term.file}`
-              })
-              rootTermsData.push(...terms)
-            } else if (terms) {
-              // Handle legacy single term format
-              terms.source = `Root: ${terms.file}`
-              rootTermsData.push(terms)
-            }
-          })
-        }
-
-        termsData.push(...rootTermsData)
-        console.log(`✅ Loaded ${rootTermsData.length} additional terms from root markdown files`)
-        console.log(`📝 Total terms loaded: ${termsData.length}`)
-      } catch (err) {
-        console.warn('Could not load root markdown files:', err.message)
+        console.warn('Terms directory not found or inaccessible:', err.message)
       }
 
       // Load external specs if they exist
