@@ -122,55 +122,58 @@
           </div>
 
           <div v-else class="list-group list-group-flush" @dragover="onListDragOver" @drop="onListDrop">
-            <!-- Show items in their dragged order -->
-            <div v-for="(item, index) in orderedItems" :key="item.path" class="position-relative">
-              <!-- Drop zone indicator at the top -->
-              <div v-if="isRootDirectory && isDragging && dragOverIndex === index && dragPosition === 'before'"
-                class="drop-zone-indicator drop-zone-before">
-                <div class="drop-line"></div>
-                <span class="drop-text">Drop here</span>
-              </div>
+            <!-- Show items in their dragged order with smooth transitions -->
+            <transition-group name="file-list" tag="div" class="file-list-container">
+              <div v-for="(item, index) in orderedItems" :key="item.path" class="position-relative file-item-wrapper">
+                <!-- Drop zone indicator at the top -->
+                <div v-if="isRootDirectory && isDragging && dragOverIndex === index && dragPosition === 'before'"
+                  class="drop-zone-indicator drop-zone-before">
+                  <div class="drop-line"></div>
+                  <span class="drop-text">Drop here</span>
+                </div>
 
-              <button @click="item.type === 'folder' ? openFolder(item) : openFile(item)"
-                class="list-group-item list-group-item-action d-flex align-items-center" :class="{
-                  'recently-created': item.type === 'file' && item.name === recentlyCreatedFile,
-                  'drag-over': isRootDirectory && isDragging && dragOverIndex === index && dragPosition === 'on',
-                  'being-dragged': isRootDirectory && isDragging && draggedIndex === index
-                }" @dragover="onDragOver($event, index, item.type)" @drop="onDrop($event, index, item.type)"
-                @dragenter="onDragEnter($event, index)" @dragleave="onDragLeave($event)">
-                <i v-if="isRootDirectory" class="bi bi-grip-vertical me-2 drag-handle" draggable="true"
-                  @dragstart="onDragStart($event, item, item.type, index)" @dragend="onDragEnd" @click.stop></i>
-                <i v-if="item.type === 'folder'" class="bi bi-folder-fill me-3" style="color: #ffc107;"></i>
-                <i v-else class="bi bi-file-text me-3" style="color: #0d6efd;"></i>
-                <div class="flex-grow-1">
-                  <div class="fw-medium">
-                    {{ item.name }}
-                    <span v-if="item.type === 'file' && item.name === recentlyCreatedFile"
-                      class="badge bg-primary ms-2">New</span>
-                    <span v-if="item.type === 'file' && item.name.startsWith('_')"
-                      title="If a file has an underscore at the beginning of the file name, it is a draft version."
-                      class="badge bg-warning text-dark ms-2">Draft</span>
-                    <span v-if="item.type === 'file' && item.hasExternalRefs"
-                      title="This file has an external reference." class="badge bg-success ms-2">External</span>
+                <button @click="item.type === 'folder' ? openFolder(item) : openFile(item)"
+                  class="list-group-item list-group-item-action d-flex align-items-center" :class="{
+                    'recently-created': item.type === 'file' && item.name === recentlyCreatedFile,
+                    'recently-moved': recentlyMovedItem && recentlyMovedItem.path === item.path,
+                    'drag-over': isRootDirectory && isDragging && dragOverIndex === index && dragPosition === 'on',
+                    'being-dragged': isRootDirectory && isDragging && draggedIndex === index
+                  }" @dragover="onDragOver($event, index, item.type)" @drop="onDrop($event, index, item.type)"
+                  @dragenter="onDragEnter($event, index)" @dragleave="onDragLeave($event)">
+                  <i v-if="isRootDirectory" class="bi bi-grip-vertical me-2 drag-handle" draggable="true"
+                    @dragstart="onDragStart($event, item, item.type, index)" @dragend="onDragEnd" @click.stop></i>
+                  <i v-if="item.type === 'folder'" class="bi bi-folder-fill me-3" style="color: #ffc107;"></i>
+                  <i v-else class="bi bi-file-text me-3" style="color: #0d6efd;"></i>
+                  <div class="flex-grow-1">
+                    <div class="fw-medium">
+                      {{ item.name }}
+                      <span v-if="item.type === 'file' && item.name === recentlyCreatedFile"
+                        class="badge bg-primary ms-2">New</span>
+                      <span v-if="item.type === 'file' && item.name.startsWith('_')"
+                        title="If a file has an underscore at the beginning of the file name, it is a draft version."
+                        class="badge bg-warning text-dark ms-2">Draft</span>
+                      <span v-if="item.type === 'file' && item.hasExternalRefs"
+                        title="This file has an external reference." class="badge bg-success ms-2">External</span>
+                    </div>
+                    <small class="text-muted">{{ item.path }}</small>
                   </div>
-                  <small class="text-muted">{{ item.path }}</small>
-                </div>
-                <div v-if="item.type === 'file'" class="d-flex align-items-center gap-2">
-                  <button @click.stop="showDeleteModal(item)" class="btn btn-outline-danger btn-sm" title="Delete File">
-                    <i class="bi bi-trash"></i>
-                  </button>
-                  <i class="bi bi-chevron-right"></i>
-                </div>
-                <i v-else class="bi bi-chevron-right"></i>
-              </button>
+                  <div v-if="item.type === 'file'" class="d-flex align-items-center gap-2">
+                    <button @click.stop="showDeleteModal(item)" class="btn btn-outline-danger btn-sm" title="Delete File">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                    <i class="bi bi-chevron-right"></i>
+                  </div>
+                  <i v-else class="bi bi-chevron-right"></i>
+                </button>
 
-              <!-- Drop zone indicator at the bottom of last item -->
-              <div v-if="isRootDirectory && isDragging && dragOverIndex === index && dragPosition === 'after'"
-                class="drop-zone-indicator drop-zone-after">
-                <div class="drop-line"></div>
-                <span class="drop-text">Drop here</span>
+                <!-- Drop zone indicator at the bottom of last item -->
+                <div v-if="isRootDirectory && isDragging && dragOverIndex === index && dragPosition === 'after'"
+                  class="drop-zone-indicator drop-zone-after">
+                  <div class="drop-line"></div>
+                  <span class="drop-text">Drop here</span>
+                </div>
               </div>
-            </div>
+            </transition-group>
 
             <!-- Final drop zone at the very end of the list -->
             <div v-if="isRootDirectory && isDragging && dragOverIndex === -2"
@@ -422,6 +425,8 @@ export default {
     const draggedIndex = ref(-1)
     const dragOverIndex = ref(-1)
     const dragPosition = ref('') // 'before', 'on', or 'after'
+    const isReordering = ref(false) // Track when items are animating to new positions
+    const recentlyMovedItem = ref(null) // Track which item was just moved
 
     // Filter state
     const filterText = ref('')
@@ -907,6 +912,10 @@ export default {
       localStorage.removeItem('recentlyCreatedFile') // Also clear from localStorage
       hasUnsavedChanges.value = false // Reset unsaved changes when navigating away from root
       draggedItems.value = [] // Reset drag items when leaving root
+      
+      // Clear animation states when navigating away from root
+      isReordering.value = false
+      recentlyMovedItem.value = null
 
       // Update URL with new directory
       const encodedDir = encodeURIComponent(folder.path)
@@ -1692,9 +1701,15 @@ export default {
       }
 
       if (originalIndex !== targetIndex && Math.abs(originalIndex - targetIndex) > 0) {
+        // Set animation state
+        isReordering.value = true;
+        
         // Reorder the items
         const newItems = [...draggedItems.value];
         const [movedItem] = newItems.splice(originalIndex, 1);
+
+        // Track which item was moved for highlighting
+        recentlyMovedItem.value = movedItem;
 
         // Adjust target index if we removed an item before it
         let adjustedTargetIndex = targetIndex;
@@ -1726,6 +1741,15 @@ export default {
         files.value = newFiles;
 
         hasUnsavedChanges.value = true;
+
+        // Clear animation state after a brief delay to show the movement
+        setTimeout(() => {
+          isReordering.value = false;
+          // Clear the recently moved item highlight after animation completes
+          setTimeout(() => {
+            recentlyMovedItem.value = null;
+          }, 500);
+        }, 200);
       }
 
       // Clear drag state
@@ -2005,6 +2029,8 @@ export default {
       draggedIndex,
       dragOverIndex,
       dragPosition,
+      isReordering,
+      recentlyMovedItem,
       onDragStart,
       onDragEnter,
       onDragLeave,
@@ -2089,24 +2115,69 @@ export default {
   cursor: grab;
   padding: 0.25rem;
   border-radius: 3px;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: all 0.2s ease;
+  opacity: 0.6;
 }
 
 .drag-handle:hover {
   background-color: #e9ecef;
   color: #495057;
+  opacity: 1;
+  transform: scale(1.1);
 }
 
 .drag-handle:active {
   cursor: grabbing;
   background-color: #dee2e6;
+  transform: scale(1.05);
+}
+
+/* Show drag handles on item hover */
+.list-group-item:hover .drag-handle {
+  opacity: 1;
+}
+
+/* File list container for smooth transitions */
+.file-list-container {
+  position: relative;
+}
+
+.file-item-wrapper {
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* Vue transition-group animations */
+.file-list-move {
+  transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.file-list-enter-active {
+  transition: all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.file-list-leave-active {
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: absolute;
+}
+
+.file-list-enter-from {
+  opacity: 0;
+  transform: translateY(-20px) scale(0.9);
+}
+
+.file-list-leave-to {
+  opacity: 0;
+  transform: translateY(20px) scale(0.9);
 }
 
 /* Enhanced drag visual feedback */
 .list-group-item.being-dragged {
-  opacity: 0.5;
-  transform: scale(0.98);
+  opacity: 0.6;
+  transform: scale(0.95) rotate(2deg);
   transition: all 0.2s ease;
+  z-index: 1000;
+  position: relative;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
 }
 
 .list-group-item.drag-over {
@@ -2115,6 +2186,39 @@ export default {
   box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.3);
   transform: scale(1.02);
   transition: all 0.2s ease;
+}
+
+/* Recently moved item highlight */
+.list-group-item.recently-moved {
+  background-color: #f0f9ff !important;
+  border-color: #0ea5e9 !important;
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.4);
+  animation: moved-item-highlight 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes moved-item-highlight {
+  0% {
+    background-color: #dbeafe !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.6);
+    transform: scale(1.05) translateY(-2px);
+  }
+  
+  30% {
+    transform: scale(1.02) translateY(-1px);
+  }
+  
+  60% {
+    background-color: #eff6ff !important;
+    transform: scale(1.01) translateY(0);
+  }
+  
+  100% {
+    background-color: #f0f9ff !important;
+    border-color: #0ea5e9 !important;
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.4);
+    transform: scale(1) translateY(0);
+  }
 }
 
 /* Drop zone indicators */
