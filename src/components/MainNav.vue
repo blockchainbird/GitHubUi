@@ -44,6 +44,10 @@
             <i class="bi bi-heart-pulse"></i>
             Health Check
           </button>
+          <button @click="navigateAndClose('/settings')" class="nav-link btn btn-link" title="Application Settings">
+            <i class="bi bi-gear"></i>
+            Settings
+          </button>
           <button @click="showModalAndClose" class="nav-link btn btn-link">
             <i class="bi bi-info-circle"></i>
             About
