@@ -10,7 +10,7 @@
           <div class="d-flex align-items-center">
             <button 
               type="button" 
-              class="btn btn-outline-secondary btn-sm me-2"
+              class="btn btn-outline-secondary btn-sm me-2 refresh-btn"
               @click="refreshPreview"
               :disabled="loading"
               title="Refresh terms">
@@ -22,35 +22,38 @@
         
         <div class="modal-body">
           <!-- Search and Filter Controls -->
-          <div class="row mb-4">
-            <div class="col-md-8">
-              <div class="input-group">
-                <span class="input-group-text">
-                  <i class="bi bi-search"></i>
-                </span>
-                <input 
-                  type="text" 
-                  class="form-control" 
-                  v-model="searchQuery"
-                  placeholder="Search terms or definitions..."
-                  @input="filterTerms">
+          <div class="search-controls">
+            <div class="row">
+              <div class="col-md-8">
+                <div class="input-group">
+                  <span class="input-group-text">
+                    <i class="bi bi-search"></i>
+                  </span>
+                  <input 
+                    type="text" 
+                    class="form-control" 
+                    v-model="searchQuery"
+                    placeholder="Search terms or definitions..."
+                    @input="filterTerms">
+                </div>
               </div>
-            </div>
-            <div class="col-md-4">
-              <select class="form-select" v-model="filterType" @change="filterTerms">
-                <option value="all">All Terms</option>
-                <option value="local">Local Terms Only</option>
-                <option value="external">External Terms Only</option>
-              </select>
+              <div class="col-md-4">
+                <select class="form-select" v-model="filterType" @change="filterTerms">
+                  <option value="all">All Terms</option>
+                  <option value="local">Local Terms (Terms Dir)</option>
+                  <option value="root">Root Markdown Files</option>
+                  <option value="external">External Terms</option>
+                </select>
+              </div>
             </div>
           </div>
 
           <!-- Loading State -->
-          <div v-if="loading" class="text-center py-5">
-            <div class="spinner-border text-primary" role="status">
+          <div v-if="loading" class="empty-state">
+            <div class="loading-spinner spinner-border" role="status">
               <span class="visually-hidden">Loading terms...</span>
             </div>
-            <p class="mt-3 text-muted">Loading terms and definitions...</p>
+            <p class="loading-text mt-3">Loading terms and definitions...</p>
           </div>
 
           <!-- Error State -->
@@ -62,34 +65,43 @@
           <!-- Terms Display -->
           <div v-else class="terms-preview-container">
             <!-- Statistics -->
-            <div class="row mb-3">
-              <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded">
-                  <small class="text-muted">
-                    Showing {{ filteredTerms.length }} of {{ allTerms.length }} terms
-                  </small>
-                  <div class="btn-group btn-group-sm">
-                    <button 
-                      class="btn btn-outline-secondary"
-                      :class="{ active: viewMode === 'compact' }"
-                      @click="viewMode = 'compact'">
-                      <i class="bi bi-list"></i> Compact
-                    </button>
-                    <button 
-                      class="btn btn-outline-secondary"
-                      :class="{ active: viewMode === 'detailed' }"
-                      @click="viewMode = 'detailed'">
-                      <i class="bi bi-card-text"></i> Detailed
-                    </button>
+            <div class="stats-bar">
+              <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex flex-wrap">
+                  <div class="stats-item">
+                    <strong>{{ filteredTerms.length }}</strong> of {{ allTerms.length }} terms
                   </div>
+                  <div class="stats-item" v-if="getTermCounts().local > 0">
+                    <i class="bi bi-folder"></i> {{ getTermCounts().local }} Terms Dir
+                  </div>
+                  <div class="stats-item" v-if="getTermCounts().root > 0">
+                    <i class="bi bi-file-earmark-text"></i> {{ getTermCounts().root }} Root
+                  </div>
+                  <div class="stats-item" v-if="getTermCounts().external > 0">
+                    <i class="bi bi-link-45deg"></i> {{ getTermCounts().external }} External
+                  </div>
+                </div>
+                <div class="view-mode-buttons btn-group btn-group-sm">
+                  <button 
+                    class="btn btn-outline-secondary"
+                    :class="{ active: viewMode === 'compact' }"
+                    @click="viewMode = 'compact'">
+                    <i class="bi bi-list"></i> Compact
+                  </button>
+                  <button 
+                    class="btn btn-outline-secondary"
+                    :class="{ active: viewMode === 'detailed' }"
+                    @click="viewMode = 'detailed'">
+                    <i class="bi bi-card-text"></i> Detailed
+                  </button>
                 </div>
               </div>
             </div>
 
             <!-- No Results -->
-            <div v-if="filteredTerms.length === 0 && !loading" class="text-center py-5">
-              <i class="bi bi-search fs-1 text-muted"></i>
-              <p class="mt-3 text-muted">
+            <div v-if="filteredTerms.length === 0 && !loading" class="empty-state">
+              <i class="bi bi-search"></i>
+              <p class="mt-3">
                 {{ searchQuery ? 'No terms found matching your search.' : 'No terms available.' }}
               </p>
               <div v-if="!searchQuery && allTerms.length === 0" class="mt-2">
@@ -108,7 +120,7 @@
                   <div 
                     v-for="term in filteredTerms" 
                     :key="getTermKey(term)"
-                    class="list-group-item list-group-item-action">
+                    class="list-group-item compact-term-item">
                     <div class="d-flex justify-content-between align-items-start">
                       <div class="flex-grow-1">
                         <div class="d-flex align-items-center mb-1">
@@ -116,20 +128,33 @@
                           <span 
                             v-if="term.external" 
                             class="badge bg-success">
-                            {{ term.externalSpec }}
+                            <i class="bi bi-link-45deg"></i> {{ term.externalSpec }}
                           </span>
-                          <span v-else class="badge bg-primary">Local</span>
+                          <span 
+                            v-else-if="term.source && term.source.startsWith('Root:')" 
+                            class="badge bg-info">
+                            <i class="bi bi-file-earmark-text"></i> Root
+                          </span>
+                          <span v-else class="badge bg-primary">
+                            <i class="bi bi-folder"></i> Terms
+                          </span>
                         </div>
                         
-                        <div v-if="term.aliases && term.aliases.length > 0" class="text-muted small mb-2">
-                          <strong>Aliases:</strong> {{ term.aliases.join(', ') }}
+                        <div v-if="term.aliases && term.aliases.length > 0" class="aliases-list mb-2">
+                          <small class="text-muted me-1"><strong>Aliases:</strong></small>
+                          <span 
+                            v-for="alias in term.aliases" 
+                            :key="alias"
+                            class="alias-badge">
+                            {{ alias }}
+                          </span>
                         </div>
                         
-                        <div class="definition-text">
-                          <div v-if="term.definitionText" class="text-secondary small">
+                        <div class="definition-content">
+                          <div v-if="term.definitionText" class="text-secondary">
                             {{ truncateText(term.definitionText, 120) }}
                           </div>
-                          <div v-else class="text-muted fst-italic small">
+                          <div v-else class="text-muted fst-italic">
                             No definition available
                           </div>
                         </div>
@@ -146,7 +171,7 @@
                     v-for="term in filteredTerms" 
                     :key="getTermKey(term)"
                     class="col-12">
-                    <div class="card h-100">
+                    <div class="card term-card h-100">
                       <div class="card-header d-flex justify-content-between align-items-center">
                         <div class="d-flex align-items-center">
                           <strong class="term-name me-2">{{ term.id }}</strong>
@@ -155,8 +180,13 @@
                             class="badge bg-success">
                             <i class="bi bi-link-45deg"></i> {{ term.externalSpec }}
                           </span>
+                          <span 
+                            v-else-if="term.source && term.source.startsWith('Root:')" 
+                            class="badge bg-info">
+                            <i class="bi bi-file-earmark-text"></i> Root
+                          </span>
                           <span v-else class="badge bg-primary">
-                            <i class="bi bi-house"></i> Local
+                            <i class="bi bi-folder"></i> Terms
                           </span>
                         </div>
                         <small class="text-muted">
@@ -164,20 +194,20 @@
                         </small>
                       </div>
                       <div class="card-body">
-                        <div v-if="term.aliases && term.aliases.length > 0" class="mb-3">
+                        <div v-if="term.aliases && term.aliases.length > 0" class="aliases-list mb-3">
                           <strong class="text-muted small">Aliases:</strong>
                           <div class="mt-1">
                             <span 
                               v-for="alias in term.aliases" 
                               :key="alias"
-                              class="badge bg-light text-dark me-1">
+                              class="alias-badge">
                               {{ alias }}
                             </span>
                           </div>
                         </div>
                         
                         <div class="definition-content">
-                          <div v-if="term.definition" v-html="term.definition" class="definition-html"></div>
+                          <div v-if="term.definition" v-html="term.definition" class="terms-and-definitions-list"></div>
                           <div v-else-if="term.definitionText" class="definition-text">
                             {{ term.definitionText }}
                           </div>
@@ -211,6 +241,7 @@
 <script>
 import { ref, computed, onMounted } from 'vue'
 import { useTermsManagement } from '../composables/useTermsManagement.js'
+import '../styles/terms-preview.css'
 
 export default {
   name: 'TermsPreview',
@@ -264,7 +295,9 @@ export default {
 
       // Filter by type
       if (filterType.value === 'local') {
-        filtered = filtered.filter(term => !term.external)
+        filtered = filtered.filter(term => !term.external && (!term.source || !term.source.startsWith('Root:')))
+      } else if (filterType.value === 'root') {
+        filtered = filtered.filter(term => !term.external && term.source && term.source.startsWith('Root:'))
       } else if (filterType.value === 'external') {
         filtered = filtered.filter(term => term.external)
       }
@@ -276,7 +309,8 @@ export default {
           return term.id.toLowerCase().includes(query) ||
                  term.aliases.some(alias => alias.toLowerCase().includes(query)) ||
                  (term.definitionText && term.definitionText.toLowerCase().includes(query)) ||
-                 (term.external && term.externalSpec && term.externalSpec.toLowerCase().includes(query))
+                 (term.external && term.externalSpec && term.externalSpec.toLowerCase().includes(query)) ||
+                 (term.source && term.source.toLowerCase().includes(query))
         })
       }
 
@@ -291,6 +325,21 @@ export default {
     const truncateText = (text, length) => {
       if (!text) return ''
       return text.length > length ? text.substring(0, length) + '...' : text
+    }
+
+    // Get counts of different term types
+    const getTermCounts = () => {
+      const counts = { local: 0, root: 0, external: 0 }
+      allTerms.value.forEach(term => {
+        if (term.external) {
+          counts.external++
+        } else if (term.source && term.source.startsWith('Root:')) {
+          counts.root++
+        } else {
+          counts.local++
+        }
+      })
+      return counts
     }
 
     // Load terms when modal is shown
@@ -343,6 +392,7 @@ export default {
       filterTerms,
       getTermKey,
       truncateText,
+      getTermCounts,
       refreshPreview
     }
   }
@@ -350,71 +400,27 @@ export default {
 </script>
 
 <style scoped>
-.terms-preview-container {
-  font-size: 0.95rem;
-}
-
-.term-name {
-  color: #2d72d9;
-  font-size: 1.1rem;
-}
-
-.definition-html {
-  line-height: 1.6;
-}
-
-.definition-html :deep(dl) {
-  margin-bottom: 0;
-}
-
-.definition-html :deep(dd) {
-  margin-left: 0;
-  margin-bottom: 0.5rem;
-}
-
-.definition-text {
-  line-height: 1.6;
-  white-space: pre-wrap;
-}
-
-.list-group-item:hover {
-  background-color: #f8f9fa;
-}
-
-.card {
-  border: 1px solid #e0e0e0;
-  transition: box-shadow 0.2s ease;
-}
-
-.card:hover {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.badge {
-  font-size: 0.75rem;
-}
-
-.modal-dialog.modal-xl {
-  max-width: 1200px;
-}
-
+/* Component-specific styles - main styles are in terms-preview.css */
 @media (max-width: 768px) {
-  .modal-dialog.modal-xl {
-    max-width: 95vw;
-    margin: 0.5rem;
+  .search-controls {
+    padding: 0.5rem;
   }
   
-  .terms-list {
-    max-height: 50vh !important;
+  .search-controls .row > div {
+    margin-bottom: 0.5rem;
   }
-}
-
-.spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  
+  .search-controls .row > div:last-child {
+    margin-bottom: 0;
+  }
+  
+  .stats-bar {
+    padding: 0.5rem;
+  }
+  
+  .stats-item {
+    font-size: 0.8rem;
+    margin-right: 0.5rem;
+  }
 }
 </style>

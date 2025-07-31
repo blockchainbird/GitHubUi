@@ -1,0 +1,273 @@
+/* Terms Preview Styles - Based on Spec-Up-T */
+
+/* Main terms container */
+.terms-preview-container {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  color: #333;
+}
+
+/* Terms list styling */
+.terms-and-definitions-list {
+  margin: 0;
+  padding: 0;
+}
+
+.terms-and-definitions-list dt {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.terms-and-definitions-list dt:first-child {
+  margin-top: 0;
+}
+
+.terms-and-definitions-list dd {
+  margin-left: 0;
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+  border-left: 3px solid #e9ecef;
+  color: #495057;
+}
+
+/* Term definition content */
+.definition-content {
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+.definition-content p {
+  margin-bottom: 0.75rem;
+}
+
+.definition-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Term cards in detailed view */
+.term-card {
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  background: #fff;
+}
+
+.term-card:hover {
+  border-color: #adb5bd;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.term-card .card-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-bottom: 1px solid #dee2e6;
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+}
+
+.term-card .card-body {
+  padding: 1rem;
+}
+
+/* Term name styling */
+.term-name {
+  color: #0d6efd;
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 1.05rem;
+}
+
+.term-name:hover {
+  color: #0a58ca;
+  text-decoration: underline;
+}
+
+/* Badge styling with spec-up-t colors */
+.badge.bg-primary {
+  background-color: #0d6efd !important;
+  color: white;
+}
+
+.badge.bg-info {
+  background-color: #0dcaf0 !important;
+  color: #212529;
+}
+
+.badge.bg-success {
+  background-color: #198754 !important;
+  color: white;
+}
+
+.badge {
+  font-size: 0.7rem;
+  padding: 0.35em 0.6em;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+/* Aliases styling */
+.aliases-list {
+  margin-top: 0.5rem;
+}
+
+.alias-badge {
+  background-color: #f8f9fa;
+  color: #6c757d;
+  border: 1px solid #e9ecef;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  margin-right: 0.25rem;
+  margin-bottom: 0.25rem;
+  border-radius: 3px;
+  font-weight: normal;
+}
+
+/* Compact list styling */
+.compact-term-item {
+  border: none;
+  border-bottom: 1px solid #e9ecef;
+  padding: 0.75rem 1rem;
+  transition: background-color 0.15s ease;
+}
+
+.compact-term-item:hover {
+  background-color: #f8f9fa;
+  border-color: #dee2e6;
+}
+
+.compact-term-item:last-child {
+  border-bottom: none;
+}
+
+/* Search and filter controls */
+.search-controls {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.search-controls .form-control {
+  border-radius: 6px;
+  border: 1px solid #ced4da;
+}
+
+.search-controls .form-control:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.search-controls .form-select {
+  border-radius: 6px;
+  border: 1px solid #ced4da;
+}
+
+/* Statistics bar */
+.stats-bar {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.stats-item {
+  color: #6c757d;
+  font-size: 0.85rem;
+  margin-right: 1rem;
+}
+
+.stats-item i {
+  margin-right: 0.25rem;
+}
+
+/* View mode buttons */
+.view-mode-buttons .btn {
+  border-radius: 4px;
+  font-size: 0.85rem;
+  padding: 0.375rem 0.75rem;
+}
+
+.view-mode-buttons .btn.active {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+  color: white;
+}
+
+/* Loading states */
+.loading-spinner {
+  color: #0d6efd;
+}
+
+.loading-text {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+/* Empty states */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #6c757d;
+}
+
+.empty-state i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+/* Modal customizations */
+.modal-header {
+  border-bottom: 2px solid #e9ecef;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+.modal-footer {
+  border-top: 2px solid #e9ecef;
+  background: #f8f9fa;
+}
+
+.modal-title {
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.modal-title i {
+  color: #0d6efd;
+  margin-right: 0.5rem;
+}
+
+/* Refresh button animation */
+.refresh-btn i.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .term-card .card-header {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.95rem;
+  }
+  
+  .term-card .card-body {
+    padding: 0.75rem;
+  }
+  
+  .stats-item {
+    margin-right: 0.5rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  .search-controls {
+    padding: 0.75rem;
+  }
+}

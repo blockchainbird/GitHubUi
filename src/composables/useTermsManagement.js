@@ -148,6 +148,9 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
 
       const content = atob(response.data.content)
       const lines = content.split('\n')
+      const extractedTerms = []
+
+      console.log(`🔍 Scanning file ${filePath} for terms...`)
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim()
@@ -164,6 +167,9 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
               const defLine = lines[j]
               if (defLine.startsWith('~ ') || defLine.startsWith('~')) {
                 definitionLines.push(defLine.replace(/^~\s?/, ''))
+              } else if (defLine.trim() && !defLine.startsWith('[[def:')) {
+                // Continue reading definition lines until we hit another term or empty line
+                break
               }
             }
 
@@ -171,7 +177,8 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
               `<dl><dd>${definitionLines.join('</dd><dd>')}</dd></dl>` : ''
 
             if (termId) {
-              return {
+              console.log(`✅ Found term "${termId}" in ${filePath}`)
+              extractedTerms.push({
                 id: termId,
                 aliases: aliases,
                 file: filePath,
@@ -179,12 +186,17 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
                 definitionText: definitionLines.join(' ').trim(),
                 external: false,
                 source: `Local: ${filePath}`
-              }
+              })
             }
           }
-          break
         }
       }
+
+      if (extractedTerms.length > 0) {
+        console.log(`📋 Extracted ${extractedTerms.length} terms from ${filePath}`)
+      }
+
+      return extractedTerms.length > 0 ? extractedTerms : null
     } catch (err) {
       console.error(`Error loading file ${filePath}:`, err)
       if (checkAuthAndRedirect(err)) {
@@ -319,7 +331,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
     return externalTerms
   }
 
-  // Load terms from repository
+  // Load terms from repository (both from terms directory and root markdown files)
   const loadTermsFromRepository = async () => {
     loadingTerms.value = true
     termsError.value = ''
@@ -342,31 +354,82 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
         }
       }
 
-      const response = await axios.get(
-        `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${fullTermsPath}?ref=${props.branch}`,
-        requestConfig
-      )
-
-      const files = response.data.filter(item =>
-        item.type === 'file' &&
-        (item.name.toLowerCase().endsWith('.md') ||
-          item.name.toLowerCase().endsWith('.txt') ||
-          item.name.toLowerCase().endsWith('.rst') ||
-          item.name.toLowerCase().endsWith('.adoc'))
-      )
-
       const termsData = []
-      const batchSize = 5
+      
+      // 1. Load terms from the traditional terms directory
+      try {
+        const response = await axios.get(
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${fullTermsPath}?ref=${props.branch}`,
+          requestConfig
+        )
 
-      for (let i = 0; i < files.length; i += batchSize) {
-        const batch = files.slice(i, i + batchSize)
-        const promises = batch.map(file => extractTermsFromFile(file.path))
-        const results = await Promise.all(promises)
-        results.forEach(term => {
-          if (term) {
-            termsData.push(term)
-          }
-        })
+        const files = response.data.filter(item =>
+          item.type === 'file' &&
+          (item.name.toLowerCase().endsWith('.md') ||
+            item.name.toLowerCase().endsWith('.txt') ||
+            item.name.toLowerCase().endsWith('.rst') ||
+            item.name.toLowerCase().endsWith('.adoc'))
+        )
+
+        const batchSize = 5
+        for (let i = 0; i < files.length; i += batchSize) {
+          const batch = files.slice(i, i + batchSize)
+          const promises = batch.map(file => extractTermsFromFile(file.path))
+          const results = await Promise.all(promises)
+          results.forEach(terms => {
+            if (terms && Array.isArray(terms)) {
+              termsData.push(...terms)
+            } else if (terms) {
+              termsData.push(terms)
+            }
+          })
+        }
+        
+        console.log(`✅ Loaded ${termsData.length} terms from terms directory`)
+      } catch (err) {
+        console.warn('Terms directory not found or inaccessible, checking root directory only:', err.message)
+      }
+
+      // 2. Load terms from root markdown files
+      try {
+        const rootResponse = await axios.get(
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents?ref=${props.branch}`,
+          requestConfig
+        )
+
+        const rootMarkdownFiles = rootResponse.data.filter(item =>
+          item.type === 'file' && item.name.toLowerCase().endsWith('.md')
+        )
+
+        console.log(`🔍 Found ${rootMarkdownFiles.length} markdown files in root:`, rootMarkdownFiles.map(f => f.name))
+
+        // Process root markdown files for terms
+        const rootTermsData = []
+        const batchSize = 5
+        for (let i = 0; i < rootMarkdownFiles.length; i += batchSize) {
+          const batch = rootMarkdownFiles.slice(i, i + batchSize)
+          const promises = batch.map(file => extractTermsFromFile(file.path))
+          const results = await Promise.all(promises)
+          results.forEach(terms => {
+            if (terms && Array.isArray(terms)) {
+              // Mark root terms with a different source indicator
+              terms.forEach(term => {
+                term.source = `Root: ${term.file}`
+              })
+              rootTermsData.push(...terms)
+            } else if (terms) {
+              // Handle legacy single term format
+              terms.source = `Root: ${terms.file}`
+              rootTermsData.push(terms)
+            }
+          })
+        }
+
+        termsData.push(...rootTermsData)
+        console.log(`✅ Loaded ${rootTermsData.length} additional terms from root markdown files`)
+        console.log(`📝 Total terms loaded: ${termsData.length}`)
+      } catch (err) {
+        console.warn('Could not load root markdown files:', err.message)
       }
 
       // Load external specs if they exist
