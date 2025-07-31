@@ -20,10 +20,10 @@
             <i class="bi bi-house"></i>
             Home
           </button>
-          <button @click="navigateAndClose('/create-project')" class="nav-link btn btn-link">
+          <!-- <button @click="navigateAndClose('/create-project')" class="nav-link btn btn-link">
             <i class="bi bi-plus-circle"></i>
             Create Project
-          </button>
+          </button> -->
           <button v-if="showRepoRelatedButtons" @click="navigateToAdminAndClose" class="nav-link btn btn-link">
             <i class="bi bi-gear"></i>
             Admin
@@ -32,35 +32,49 @@
             @click="navigateAndClose(`/external-specs/${route.params.owner}/${route.params.repo}/${route.params.branch}`)"
             class="nav-link btn btn-link" title="Manage External Specifications">
             <i class="bi bi-link-45deg"></i>
-            External Specs
+            External
           </button>
           <a v-if="showRepoRelatedButtons" :href="githubRepoUrl" target="_blank" rel="noopener" class="nav-link"
             title="View Repository on GitHub" @click="closeNavbar">
             <i class="bi bi-github"></i>
-            View on GitHub
+            GitHub
           </a>
           <button v-if="showRepoRelatedButtons" @click="navigateToHealthCheckAndClose" class="nav-link btn btn-link"
             title="Run Health Check">
             <i class="bi bi-heart-pulse"></i>
             Health Check
           </button>
-          <button @click="navigateAndClose('/settings')" class="nav-link btn btn-link" title="Application Settings">
-            <i class="bi bi-gear"></i>
-            Settings
-          </button>
           <button @click="showModalAndClose" class="nav-link btn btn-link">
             <i class="bi bi-info-circle"></i>
             About
           </button>
-          <a href="https://blockchainbird.github.io/spec-up-t-website/docs/tools/spec-up-t-editor-user-guide/"
+          <a title="Go to documentation website" href="https://blockchainbird.github.io/spec-up-t-website/docs/tools/spec-up-t-editor-user-guide/"
             target="_blank" rel="noopener" class="nav-link" @click="closeNavbar">
             <i class="bi bi-box-arrow-up-right"></i>
             Help
           </a>
-
+          <button @click="navigateAndClose('/settings')" class="nav-link btn btn-link" title="Application Settings">
+            <i class="bi bi-gear"></i>
+            Settings
+          </button>
           <!-- API Rate Limit Indicator -->
           <div class="nav-item d-flex align-items-center">
             <RateLimitIndicator />
+          </div>
+          <!-- Authentication UI -->
+          <div class="nav-item d-flex align-items-center ms-2">
+            <div v-if="isAuthenticated" class="d-flex align-items-center">
+              <span class="navbar-text me-3">{{ user.login }}</span>
+              <button @click="handleLogout" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-box-arrow-right"></i> Logout
+              </button>
+            </div>
+            <div v-else class="d-flex align-items-center">
+              <span class="navbar-text me-3 text-muted">Not logged in</span>
+              <button @click="navigateAndClose('/login')" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-box-arrow-in-right"></i> Login
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -105,7 +119,7 @@
 </template>
 
 <script>
-import { computed, ref, onMounted, onUnmounted } from 'vue';
+import { computed, ref, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Modal from './Modal.vue';
 import RateLimitIndicator from './RateLimitIndicator.vue';
@@ -113,7 +127,18 @@ import RateLimitIndicator from './RateLimitIndicator.vue';
 export default {
   name: 'MainNav',
   components: { Modal, RateLimitIndicator },
-  setup() {
+  props: {
+    isAuthenticated: {
+      type: Boolean,
+      default: false
+    },
+    user: {
+      type: Object,
+      default: () => ({})
+    }
+  },
+  emits: ['logout'],
+  setup(props, { emit }) {
     const route = useRoute();
     const router = useRouter();
     const isNavbarOpen = ref(false);
@@ -129,6 +154,10 @@ export default {
       }
       return '';
     });
+
+    // Create reactive computed properties for authentication state
+    const isAuthenticated = computed(() => props.isAuthenticated);
+    const user = computed(() => props.user);
 
     const toggleNavbar = () => {
       isNavbarOpen.value = !isNavbarOpen.value;
@@ -165,6 +194,20 @@ export default {
       closeNavbar();
     };
 
+    const handleLogout = () => {
+      console.log('MainNav: Logout clicked');
+      emit('logout');
+      closeNavbar();
+    };
+
+    // Debug authentication state
+    const logAuthState = () => {
+      console.log('MainNav Auth State:', {
+        isAuthenticated: isAuthenticated.value,
+        user: user.value
+      });
+    };
+
     // Close navbar when clicking outside on mobile
     const handleClickOutside = (event) => {
       if (isNavbarOpen.value && !event.target.closest('.navbar')) {
@@ -180,9 +223,20 @@ export default {
     };
 
     onMounted(() => {
+      logAuthState();
       document.addEventListener('click', handleClickOutside);
       window.addEventListener('resize', handleResize);
     });
+
+    // Watch for changes in authentication state
+    watch(() => props.isAuthenticated, (newVal, oldVal) => {
+      console.log('MainNav: Authentication state changed from', oldVal, 'to', newVal);
+      logAuthState();
+    });
+
+    watch(() => props.user, (newVal, oldVal) => {
+      console.log('MainNav: User changed from', oldVal, 'to', newVal);
+    }, { deep: true });
 
     onUnmounted(() => {
       document.removeEventListener('click', handleClickOutside);
@@ -204,7 +258,10 @@ export default {
       navigateToHealthCheckAndClose,
       navigateToAdmin,
       navigateToAdminAndClose,
-      buildInfo
+      handleLogout,
+      buildInfo,
+      isAuthenticated,
+      user
     };
   },
   data() {
@@ -315,6 +372,16 @@ export default {
     justify-content: center;
   }
 
+  /* Authentication UI for mobile */
+  .nav-item .navbar-text {
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+
+  .nav-item .btn {
+    width: 100%;
+  }
+
   /* Animation for collapse - mobile only */
   .navbar-collapse {
     transition: all 0.3s ease;
@@ -345,6 +412,16 @@ export default {
     display: flex !important;
     max-height: none;
     overflow: visible;
+  }
+
+  /* Authentication UI for desktop */
+  .nav-item .navbar-text {
+    color: #495057;
+    font-weight: 500;
+  }
+
+  .nav-item .btn {
+    white-space: nowrap;
   }
 }
 </style>

@@ -1,18 +1,16 @@
 <template>
   <div>
-    <MainNav />
+    <MainNav 
+      :isAuthenticated="isAuthenticated" 
+      :user="user" 
+      @logout="handleLogout" 
+    />
     <nav class="navbar navbar-dark bg-dark">
       <div class="container-fluid">
         <a class="navbar-brand" href="#">
           <i class="bi bi-github"></i>
           Spec-Up-T Editor
         </a>
-        <div v-if="isAuthenticated" class="d-flex">
-          <span class="navbar-text me-3">{{ user.login }}</span>
-          <button @click="logout" class="btn btn-outline-light btn-sm">
-            <i class="bi bi-box-arrow-right"></i> Logout
-          </button>
-        </div>
       </div>
     </nav>
     <main class="container-fluid mt-3">
@@ -38,22 +36,28 @@ export default {
     const user = ref({})
     
     const handleLogin = (userData) => {
+      console.log('App: handleLogin called with:', userData);
       isAuthenticated.value = true
       user.value = userData
       localStorage.setItem('github_token', userData.token)
       localStorage.setItem('github_user', JSON.stringify(userData))
+      console.log('App: Authentication state after login:', {
+        isAuthenticated: isAuthenticated.value,
+        user: user.value
+      });
     }
     
     const handleLogout = () => {
+      console.log('App: handleLogout called');
       isAuthenticated.value = false
       user.value = {}
       localStorage.removeItem('github_token')
       localStorage.removeItem('github_user')
       router.push('/login')
-    }
-    
-    const logout = () => {
-      handleLogout()
+      console.log('App: Authentication state after logout:', {
+        isAuthenticated: isAuthenticated.value,
+        user: user.value
+      });
     }
     
     onMounted(() => {
@@ -86,8 +90,7 @@ export default {
       isAuthenticated,
       user,
       handleLogin,
-      handleLogout,
-      logout
+      handleLogout
     }
   }
 }
