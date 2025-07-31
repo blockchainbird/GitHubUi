@@ -161,8 +161,13 @@ export default {
     const isNavbarOpen = ref(false);
 
     const showRepoRelatedButtons = computed(() => {
-      // Show health check button only when we have repository context
+      // Show repository-specific buttons only when we have repository context
       return route.params.owner && route.params.repo && route.params.branch;
+    });
+
+    const showAlwaysVisibleButtons = computed(() => {
+      // These buttons should always be visible regardless of route
+      return true;
     });
 
     const githubRepoUrl = computed(() => {
@@ -277,6 +282,7 @@ export default {
     return {
       route,
       showRepoRelatedButtons,
+      showAlwaysVisibleButtons,
       githubRepoUrl,
       isNavbarOpen,
       toggleNavbar,

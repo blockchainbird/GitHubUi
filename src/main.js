@@ -1,5 +1,5 @@
 import { createApp } from 'vue'
-import { createRouter, createWebHashHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
 import LoginPage from './components/LoginPage.vue'
 import HomePage from './components/HomePage.vue'
@@ -36,10 +36,8 @@ const routes = [
   { path: '/health-check/:owner/:repo/:branch', component: HealthCheck, props: true }
 ]
 
-const basePath = import.meta.env.VITE_BASE_PATH || '/';
-
 const router = createRouter({
-  history: createWebHashHistory(basePath),
+  history: createWebHistory(),
   routes
 })
 
@@ -56,6 +54,7 @@ router.beforeEach((to, from, next) => {
   const user = localStorage.getItem('github_user');
   const token = localStorage.getItem('github_token');
 
+  // Allow authenticated users to access all routes
   if (authRequired && (!user || !token)) {
     // Store the intended destination before redirecting to login
     if (to.path !== '/login') {
