@@ -24,7 +24,7 @@
         <div class="card-body">
           <h2 class="card-title text-center mb-4">
             <i class="bi bi-house-door"></i>
-            Repository Access
+            Go To Existing Repository
           </h2>
 
           <div v-if="error" class="alert alert-danger" role="alert">
@@ -41,7 +41,8 @@
             <div class="mb-4 position-relative">
               <label for="repo" class="form-label">Repository Name</label>
               <input type="text" id="repo" v-model="repo" class="form-control"
-                placeholder="e.g., tswg-keri-specification" required @focus="onRepoInputFocus" autocomplete="off">
+                placeholder="e.g., tswg-keri-specification" required @focus="onRepoInputFocus" autocomplete="off"
+                :disabled="!owner.trim()">
             </div>
             <Modal v-if="showRepoModal" @close="showRepoModal = false">
               <template #header>
@@ -72,7 +73,7 @@
             <div class="mb-4 position-relative">
               <label for="branch" class="form-label">Branch</label>
               <input type="text" id="branch" v-model="branch" class="form-control" placeholder="e.g., main" required
-                @focus="onBranchInputFocus" autocomplete="off">
+                @focus="onBranchInputFocus" autocomplete="off" :disabled="!owner.trim() || !repo.trim()">
             </div>
             <Modal v-if="showBranchModal" @close="showBranchModal = false">
               <template #header>
@@ -180,7 +181,7 @@
 </template>
 
 <script>
-import { ref, onMounted, watchEffect } from 'vue'
+import { ref, onMounted, watchEffect, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import Modal from './Modal.vue'
@@ -217,7 +218,7 @@ export default {
     const filteredBranchList = ref([])
     // Fetch branches for the selected repo
     const fetchBranches = async () => {
-      if (!owner.value || !repo.value) return
+      if (!owner.value.trim() || !repo.value.trim()) return
       branchLoading.value = true
       branchList.value = []
       try {
@@ -228,7 +229,7 @@ export default {
             'Accept': 'application/vnd.github.v3+json'
           }
         } : { headers: { 'Accept': 'application/vnd.github.v3+json' } }
-        const res = await axios.get(`https://api.github.com/repos/${owner.value}/${repo.value}/branches?per_page=100`, config)
+        const res = await axios.get(`https://api.github.com/repos/${owner.value.trim()}/${repo.value.trim()}/branches?per_page=100`, config)
         branchList.value = (res.data || []).map(b => ({ name: b.name }))
         filteredBranchList.value = [...branchList.value]
       } catch (e) {
@@ -297,7 +298,7 @@ export default {
 
     // Show modal and fetch branches on input focus
     const onBranchInputFocus = async () => {
-      if (!owner.value || !repo.value) return
+      if (!owner.value.trim() || !repo.value.trim()) return
       branchFilter.value = ''
       showBranchModal.value = true
       await fetchBranches()
@@ -312,7 +313,7 @@ export default {
 
     // Fetch repos for the given owner
     const fetchRepos = async () => {
-      if (!owner.value) return
+      if (!owner.value.trim()) return
       repoLoading.value = true
       repoList.value = []
       try {
@@ -326,10 +327,10 @@ export default {
         // Try user repos first, then org repos if user fails
         let res
         try {
-          res = await axios.get(`https://api.github.com/users/${owner.value}/repos?per_page=100`, config)
+          res = await axios.get(`https://api.github.com/users/${owner.value.trim()}/repos?per_page=100`, config)
         } catch (e) {
           // fallback to org
-          res = await axios.get(`https://api.github.com/orgs/${owner.value}/repos?per_page=100`, config)
+          res = await axios.get(`https://api.github.com/orgs/${owner.value.trim()}/repos?per_page=100`, config)
         }
         repoList.value = res.data || []
         filteredRepoList.value = [...repoList.value]
@@ -343,7 +344,7 @@ export default {
 
     // Show modal and fetch repos on input focus
     const onRepoInputFocus = async () => {
-      if (!owner.value) return
+      if (!owner.value.trim()) return
       repoFilter.value = ''
       showRepoModal.value = true
       await fetchRepos()
@@ -407,6 +408,21 @@ export default {
         repo.value = route.query.name
         // Automatically access the repository
         accessRepository()
+      }
+    })
+
+    // Watch for changes in owner and clear dependent fields
+    watch(owner, (newOwner, oldOwner) => {
+      if (newOwner !== oldOwner && oldOwner !== undefined) {
+        repo.value = ''
+        branch.value = 'main'
+      }
+    })
+
+    // Watch for changes in repo and clear dependent fields
+    watch(repo, (newRepo, oldRepo) => {
+      if (newRepo !== oldRepo && oldRepo !== undefined) {
+        branch.value = 'main'
       }
     })
 
@@ -474,5 +490,11 @@ export default {
   opacity: 1;
   background-color: #dc3545;
   color: white;
+}
+
+.form-control:disabled {
+  background-color: #f8f9fa;
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>
