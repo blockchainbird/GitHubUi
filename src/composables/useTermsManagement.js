@@ -407,10 +407,30 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
     const modal = new bootstrap.Modal(document.getElementById('termsModal'))
     modal.show()
 
+    // Only load terms if not already loaded
+    if (terms.value.length === 0) {
+      if (!loadTermsFromStorage()) {
+        await loadTermsFromRepository()
+      }
+    }
+    
+    loadingTerms.value = false
+    filteredTerms.value = terms.value
+  }
+
+  // Load terms on initialization (for preview mode)
+  const initializeTerms = async () => {
+    // Try to load from storage first, then from repository if needed
     if (!loadTermsFromStorage()) {
-      await loadTermsFromRepository()
-    } else {
-      loadingTerms.value = false
+      loadingTerms.value = true
+      try {
+        await loadTermsFromRepository()
+      } catch (error) {
+        console.warn('Failed to load terms during initialization:', error)
+        termsError.value = 'Failed to load terms'
+      } finally {
+        loadingTerms.value = false
+      }
     }
     filteredTerms.value = terms.value
   }
@@ -443,6 +463,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
     toggleIndividualTerm,
     showTermsModal,
     refreshTerms,
-    loadTermsFromRepository
+    loadTermsFromRepository,
+    initializeTerms
   }
 }

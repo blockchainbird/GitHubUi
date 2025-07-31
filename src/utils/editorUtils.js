@@ -99,43 +99,83 @@ export const processTermReferences = (content, terms = []) => {
 
   let html = content
 
-  // Handle tref patterns (external references)
-  html = html.replace(/\[\[tref:\s*([^,\]]+),\s*([^\]]+)\]\]/g, (match, specName, termId) => {
-    return `<div class="external-term-reference">
-      <div class="term-name">${termId.trim()}</div>
-      <div class="term-definition loading">Loading definition from ${specName.trim()}...</div>
-    </div>`
+  // Process definition paragraphs (lines starting with ~)
+  html = html.replace(/^~\s*(.+)$/gm, '<p class="definition-paragraph">$1</p>')
+
+  // Handle tref patterns (external term definitions)
+  html = html.replace(/\[\[tref:\s*([^,\]]+),\s*([^,\]]+)(?:,\s*([^\]]+))?\]\]/g, (match, specName, termId, aliases) => {
+    const cleanSpecName = specName.trim()
+    const cleanTermId = termId.trim()
+    const cleanAliases = aliases ? aliases.split(',').map(a => a.trim()).filter(a => a.length > 0) : []
+    
+    // Find the external term in the loaded terms
+    const externalTerm = terms.find(t => 
+      t.external && 
+      t.externalSpec === cleanSpecName && 
+      t.id === cleanTermId
+    )
+
+    if (externalTerm && externalTerm.definition) {
+      return `<div class="external-term-reference">
+        <div class="term-name">${cleanTermId}${cleanAliases.length > 0 ? ` (${cleanAliases.join(', ')})` : ''}</div>
+        <div class="term-definition">${externalTerm.definition}</div>
+      </div>`
+    } else {
+      return `<div class="external-term-reference">
+        <div class="term-name">${cleanTermId}${cleanAliases.length > 0 ? ` (${cleanAliases.join(', ')})` : ''}</div>
+        <div class="term-definition not-found">Definition not found for ${cleanTermId} from ${cleanSpecName}</div>
+      </div>`
+    }
   })
 
   // Handle xref patterns (external references)
   html = html.replace(/\[\[xref:\s*([^,\]]+),\s*([^\]]+)\]\]/g, (match, specName, termId) => {
-    return `<span class="term-reference external" title="External reference to ${termId.trim()} from ${specName.trim()}">
-      ${termId.trim()}
+    const cleanSpecName = specName.trim()
+    const cleanTermId = termId.trim()
+    
+    const externalTerm = terms.find(t => 
+      t.external && 
+      t.externalSpec === cleanSpecName && 
+      t.id === cleanTermId
+    )
+    
+    const tooltip = externalTerm ? 
+      `External reference: ${externalTerm.definitionText || cleanTermId}` : 
+      `External reference to ${cleanTermId} from ${cleanSpecName}`
+    
+    return `<span class="term-reference external" title="${tooltip}">
+      ${cleanTermId}
     </span>`
   })
 
   // Handle ref patterns (local references)
   html = html.replace(/\[\[ref:\s*([^\]]+)\]\]/g, (match, termId) => {
-    const term = terms.find(t => t.id === termId.trim() && !t.external)
+    const cleanTermId = termId.trim()
+    const term = terms.find(t => t.id === cleanTermId && !t.external)
+    
     if (term) {
       return `<span class="term-reference local" title="${term.definitionText || 'Local term reference'}">
-        ${termId.trim()}
+        ${cleanTermId}
       </span>`
     }
     return `<span class="term-reference local missing" title="Term not found">
-      ${termId.trim()}
+      ${cleanTermId}
     </span>`
   })
 
   // Handle def patterns (term definitions)
   html = html.replace(/\[\[def:\s*([^,\]]+)(?:,\s*([^\]]+))?\]\]/g, (match, termId, aliases) => {
+    const cleanTermId = termId.trim()
     const cleanAliases = aliases ? aliases.split(',').map(a => a.trim()).filter(a => a.length > 0) : []
 
     return `<div class="term-definition-marker">
-      <div class="definition-term-name">${termId.trim()}</div>
+      <div class="definition-term-name">${cleanTermId}</div>
       ${cleanAliases.length > 0 ? `<div class="definition-aliases">Aliases: ${cleanAliases.join(', ')}</div>` : ''}
     </div>`
   })
+
+  // Convert line breaks to HTML
+  html = html.replace(/\n/g, '<br>')
 
   return html
 }

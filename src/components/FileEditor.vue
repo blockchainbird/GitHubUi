@@ -299,7 +299,8 @@ export default {
       toggleDefinitionsCollapse,
       toggleIndividualTerm,
       showTermsModal,
-      refreshTerms
+      refreshTerms,
+      initializeTerms
     } = termsManagement
 
     // Simple editor
@@ -649,9 +650,12 @@ export default {
     }
 
     // Lifecycle
-    onMounted(() => {
+    onMounted(async () => {
       addToVisitedRepos(props.owner, props.repo, props.branch)
       loadFileContent()
+      
+      // Initialize terms for preview mode
+      await initializeTerms()
 
       // Browser navigation guard
       const handleBeforeUnload = (event) => {
@@ -835,7 +839,7 @@ textarea:focus {
 /* Term reference styles */
 .external-term-reference {
   margin: 1rem 0;
-  padding: 0.15rem;
+  padding: 1rem;
   border: 1px solid #e9ecef;
   border-radius: 0.375rem;
   background-color: $success-color-transparent;
@@ -849,7 +853,8 @@ textarea:focus {
   background-color: $success-color;
   font-size: 0.85rem;
   display: block;
-  margin: 0.25rem;
+  margin: -0.75rem -0.75rem 0.5rem auto;
+  width: fit-content;
   float: right;
 }
 
@@ -890,6 +895,28 @@ textarea:focus {
   padding: 0.25rem 0;
 }
 
+/* Term reference inline styles */
+.term-reference {
+  font-weight: 500;
+  text-decoration: underline;
+  cursor: help;
+}
+
+.term-reference.external {
+  color: #28a745;
+  border-bottom: 1px dotted #28a745;
+}
+
+.term-reference.local {
+  color: #0d6efd;
+  border-bottom: 1px dotted #0d6efd;
+}
+
+.term-reference.local.missing {
+  color: #dc3545;
+  border-bottom: 1px dotted #dc3545;
+}
+
 /* Term definition marker styles */
 .term-definition-marker {
   margin: 1rem 0;
@@ -912,5 +939,16 @@ textarea:focus {
   color: #6c757d;
   font-size: 0.9em;
   font-style: italic;
+}
+
+/* Definition paragraph styles */
+.definition-paragraph {
+  margin: 0.5rem 0;
+  padding-left: 1rem;
+  border-left: 3px solid #0d6efd;
+  background-color: #f8f9fa;
+  padding: 0.5rem 0.5rem 0.5rem 1rem;
+  border-radius: 0 0.25rem 0.25rem 0;
+  line-height: 1.6;
 }
 </style>
