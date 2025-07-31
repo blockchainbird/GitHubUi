@@ -20,10 +20,10 @@
             <i class="bi bi-house"></i>
             Home
           </button>
-          <button @click="navigateAndClose('/create-project')" class="nav-link btn btn-link">
+          <!-- <button @click="navigateAndClose('/create-project')" class="nav-link btn btn-link">
             <i class="bi bi-plus-circle"></i>
             Create Project
-          </button>
+          </button> -->
           <button v-if="showRepoRelatedButtons" @click="navigateToAdminAndClose" class="nav-link btn btn-link">
             <i class="bi bi-gear"></i>
             Admin
