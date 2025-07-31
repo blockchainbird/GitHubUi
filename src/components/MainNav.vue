@@ -58,10 +58,6 @@
             <i class="bi bi-gear"></i>
             Settings
           </button>
-          <button @click="navigateAndClose('/version-demo')" class="nav-link btn btn-link" title="Version Demo">
-            <i class="bi bi-wrench-adjustable"></i>
-            Version Demo
-          </button>
           <!-- API Rate Limit Indicator -->
           <div class="nav-item d-flex align-items-center">
             <RateLimitIndicator />
