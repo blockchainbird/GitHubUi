@@ -2,10 +2,10 @@
   <nav class="navbar navbar-expand-lg main-nav">
     <div class="container-fluid">
       <!-- Brand/Logo -->
-      <span class="navbar-brand mb-0 h1 d-flex align-items-center">
+      <button @click="navigateAndClose('/home')" class="navbar-brand mb-0 h1 d-flex align-items-center border-0">
         <img src="/assets/logo.svg" alt="Spec-Up-T Logo" style="height: 2rem; width: auto; margin-right: 0.5rem;" />
         Spec-Up-T Editor
-      </span>
+      </button>
 
       <!-- Hamburger button for mobile -->
       <button class="navbar-toggler" type="button" @click="toggleNavbar" :aria-expanded="isNavbarOpen"
