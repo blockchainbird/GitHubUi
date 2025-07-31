@@ -32,12 +32,12 @@
             @click="navigateAndClose(`/external-specs/${route.params.owner}/${route.params.repo}/${route.params.branch}`)"
             class="nav-link btn btn-link" title="Manage External Specifications">
             <i class="bi bi-link-45deg"></i>
-            External Specs
+            External
           </button>
           <a v-if="showRepoRelatedButtons" :href="githubRepoUrl" target="_blank" rel="noopener" class="nav-link"
             title="View Repository on GitHub" @click="closeNavbar">
             <i class="bi bi-github"></i>
-            View on GitHub
+            GitHub
           </a>
           <button v-if="showRepoRelatedButtons" @click="navigateToHealthCheckAndClose" class="nav-link btn btn-link"
             title="Run Health Check">
