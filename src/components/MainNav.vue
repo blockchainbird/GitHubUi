@@ -285,6 +285,7 @@ export default {
   background: #f8f9fa;
   border-bottom: 1px solid #e0e0e0;
   padding: 0.5rem 0;
+  filter: invert(1);
 }
 
 .navbar-brand {

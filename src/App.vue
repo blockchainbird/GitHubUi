@@ -1,6 +1,6 @@
 <template>
   <div>
-    <MainNav style="filter: invert(1);" :isAuthenticated="isAuthenticated" :user="user" @logout="handleLogout" />
+    <MainNav :isAuthenticated="isAuthenticated" :user="user" @logout="handleLogout" />
     <main class="container-fluid mt-3">
       <router-view @login="handleLogin" @logout="handleLogout"></router-view>
     </main>
