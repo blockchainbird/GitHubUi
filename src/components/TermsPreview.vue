@@ -7,7 +7,7 @@
             <i class="bi bi-book"></i>
             Terms & Definitions Preview
           </h5>
-          <div class="d-flex align-items-center">
+          <div class="d-flex align-items-center ms-3">
             <button 
               type="button" 
               class="btn btn-outline-secondary btn-sm me-2 refresh-btn"
