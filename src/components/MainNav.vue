@@ -42,7 +42,7 @@
           <button v-if="showRepoRelatedButtons" @click="navigateToHealthCheckAndClose" class="nav-link btn btn-link"
             title="Run Health Check">
             <i class="bi bi-heart-pulse"></i>
-            Health Check
+            Health
           </button>
           <button @click="showModalAndClose" class="nav-link btn btn-link">
             <i class="bi bi-info-circle"></i>
