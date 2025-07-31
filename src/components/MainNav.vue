@@ -25,7 +25,7 @@
             Create Project
           </button> -->
           <button v-if="showRepoRelatedButtons" @click="navigateToAdminAndClose" class="nav-link btn btn-link">
-            <i class="bi bi-gear"></i>
+            <i class="bi bi-shield-lock"></i>
             Admin
           </button>
           <button v-if="showRepoRelatedButtons"
