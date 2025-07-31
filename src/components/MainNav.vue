@@ -48,7 +48,7 @@
             <i class="bi bi-info-circle"></i>
             About
           </button>
-          <a href="https://blockchainbird.github.io/spec-up-t-website/docs/tools/spec-up-t-editor-user-guide/"
+          <a title="Go to documentation website" href="https://blockchainbird.github.io/spec-up-t-website/docs/tools/spec-up-t-editor-user-guide/"
             target="_blank" rel="noopener" class="nav-link" @click="closeNavbar">
             <i class="bi bi-box-arrow-up-right"></i>
             Help
