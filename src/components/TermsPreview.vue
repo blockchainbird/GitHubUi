@@ -1,25 +1,22 @@
 <template>
-  <div class="modal fade" id="termsPreviewModal" tabindex="-1" aria-labelledby="termsPreviewModalLabel" aria-hidden="true">
+  <div class="modal fade" id="termsPreviewModal" tabindex="-1" aria-labelledby="termsPreviewModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog modal-xl">
       <div class="modal-content">
         <div class="modal-header bg-light">
           <h5 class="modal-title" id="termsPreviewModalLabel">
             <i class="bi bi-book"></i>
-            Terms & Definitions Preview
+            Terms & Definitions Preview – <code>{{ owner }}/{{ repo }}</code>
           </h5>
           <div class="d-flex align-items-center ms-3">
-            <button 
-              type="button" 
-              class="btn btn-outline-secondary btn-sm me-2 refresh-btn"
-              @click="refreshPreview"
-              :disabled="loading"
-              :title="loading ? 'Refreshing terms...' : 'Clear cache and reload all terms'">
+            <button type="button" class="btn btn-outline-secondary btn-sm me-2 refresh-btn" @click="refreshPreview"
+              :disabled="loading" :title="loading ? 'Refreshing terms...' : 'Clear cache and reload all terms'">
               <i class="bi" :class="loading ? 'bi-arrow-clockwise spin' : 'bi-arrow-clockwise'"></i>
             </button>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
         </div>
-        
+
         <div class="modal-body">
           <!-- Search and Filter Controls -->
           <div class="search-controls">
@@ -29,12 +26,8 @@
                   <span class="input-group-text">
                     <i class="bi bi-search"></i>
                   </span>
-                  <input 
-                    type="text" 
-                    class="form-control" 
-                    v-model="searchQuery"
-                    placeholder="Search terms or definitions..."
-                    @input="filterTerms">
+                  <input type="text" class="form-control" v-model="searchQuery"
+                    placeholder="Search terms or definitions..." @input="filterTerms">
                 </div>
               </div>
               <div class="col-md-4">
@@ -53,7 +46,7 @@
               <span class="visually-hidden">{{ loadingMessage }}</span>
             </div>
             <p class="loading-text mt-3">{{ loadingMessage }}</p>
-            
+
             <!-- Progress indicator for external specs -->
             <div v-if="proxyInfo && specsConfig?.specs?.[0]?.external_specs?.length" class="mt-3">
               <div class="alert alert-info d-flex align-items-center">
@@ -93,21 +86,17 @@
                   </div>
                 </div>
                 <div class="view-mode-buttons btn-group btn-group-sm">
-                  <button 
-                    class="btn btn-outline-secondary"
-                    :class="{ active: viewMode === 'compact' }"
+                  <button class="btn btn-outline-secondary" :class="{ active: viewMode === 'compact' }"
                     @click="viewMode = 'compact'">
                     <i class="bi bi-list"></i> Compact
                   </button>
-                  <button 
-                    class="btn btn-outline-secondary"
-                    :class="{ active: viewMode === 'detailed' }"
+                  <button class="btn btn-outline-secondary" :class="{ active: viewMode === 'detailed' }"
                     @click="viewMode = 'detailed'">
                     <i class="bi bi-card-text"></i> Detailed
                   </button>
                 </div>
               </div>
-              
+
               <!-- Show loading completion summary -->
               <div v-if="proxyInfo && !loading" class="mt-2">
                 <div class="alert alert-success alert-sm d-flex align-items-center">
@@ -115,7 +104,7 @@
                   <small>{{ proxyInfo }}</small>
                 </div>
               </div>
-              
+
               <!-- Show refresh success message -->
               <div v-if="refreshSuccess && !loading" class="mt-2">
                 <div class="alert alert-info alert-sm d-flex align-items-center">
@@ -133,45 +122,38 @@
               </p>
               <div v-if="!searchQuery && allTerms.length === 0" class="mt-2">
                 <small class="text-muted">
-                  This repository may not contain any term definitions, or they may be located in a different directory structure.
+                  This repository may not contain any term definitions, or they may be located in a different directory
+                  structure.
                 </small>
               </div>
             </div>
 
             <!-- Terms List -->
             <div v-else class="terms-list" style="max-height: 60vh; overflow-y: auto;">
-              
+
               <!-- Compact View -->
               <template v-if="viewMode === 'compact'">
                 <div class="list-group">
-                  <div 
-                    v-for="term in filteredTerms" 
-                    :key="getTermKey(term)"
-                    class="list-group-item compact-term-item">
+                  <div v-for="term in filteredTerms" :key="getTermKey(term)" class="list-group-item compact-term-item">
                     <div class="d-flex justify-content-between align-items-start">
                       <div class="flex-grow-1">
                         <div class="d-flex align-items-center mb-1">
                           <strong class="term-name me-2">{{ term.id }}</strong>
-                          <span 
-                            v-if="term.external" 
-                            class="badge bg-success">
+                          <span v-if="term.external" class="badge bg-success">
                             <i class="bi bi-link-45deg"></i> {{ term.externalSpec }}
                           </span>
                           <span v-else class="badge bg-primary">
                             <i class="bi bi-folder"></i> Local
                           </span>
                         </div>
-                        
+
                         <div v-if="term.aliases && term.aliases.length > 0" class="aliases-list mb-2">
                           <small class="text-muted me-1"><strong>Aliases:</strong></small>
-                          <span 
-                            v-for="alias in term.aliases" 
-                            :key="alias"
-                            class="alias-badge">
+                          <span v-for="alias in term.aliases" :key="alias" class="alias-badge">
                             {{ alias }}
                           </span>
                         </div>
-                        
+
                         <div class="definition-content">
                           <div v-if="term.definitionText" class="text-secondary">
                             {{ truncateText(term.definitionText, 120) }}
@@ -189,17 +171,12 @@
               <!-- Detailed View -->
               <template v-else>
                 <div class="row g-3">
-                  <div 
-                    v-for="term in filteredTerms" 
-                    :key="getTermKey(term)"
-                    class="col-12">
+                  <div v-for="term in filteredTerms" :key="getTermKey(term)" class="col-12">
                     <div class="card term-card h-100">
                       <div class="card-header d-flex justify-content-between align-items-center">
                         <div class="d-flex align-items-center">
                           <strong class="term-name me-2">{{ term.id }}</strong>
-                          <span 
-                            v-if="term.external" 
-                            class="badge bg-success">
+                          <span v-if="term.external" class="badge bg-success">
                             <i class="bi bi-link-45deg"></i> {{ term.externalSpec }}
                           </span>
                           <span v-else class="badge bg-primary">
@@ -214,15 +191,12 @@
                         <div v-if="term.aliases && term.aliases.length > 0" class="aliases-list mb-3">
                           <strong class="text-muted small">Aliases:</strong>
                           <div class="mt-1">
-                            <span 
-                              v-for="alias in term.aliases" 
-                              :key="alias"
-                              class="alias-badge">
+                            <span v-for="alias in term.aliases" :key="alias" class="alias-badge">
                               {{ alias }}
                             </span>
                           </div>
                         </div>
-                        
+
                         <div class="definition-content">
                           <div v-if="term.definition" v-html="term.definition" class="terms-and-definitions-list"></div>
                           <div v-else-if="term.definitionText" class="definition-text">
@@ -240,7 +214,7 @@
             </div>
           </div>
         </div>
-        
+
         <div class="modal-footer bg-light">
           <div class="me-auto small text-muted">
             <i class="bi bi-info-circle"></i>
