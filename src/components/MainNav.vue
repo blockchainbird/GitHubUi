@@ -1,5 +1,5 @@
 <template>
-  <nav class="navbar navbar-expand-lg main-nav">
+  <nav class="navbar navbar-expand-lg main-nav sticky-top">
     <div class="container-fluid">
             <!-- Brand/Logo -->
       <span class="navbar-brand mb-0 h1 d-flex align-items-center">
