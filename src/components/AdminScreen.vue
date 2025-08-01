@@ -6,8 +6,8 @@
           <div>
             <h2>Admin Configuration</h2>
             <p class="text-muted">
-              <i class="bi bi-github"></i>
-              {{ owner }}/{{ repo }} ({{ branch }}) - Manage specifications configuration
+              <i class="bi bi-github me-2"></i>
+              <code>{{ owner }}/{{ repo }} ({{ branch }})</code>
             </p>
           </div>
           <button @click="$router.go(-1)" class="btn btn-outline-secondary">
