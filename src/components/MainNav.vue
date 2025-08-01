@@ -16,7 +16,8 @@
       <!-- Collapsible content -->
       <div class="collapse navbar-collapse" :class="{ show: isNavbarOpen }" id="navbarNav">
         <div class="navbar-nav ms-auto">
-          <button @click="navigateAndClose('/home')" class="nav-link btn btn-link">
+          <button @click="navigateAndClose('/home')" 
+            :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/home') }]">
             <i class="bi bi-house"></i>
             Home
           </button>
@@ -24,14 +25,16 @@
             <i class="bi bi-plus-circle"></i>
             Create Project
           </button> -->
-          <button v-if="showRepoRelatedButtons" @click="navigateToFilesAndClose" class="nav-link btn btn-link"
+          <button v-if="showRepoRelatedButtons" @click="navigateToFilesAndClose" 
+            :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/files') }]"
             title="Browse Repository Files">
             <i class="bi bi-folder"></i>
             Files
           </button>
           <button v-if="showRepoRelatedButtons"
             @click="navigateAndClose(`/external-specs/${route.params.owner}/${route.params.repo}/${route.params.branch}`)"
-            class="nav-link btn btn-link" title="Manage External Specifications">
+            :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/external-specs') }]" 
+            title="Manage External Specifications">
             <i class="bi bi-link-45deg"></i>
             External
           </button>
@@ -40,7 +43,8 @@
             <i class="bi bi-book"></i>
             Preview
           </button>
-          <button v-if="showRepoRelatedButtons" @click="navigateToHealthCheckAndClose" class="nav-link btn btn-link"
+          <button v-if="showRepoRelatedButtons" @click="navigateToHealthCheckAndClose" 
+            :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/health-check') }]"
             title="Run Health Check">
             <i class="bi bi-heart-pulse"></i>
             Health
@@ -60,11 +64,14 @@
             <i class="bi bi-box-arrow-up-right"></i>
             Help
           </a>
-          <button v-if="showRepoRelatedButtons" @click="navigateToAdminAndClose" class="nav-link btn btn-link">
+          <button v-if="showRepoRelatedButtons" @click="navigateToAdminAndClose" 
+            :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/admin') }]">
             <i class="bi bi-shield-lock"></i>
             Admin
           </button>
-          <button @click="navigateAndClose('/settings')" class="nav-link btn btn-link" title="Application Settings">
+          <button @click="navigateAndClose('/settings')" 
+            :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/settings') }]" 
+            title="Application Settings">
             <i class="bi bi-gear"></i>
             Settings
           </button>
@@ -279,6 +286,24 @@ export default {
     // Get build info from Vite's define
     const buildInfo = __BUILD_INFO__;
 
+    // Function to check if a route is active
+    const isActiveRoute = (routePath) => {
+      const currentPath = route.path;
+      
+      // Handle exact matches for static routes
+      if (routePath === '/home' || routePath === '/settings') {
+        return currentPath === routePath;
+      }
+      
+      // Handle parametric routes that include owner/repo/branch
+      if (route.params.owner && route.params.repo && route.params.branch) {
+        const expectedPath = `${routePath}/${route.params.owner}/${route.params.repo}/${route.params.branch}`;
+        return currentPath.startsWith(expectedPath);
+      }
+      
+      return false;
+    };
+
     return {
       route,
       showRepoRelatedButtons,
@@ -297,7 +322,8 @@ export default {
       handleLogout,
       buildInfo,
       isAuthenticated,
-      user
+      user,
+      isActiveRoute
     };
   },
   data() {
@@ -366,13 +392,24 @@ export default {
   color: #0d6efd;
 }
 
+.navbar-nav .nav-link.active {
+  background-color: #0d6efd;
+  color: white;
+  /* font-weight: 500; */
+}
+
+.navbar-nav .nav-link.active:hover {
+  background-color: #0b5ed7;
+  color: white;
+}
+
 .navbar-nav .nav-link i {
   margin-right: 0.5rem;
   font-size: 1rem;
 }
 
 /* Button-style nav links */
-.navbar-nav .btn.nav-link {
+.navbar-nav .nav-link {
   border: none;
   background: transparent;
   font-size: inherit;
@@ -401,6 +438,19 @@ export default {
   .navbar-nav .nav-link:hover {
     background-color: #f8f9fa;
     border-color: #0d6efd;
+  }
+
+  .navbar-nav .nav-link.active {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+    font-weight: 500;
+  }
+
+  .navbar-nav .nav-link.active:hover {
+    background-color: #0b5ed7;
+    border-color: #0b5ed7;
+    color: white;
   }
 
   .navbar-nav .nav-item {
