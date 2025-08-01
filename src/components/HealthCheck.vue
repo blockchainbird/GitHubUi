@@ -5,11 +5,13 @@
         <i class="bi bi-heart-pulse"></i>
         Health Check
       </h2>
-      <p class="text-muted">
+      <!-- Repository Info Row -->
+      <div class="repository-info d-flex align-items-center text-muted">
         <i class="bi bi-github me-2"></i>
-        <code>{{ owner }}/{{ repo }} ({{ branch }})</code>
-      </p>
-
+        <code class="bg-light px-2 py-1 rounded border">{{ owner }}/{{ repo }}</code>
+        <span class="mx-2">•</span>
+        <span class="badge bg-secondary">{{ branch }}</span>
+      </div>
       <div>
         <button @click="runHealthCheck" class="btn btn-primary me-2" :disabled="isRunning">
           <span v-if="isRunning" class="spinner-border spinner-border-sm me-2" role="status">

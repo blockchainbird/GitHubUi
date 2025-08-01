@@ -5,10 +5,13 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
             <h2>Admin Configuration</h2>
-            <p class="text-muted">
+            <!-- Repository Info Row -->
+            <div class="repository-info d-flex align-items-center text-muted">
               <i class="bi bi-github me-2"></i>
-              <code>{{ owner }}/{{ repo }} ({{ branch }})</code>
-            </p>
+              <code class="bg-light px-2 py-1 rounded border">{{ owner }}/{{ repo }}</code>
+              <span class="mx-2">•</span>
+              <span class="badge bg-secondary">{{ branch }}</span>
+            </div>
           </div>
           <button @click="$router.go(-1)" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left"></i>

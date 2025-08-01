@@ -8,8 +8,13 @@
               <i class="bi bi-link-45deg"></i>
               External Specifications Manager
             </h4>
-            <p class="text-muted"><i class="bi bi-github me-2"></i><code>{{ owner }}/{{ repo }} ({{ branch }})</code>
-            </p>
+            <!-- Repository Info Row -->
+            <div class="repository-info d-flex align-items-center text-muted">
+              <i class="bi bi-github me-2"></i>
+              <code class="bg-light px-2 py-1 rounded border">{{ owner }}/{{ repo }}</code>
+              <span class="mx-2">•</span>
+              <span class="badge bg-secondary">{{ branch }}</span>
+            </div>
             <div>
               <button @click="goBack" class="btn btn-outline-secondary me-2">
                 <i class="bi bi-arrow-left"></i> Back
