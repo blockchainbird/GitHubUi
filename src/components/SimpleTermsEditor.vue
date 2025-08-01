@@ -11,7 +11,7 @@
         <!-- Term Type Selection -->
         <div class="mb-3">
           <label class="form-label">Term Type <i
-              title="Local terms are defined in this repository.External terms reference definitions from other specifications."
+              title="Local terms are defined in this repository. External terms reference definitions from other specifications."
               class="bi bi-question-circle fs-5 ms-3 text-primary"></i></label>
           <div class="btn-group w-100" role="group">
             <input type="radio" class="btn-check" id="termType-local" v-model="termType" value="local"
