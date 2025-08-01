@@ -490,6 +490,7 @@ export default {
 @media (min-width: 992px) {
   .navbar-nav {
     flex-direction: row;
+    flex-wrap: wrap;
   }
 
   .navbar-nav .nav-item {
