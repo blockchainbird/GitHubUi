@@ -57,8 +57,8 @@ export default {
 <style scoped>
 .back-to-top-btn {
   position: fixed;
-  bottom: 2rem;
-  right: 2rem;
+  bottom: 1rem;
+  left: 1rem;
   width: 3rem;
   height: 3rem;
   border: none;
