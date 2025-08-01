@@ -433,6 +433,9 @@ export default {
     const dragPosition = ref('') // 'before', 'on', or 'after'
     const isReordering = ref(false) // Track when items are animating to new positions
     const recentlyMovedItem = ref(null) // Track which item was just moved
+    
+    // Throttle drag events to prevent excessive re-renders
+    let dragThrottleTimer = null
 
     // Filter state
     const filterText = ref('')
@@ -537,8 +540,9 @@ export default {
         return items
       }
 
-      // In root directory, use dragged order if available, otherwise initialize with current data
+      // In root directory, use dragged order if available, otherwise use default order
       if (draggedItems.value.length > 0) {
+        // Filter dragged items to only show items that match current filters
         const filtered = draggedItems.value.filter(item => {
           if (item.type === 'folder') {
             return filteredFolders.value.some(f => f.name === item.name)
@@ -549,11 +553,7 @@ export default {
 
         return filtered;
       } else {
-        // Initialize with default order - but only when files/folders are actually loaded
-        if (files.value.length === 0 && folders.value.length === 0) {
-          return [];
-        }
-
+        // Return default order - initialization happens elsewhere
         const items = []
 
         // Add filtered folders first  
@@ -566,20 +566,33 @@ export default {
           items.push({ ...file, type: 'file' })
         })
 
-        // Set this as the initial drag items - but don't modify during computed execution
-        // Use nextTick to avoid infinite loops
-        if (isRootDirectory.value && items.length > 0) {
-          nextTick(() => {
-            if (draggedItems.value.length === 0) {
-              draggedItems.value = [...items];
-              originalOrder.value = [...items];
-            }
-          });
-        }
-
         return items
       }
     })
+
+    // Initialize drag items for root directory
+    const initializeDragItems = () => {
+      if (!isRootDirectory.value || draggedItems.value.length > 0) {
+        return
+      }
+
+      const items = []
+
+      // Add folders first  
+      folders.value.forEach(folder => {
+        items.push({ ...folder, type: 'folder' })
+      })
+
+      // Then add files
+      files.value.forEach(file => {
+        items.push({ ...file, type: 'file' })
+      })
+
+      if (items.length > 0) {
+        draggedItems.value = [...items]
+        originalOrder.value = [...items]
+      }
+    }
 
     // Helper function to check authentication and redirect if needed
     const checkAuthAndRedirect = (error) => {
@@ -789,6 +802,9 @@ export default {
         if (isRootDirectory.value && specsConfig.value) {
           console.log('Applying saved order...')
           applySavedOrder();
+        } else {
+          // Initialize drag items for root directory if no saved order
+          initializeDragItems()
         }
       } catch (err) {
         console.error('Error loading spec files:', err)
@@ -1563,6 +1579,12 @@ export default {
     onUnmounted(() => {
       document.removeEventListener('click', handleClickOutside)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
+      
+      // Clean up drag throttle timer
+      if (dragThrottleTimer) {
+        clearTimeout(dragThrottleTimer);
+        dragThrottleTimer = null;
+      }
     })
 
     // Go Up directory function (never go above root specDirectory)
@@ -1635,6 +1657,10 @@ export default {
       if (!isRootDirectory.value || !isDragging.value) return;
 
       event.preventDefault();
+      
+      // Avoid unnecessary updates if we're already at this position
+      if (dragOverIndex.value === index) return;
+      
       const rect = event.currentTarget.getBoundingClientRect();
       const y = event.clientY - rect.top;
       const height = rect.height;
@@ -1671,20 +1697,36 @@ export default {
       event.preventDefault();
       event.dataTransfer.dropEffect = 'move';
 
+      // Throttle updates to prevent oscillation
+      if (dragThrottleTimer) return;
+      
+      dragThrottleTimer = setTimeout(() => {
+        dragThrottleTimer = null;
+      }, 200);
+
+      // Only update position if we're over a different element or need to recalculate position
+      if (dragOverIndex.value !== index) {
+        dragOverIndex.value = index;
+      }
+
       // Update position based on mouse position
       const rect = event.currentTarget.getBoundingClientRect();
       const y = event.clientY - rect.top;
       const height = rect.height;
 
+      let newPosition;
       if (y < height * 0.33) {
-        dragPosition.value = 'before';
+        newPosition = 'before';
       } else if (y > height * 0.67) {
-        dragPosition.value = 'after';
+        newPosition = 'after';
       } else {
-        dragPosition.value = 'on';
+        newPosition = 'on';
       }
 
-      dragOverIndex.value = index;
+      // Only update if position actually changed
+      if (dragPosition.value !== newPosition) {
+        dragPosition.value = newPosition;
+      }
     };
 
     const onDrop = (event, dropIndex, dropType) => {
@@ -1765,6 +1807,13 @@ export default {
 
     const onDragEnd = (event) => {
       event.target.style.opacity = '1';
+      
+      // Clear throttle timer
+      if (dragThrottleTimer) {
+        clearTimeout(dragThrottleTimer);
+        dragThrottleTimer = null;
+      }
+      
       // Clear all drag state
       draggedIndex.value = -1;
       dragOverIndex.value = -1;
