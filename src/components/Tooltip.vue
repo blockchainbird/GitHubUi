@@ -107,13 +107,14 @@ export default {
 };
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@import "../styles/custom-bootstrap.scss";
 .tooltip-wrapper {
   display: inline-block;
 }
 
 .tooltip-content {
-  background-color: #333;
+  background-color: $primary-color-transparent !important;
   color: white;
   padding: 0.375rem 0.75rem;
   border-radius: 0.25rem;
