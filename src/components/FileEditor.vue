@@ -133,10 +133,10 @@
                     <i class="bi bi-bookmark"></i>
                     Terms
                   </button>
-                  <button @click="showAddTermModal" class="btn btn-outline-success" title="Add New Term">
+                  <!-- <button @click="showAddTermModal" class="btn btn-outline-success" title="Add New Term">
                     <i class="bi bi-plus-circle"></i>
                     Add Term
-                  </button>
+                  </button> -->
                 </div>
 
                 <div class="btn-group btn-group-sm" role="group">
