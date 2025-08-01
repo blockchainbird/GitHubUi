@@ -10,76 +10,64 @@
       <div class="card-body">
         <!-- Term Type Selection -->
         <div class="mb-3">
-          <label class="form-label">Term Type</label>
+          <label class="form-label">Term Type <i
+              title="Local terms are defined in this repository.External terms reference definitions from other specifications."
+              class="bi bi-question-circle fs-5 ms-3 text-primary"></i></label>
           <div class="btn-group w-100" role="group">
-            <input type="radio" class="btn-check" id="termType-local" 
-                   v-model="termType" value="local" @change="onFormChange">
+            <input type="radio" class="btn-check" id="termType-local" v-model="termType" value="local"
+              @change="onFormChange">
             <label class="btn btn-outline-primary" for="termType-local">
               <i class="bi bi-house"></i> Local Term
             </label>
 
-            <input type="radio" class="btn-check" id="termType-external" 
-                   v-model="termType" value="external" @change="onFormChange">
+            <input type="radio" class="btn-check" id="termType-external" v-model="termType" value="external"
+              @change="onFormChange">
             <label class="btn btn-outline-success" for="termType-external">
               <i class="bi bi-link-45deg"></i> External Term
             </label>
-          </div>
-          <div class="form-text">
-            Local terms are defined in this repository. External terms reference definitions from other specifications.
           </div>
         </div>
 
         <!-- External Repository (shown only for external terms) -->
         <div v-if="termType === 'external'" class="mb-3">
-          <label class="form-label">External Repository</label>
+          <label class="form-label">External Repository <i
+              title="The identifier of the external specification containing the term."
+              class="bi bi-question-circle fs-5 ms-3 text-primary"></i></label>
           <div class="input-group">
-            <input type="text" class="form-control" 
-                   v-model="externalRepo"
-                   @input="onFormChange"
-                   placeholder="e.g., toip1, did-core">
+            <input type="text" class="form-control" v-model="externalRepo" @input="onFormChange"
+              placeholder="e.g., toip1, did-core">
             <button class="btn btn-outline-info" type="button" @click="$emit('show-external-terms')">
               <i class="bi bi-search"></i> Browse
             </button>
-          </div>
-          <div class="form-text">
-            The identifier of the external specification containing the term.
           </div>
         </div>
 
         <!-- Main Term -->
         <div class="mb-3">
-          <label for="mainTerm" class="form-label">Term Name</label>
-          <input type="text" class="form-control" id="mainTerm"
-                 v-model="mainTerm"
-                 @input="onFormChange"
-                 placeholder="Enter the main term">
-          <div class="form-text">
-            The primary name for this term (e.g., "verifiable-credential").
-          </div>
+          <label for="mainTerm" class="form-label">Term Name <i
+              title="The primary name for this term (e.g., “verifiable-credential”)."
+              class="bi bi-question-circle fs-5 ms-3 text-primary"></i></label>
+          <input type="text" class="form-control" id="mainTerm" v-model="mainTerm" @input="onFormChange"
+            placeholder="Enter the main term">
         </div>
 
         <!-- Aliases -->
         <div class="mb-3">
-          <label class="form-label">Aliases (Optional)</label>
+          <label class="form-label">Aliases (Optional) <i
+              title="Alternative names for the term (e.g., “VC”, “credential”)."
+              class="bi bi-question-circle fs-5 ms-3 text-primary"></i></label>
           <div v-for="(alias, index) in aliases" :key="index" class="input-group mb-2">
-            <input type="text" class="form-control" 
-                   :value="alias || ''"
-                   @input="e => onAliasChange(index, e.target.value)"
-                   @focus="onAliasInputFocus(index)"
-                   @blur="onAliasInputBlur(index)"
-                   placeholder="Enter alias">
-            <button class="btn btn-outline-danger" type="button" 
-                    @click="removeAlias(index)"
-                    :disabled="aliases.length <= 1">
+            <input type="text" class="form-control" :value="alias || ''"
+              @input="e => onAliasChange(index, e.target.value)" @focus="onAliasInputFocus(index)"
+              @blur="onAliasInputBlur(index)" placeholder="Enter alias">
+            <button class="btn btn-outline-danger" type="button" @click="removeAlias(index)"
+              :disabled="aliases.length <= 1">
               <i class="bi bi-trash"></i>
             </button>
           </div>
           <button class="btn btn-outline-secondary btn-sm" @click="addAlias">
             <i class="bi bi-plus"></i> Add Alias
           </button>
-          <div class="form-text">
-            Alternative names for the term (e.g., "VC", "credential").
-          </div>
         </div>
 
         <!-- Generated Term Line Preview -->
@@ -90,43 +78,35 @@
 
         <!-- Definition -->
         <div class="mb-3">
-          <label for="definition" class="form-label">Definition</label>
-          
+          <label for="definition" class="form-label">Definition <i
+              title="The definition content. Each paragraph will be automatically prefixed with “~” in the technical format."
+              class="bi bi-question-circle fs-5 ms-3 text-primary"></i></label>
+
           <!-- Definition Toolbar -->
           <div class="definition-editor-toolbar">
             <div class="btn-group btn-group-sm" role="group">
-              <button type="button" class="btn btn-outline-secondary" 
-                      @click="$emit('insert-definition-text', '**', '**')"
-                      title="Bold">
+              <button type="button" class="btn btn-outline-secondary"
+                @click="$emit('insert-definition-text', '**', '**')" title="Bold">
                 <i class="bi bi-type-bold"></i>
               </button>
-              <button type="button" class="btn btn-outline-secondary" 
-                      @click="$emit('insert-definition-text', '_', '_')"
-                      title="Italic">
+              <button type="button" class="btn btn-outline-secondary" @click="$emit('insert-definition-text', '_', '_')"
+                title="Italic">
                 <i class="bi bi-type-italic"></i>
               </button>
-              <button type="button" class="btn btn-outline-secondary" 
-                      @click="$emit('insert-definition-text', '`', '`')"
-                      title="Code">
+              <button type="button" class="btn btn-outline-secondary" @click="$emit('insert-definition-text', '`', '`')"
+                title="Code">
                 <i class="bi bi-code"></i>
               </button>
-              <button type="button" class="btn btn-outline-secondary" 
-                      @click="$emit('insert-definition-text', '[', '](url)')"
-                      title="Link">
+              <button type="button" class="btn btn-outline-secondary"
+                @click="$emit('insert-definition-text', '[', '](url)')" title="Link">
                 <i class="bi bi-link"></i>
               </button>
             </div>
           </div>
 
-          <textarea class="form-control" id="definition" rows="6"
-                    ref="definitionEditor"
-                    v-model="definition"
-                    @input="onDefinitionInput"
-                    @keydown.enter="onDefinitionEnter"
-                    placeholder="Write the definition content here..."></textarea>
-          <div class="form-text">
-            The definition content. Each paragraph will be automatically prefixed with "~" in the technical format.
-          </div>
+          <textarea class="form-control" id="definition" rows="6" ref="definitionEditor" v-model="definition"
+            @input="onDefinitionInput" @keydown.enter="onDefinitionEnter"
+            placeholder="Write the definition content here..."></textarea>
         </div>
       </div>
     </div>
