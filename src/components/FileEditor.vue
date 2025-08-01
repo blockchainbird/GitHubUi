@@ -15,9 +15,6 @@
         </span>
       </h2>
       <div>
-        <button @click="goBack" class="btn btn-outline-secondary me-2">
-          Close
-        </button>
         <button @click="handleTogglePublish" class="btn me-2" :class="isDraft ? 'btn-success' : 'btn-warning'"
           :disabled="saving || isNewFile"
           :title="isNewFile ? 'Create the file first before publishing/unpublishing' : ''">
@@ -33,6 +30,10 @@
             <i class="bi" :class="isNewFile ? 'bi-plus-circle' : 'bi-save'"></i>
             {{ isNewFile ? 'Create & Commit' : 'Save & Commit' }}
           </span>
+        </button>
+        <button @click="goBack" class="btn btn-outline-secondary ms-2">
+          <i class="bi bi-x-circle me-2"></i>
+          Close
         </button>
       </div>
     </div>
