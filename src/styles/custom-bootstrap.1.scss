@@ -1,0 +1,41 @@
+$white: #f3f9ff;
+
+$theme-colors: (
+  "light": #F6E7E1,
+  // warm off-white
+  "primary": #BFA2DB,
+  // Provencal lavender
+  "secondary": #A3A1C1,
+  // muted lavender
+  "info": #E2C275,
+  // warm golden
+  "success": #C2B280,
+  // olive/earthy
+  "warning": #F7C59F,
+  // warm peach
+  "danger": #D291BC,
+  // soft magenta
+  "dark": #5D4660,
+  // deep lavender
+);
+
+// Transparent variants for theme colors
+$light-color: #F6E7E1;
+$light-color-transparent: #f6e7e16e;
+$primary-color: #BFA2DB;
+$primary-color-transparent: #bfa2db6e;
+$secondary-color: #A3A1C1;
+$secondary-color-transparent: #a3a1c16e;
+$info-color: #E2C275;
+$info-color-transparent: #e2c2756e;
+$success-color: #C2B280;
+$success-color-transparent: #c2b2806e;
+$warning-color: #F7C59F;
+$warning-color-transparent: #f7c59f6e;
+$danger-color: #D291BC;
+$danger-color-transparent: #d291bc6e;
+$dark-color: #5D4660;
+$dark-color-transparent: #5d46606e;
+
+// Import Bootstrap (keeping @import for compatibility)
+@import "bootstrap/scss/bootstrap";
