@@ -14,7 +14,20 @@
 
 <script>
 export default {
-  name: 'Modal'
+  name: 'Modal',
+  mounted() {
+    window.addEventListener('keydown', this.handleEscape);
+  },
+  beforeUnmount() {
+    window.removeEventListener('keydown', this.handleEscape);
+  },
+  methods: {
+    handleEscape(e) {
+      if (e.key === 'Escape') {
+        this.$emit('close');
+      }
+    }
+  }
 };
 </script>
 
