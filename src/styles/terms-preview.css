@@ -7,6 +7,23 @@
   color: #333;
 }
 
+/* Modal Height Fix */
+.modal-xl {
+  max-width: 90vw;
+}
+
+.modal-content {
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-body {
+  overflow-y: auto;
+  max-height: 90vh;
+}
+
 /* Modal Header Enhancements */
 .modal-header.bg-gradient-light {
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
