@@ -1,7 +1,7 @@
 <template>
-  <nav class="navbar navbar-expand-lg main-nav sticky-top">
+  <nav class="navbar navbar-expand-lg main-nav sticky-top bg-light">
     <div class="container-fluid">
-            <!-- Brand/Logo -->
+      <!-- Brand/Logo -->
       <span class="navbar-brand mb-0 h1 d-flex align-items-center">
         <img src="/assets/logo.svg" alt="Spec-Up-T Logo" style="height: 2rem; width: auto; margin-right: 0.5rem;" />
         Spec-Up-T Editor
@@ -16,7 +16,7 @@
       <!-- Collapsible content -->
       <div class="collapse navbar-collapse" :class="{ show: isNavbarOpen }" id="navbarNav">
         <div class="navbar-nav ms-auto">
-          <button @click="navigateAndClose('/home')" 
+          <button @click="navigateAndClose('/home')"
             :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/home') }]">
             <i class="bi bi-house"></i>
             Home
@@ -25,7 +25,7 @@
             <i class="bi bi-plus-circle"></i>
             Create Project
           </button> -->
-          <button v-if="showRepoRelatedButtons" @click="navigateToFilesAndClose" 
+          <button v-if="showRepoRelatedButtons" @click="navigateToFilesAndClose"
             :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/files') }]"
             title="Browse Repository Files">
             <i class="bi bi-folder"></i>
@@ -33,7 +33,7 @@
           </button>
           <button v-if="showRepoRelatedButtons"
             @click="navigateAndClose(`/external-specs/${route.params.owner}/${route.params.repo}/${route.params.branch}`)"
-            :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/external-specs') }]" 
+            :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/external-specs') }]"
             title="Manage External Specifications">
             <i class="bi bi-link-45deg"></i>
             External
@@ -43,7 +43,7 @@
             <i class="bi bi-book"></i>
             Preview
           </button>
-          <button v-if="showRepoRelatedButtons" @click="navigateToHealthCheckAndClose" 
+          <button v-if="showRepoRelatedButtons" @click="navigateToHealthCheckAndClose"
             :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/health-check') }]"
             title="Run Health Check">
             <i class="bi bi-heart-pulse"></i>
@@ -64,13 +64,13 @@
             <i class="bi bi-box-arrow-up-right"></i>
             Help
           </a>
-          <button v-if="showRepoRelatedButtons" @click="navigateToAdminAndClose" 
+          <button v-if="showRepoRelatedButtons" @click="navigateToAdminAndClose"
             :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/admin') }]">
             <i class="bi bi-shield-lock"></i>
             Admin
           </button>
-          <button @click="navigateAndClose('/settings')" 
-            :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/settings') }]" 
+          <button @click="navigateAndClose('/settings')"
+            :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/settings') }]"
             title="Application Settings">
             <i class="bi bi-gear"></i>
             Settings
@@ -289,18 +289,18 @@ export default {
     // Function to check if a route is active
     const isActiveRoute = (routePath) => {
       const currentPath = route.path;
-      
+
       // Handle exact matches for static routes
       if (routePath === '/home' || routePath === '/settings') {
         return currentPath === routePath;
       }
-      
+
       // Handle parametric routes that include owner/repo/branch
       if (route.params.owner && route.params.repo && route.params.branch) {
         const expectedPath = `${routePath}/${route.params.owner}/${route.params.repo}/${route.params.branch}`;
         return currentPath.startsWith(expectedPath);
       }
-      
+
       return false;
     };
 
@@ -340,12 +340,13 @@ export default {
 };
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@import "../styles/custom-bootstrap.scss";
+
 .main-nav {
   background: #f8f9fa;
   border-bottom: 1px solid #e0e0e0;
   padding: 0.5rem 0;
-  filter: invert(1);
 }
 
 .navbar-brand {
@@ -393,7 +394,7 @@ export default {
 }
 
 .navbar-nav .nav-link.active {
-  background-color: #0d6efd;
+  background-color: $dark-color;
   color: white;
   /* font-weight: 500; */
 }
@@ -441,14 +442,14 @@ export default {
   }
 
   .navbar-nav .nav-link.active {
-    background-color: #0d6efd;
+    background-color: var(--primary-color-transparent);
     border-color: #0d6efd;
     color: white;
     font-weight: 500;
   }
 
   .navbar-nav .nav-link.active:hover {
-    background-color: #0b5ed7;
+    /* background-color: #0b5ed7; */
     border-color: #0b5ed7;
     color: white;
   }
