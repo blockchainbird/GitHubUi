@@ -119,7 +119,11 @@ export function useFileContent(props) {
       )
 
       fileSha.value = response.data.sha
-      content.value = atob(response.data.content)
+      // Properly decode UTF-8 content from base64
+      const binaryString = atob(response.data.content)
+      content.value = new TextDecoder('utf-8').decode(
+        new Uint8Array([...binaryString].map(char => char.charCodeAt(0)))
+      )
       originalContent.value = content.value
 
     } catch (err) {
@@ -155,7 +159,7 @@ export function useFileContent(props) {
 
       const data = {
         message: commitMessage.value,
-        content: btoa(content.value),
+        content: btoa(new TextEncoder().encode(content.value).reduce((data, byte) => data + String.fromCharCode(byte), '')),
         branch: props.branch
       }
 
