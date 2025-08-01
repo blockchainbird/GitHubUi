@@ -7,7 +7,7 @@
           <i class="bi bi-github me-2"></i>
           <code class="bg-light px-2 py-1 rounded border">{{ owner }}/{{ repo }}</code>
           <span class="mx-2">•</span>
-          <span class="badge bg-secondary">{{ branch }}</span>
+          <span class="fs-6 badge bg-secondary">{{ branch }}</span>
         </div>
       </h2>
       <div>
