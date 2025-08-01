@@ -442,7 +442,7 @@ export default {
   }
 
   .navbar-nav .nav-link.active {
-    background-color: var(--primary-color-transparent);
+    background-color: $primary-color-transparent;
     border-color: #0d6efd;
     color: white;
     font-weight: 500;
