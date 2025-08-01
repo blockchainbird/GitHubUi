@@ -342,21 +342,14 @@ export default {
     const editor = ref(null)
     const proxyInfo = ref('')
 
+    // State to track if file was detected as terms file (for stability)
+    const wasDetectedAsTermsFile = ref(false)
+
     // Check if file is terms file
     const isTermsFileComputed = computed(() => {
       // For new files, check if we're in a terms directory or if filename suggests terms
       const isCreatingNewFile = isNewFile.value || route.query.new === 'true'
-      
-      // Debug logging
-      console.log('Debug isTermsFileComputed:', {
-        isNewFile: isNewFile.value,
-        routeQueryNew: route.query.new,
-        isCreatingNewFile,
-        path: props.path,
-        filename: filename.value,
-        route: route
-      })
-      
+
       if (isCreatingNewFile) {
         // Handle both string and array cases for path
         let path = ''
@@ -365,43 +358,64 @@ export default {
         } else if (Array.isArray(props.path) && props.path.length > 0) {
           path = props.path[0]
         }
-        
+
         const name = filename.value || ''
-        
+
         // Check if path contains terms directory patterns
         const isInTermsDirectory = path.toLowerCase().includes('term') ||
           path.toLowerCase().includes('/terms/') ||
           path.toLowerCase().includes('/terms-definitions/') ||
           path.toLowerCase().includes('definitions')
-        
+
         // Check if filename suggests it's a terms file
         const isTermsFileName = name.toLowerCase().includes('term') ||
           name.toLowerCase().includes('definition') ||
           name.toLowerCase().includes('def-')
-        
+
         // Check if we're creating a markdown file (new files typically don't have extension in path initially)
-        const isMarkdownFile = name.toLowerCase().endsWith('.md') || 
-                             path.toLowerCase().endsWith('.md') ||
-                             (!name.includes('.') && !path.includes('.')) // Assume .md for files without extension
-        
-        console.log('Debug new file terms detection:', {
-          path, name, isInTermsDirectory, isTermsFileName, isMarkdownFile,
-          result: (isInTermsDirectory || isTermsFileName) && isMarkdownFile
-        })
-        
+        const isMarkdownFile = name.toLowerCase().endsWith('.md') ||
+          path.toLowerCase().endsWith('.md') ||
+          (!name.includes('.') && !path.includes('.')) // Assume .md for files without extension
+
         // For new files in terms context, enable terms mode
-        return (isInTermsDirectory || isTermsFileName) && isMarkdownFile
+        const result = (isInTermsDirectory || isTermsFileName) && isMarkdownFile
+        if (result) {
+          wasDetectedAsTermsFile.value = true
+        }
+        return result
       }
-      
-      // For existing files, use the original logic
-      const existingFileResult = isTermsFile(filename.value, content.value)
-      console.log('Debug existing file terms detection:', {
-        filename: filename.value,
-        hasContent: !!content.value,
-        result: existingFileResult
-      })
-      
-      return existingFileResult
+
+      // For existing files, check multiple conditions for stability
+      const hasTermsContent = isTermsFile(filename.value, content.value)
+      const isCurrentlyInSimpleMode = editMode.value === 'simple'
+      const hasSimpleEditorContent = simpleEditor.value.mainTerm.trim() !== '' ||
+        simpleEditor.value.definition.trim() !== ''
+
+      // Once detected as terms file, remain stable unless clearly not a terms file
+      if (hasTermsContent) {
+        wasDetectedAsTermsFile.value = true
+        return true
+      }
+
+      // If we're in simple mode or have simple editor content, it's a terms file
+      if (isCurrentlyInSimpleMode || hasSimpleEditorContent) {
+        wasDetectedAsTermsFile.value = true
+        return true
+      }
+
+      // If previously detected as terms file and we're still loading or syncing, remain stable
+      if (wasDetectedAsTermsFile.value && (loading.value || isSyncing.value)) {
+        return true
+      }
+
+      // Default check for filename patterns (fallback)
+      if (filename.value && filename.value.toLowerCase().includes('term') &&
+        filename.value.toLowerCase().endsWith('.md')) {
+        wasDetectedAsTermsFile.value = true
+        return true
+      }
+
+      return wasDetectedAsTermsFile.value
     })
 
     // Rendered content for preview
@@ -659,7 +673,7 @@ export default {
     onMounted(async () => {
       addToVisitedRepos(props.owner, props.repo, props.branch)
       loadFileContent()
-      
+
       // Initialize terms for preview mode
       await initializeTerms()
 
@@ -686,6 +700,9 @@ export default {
     // Watchers
     watch(() => props.path, (newPath, oldPath) => {
       if (newPath && newPath !== oldPath && oldPath !== undefined) {
+        // Reset terms file detection state when switching files
+        wasDetectedAsTermsFile.value = false
+
         if (route.query.new !== 'true') {
           loading.value = true
           error.value = ''
