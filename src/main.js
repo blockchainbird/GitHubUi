@@ -1,5 +1,5 @@
 import { createApp } from 'vue'
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import App from './App.vue'
 import LoginPage from './components/LoginPage.vue'
 import HomePage from './components/HomePage.vue'
@@ -36,8 +36,10 @@ const routes = [
   { path: '/health-check/:owner/:repo/:branch', component: HealthCheck, props: true }
 ]
 
+const basePath = import.meta.env.VITE_BASE_PATH || '/';
+
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHashHistory(basePath),
   routes
 })
 
