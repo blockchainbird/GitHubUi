@@ -2,8 +2,8 @@
   <div>
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h2>
-        <i class="bi bi-folder"></i>
-        {{ owner }}/{{ repo }} - Spec Files
+        <i class="bi bi-folder me-2"></i>
+        <code>{{ owner }}/{{ repo }}</code> - Spec Files
       </h2>
       <div>
         <button @click="$router.push('/home')" class="btn btn-outline-secondary">

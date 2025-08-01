@@ -70,8 +70,8 @@
         <div class="card">
           <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">
-              <i class="bi bi-file-text"></i>
-              {{ decodedPath }}
+              <i class="bi bi-file-text me-2"></i>
+              <code>{{ owner }}/{{ repo }}{{ decodedPath }}</code>
             </h5>
             <div class="btn-group" role="group">
               <input type="radio" class="btn-check" id="simple-mode" v-model="editMode" value="simple"
