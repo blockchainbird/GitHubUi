@@ -3,7 +3,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h2>
         <i class="bi bi-heart-pulse"></i>
-        Health Check - {{ owner }}/{{ repo }}
+        Health Check - <code>{{ owner }}/{{ repo }}</code>
       </h2>
       <div>
         <button @click="runHealthCheck" class="btn btn-primary me-2" :disabled="isRunning">
