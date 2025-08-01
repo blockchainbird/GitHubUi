@@ -1,8 +1,8 @@
 <template>
-  <div v-if="rateLimitRemaining !== null" class="rate-limit-indicator">
+  <div class="rate-limit-indicator">
     <div class="rate-limit-badge" :class="badgeClass" :title="tooltipText">
       <i class="bi bi-speedometer2"></i>
-      <span class="rate-limit-text">{{ rateLimitRemaining }}</span>
+      <span class="rate-limit-text">{{ rateLimitRemaining !== null ? rateLimitRemaining : '0000' }}</span>
     </div>
   </div>
 </template>
