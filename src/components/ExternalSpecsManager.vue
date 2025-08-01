@@ -8,6 +8,8 @@
               <i class="bi bi-link-45deg"></i>
               External Specifications Manager
             </h4>
+            <p class="text-muted"><i class="bi bi-github me-2"></i><code>{{ owner }}/{{ repo }} ({{ branch }})</code>
+            </p>
             <div>
               <button @click="goBack" class="btn btn-outline-secondary me-2">
                 <i class="bi bi-arrow-left"></i> Back
@@ -39,7 +41,7 @@
               <!-- Repository Info -->
               <div class="alert alert-info mb-4">
                 <i class="bi bi-info-circle"></i>
-                Managing external specs for: <strong>{{ owner }}/{{ repo }}</strong> ({{ branch }} branch)
+                Managing external specs <strong>{{ owner }}/{{ repo }}</strong> ({{ branch }} branch)
               </div>
 
               <!-- External Specs List -->
@@ -240,8 +242,8 @@
                           :disabled="!bulkPreviewData.length || bulkImportLoading || bulkPreviewData.some(spec => spec._isInvalid)">
                           <i class="bi bi-upload"></i>
                           {{bulkPreviewData.filter(spec => !spec._isInvalid).length > 0
-                            ? `Import ${bulkPreviewData.filter(spec => !spec._isInvalid).length} Valid Specs`
-                            : 'No Valid Specs to Import'}}
+                          ? `Import ${bulkPreviewData.filter(spec => !spec._isInvalid).length} Valid Specs`
+                          : 'No Valid Specs to Import'}}
                         </button>
                       </div>
                     </div>

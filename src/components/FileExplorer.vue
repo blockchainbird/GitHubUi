@@ -3,7 +3,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h2>
         <i class="bi bi-folder me-2"></i>
-        <code>{{ owner }}/{{ repo }}</code> - Spec Files
+        <code>{{ owner }}/{{ repo }} ({{ branch }})</code>
       </h2>
       <div>
         <button @click="$router.push('/home')" class="btn btn-outline-secondary">
@@ -158,7 +158,8 @@
                     <small class="text-muted">{{ item.path }}</small>
                   </div>
                   <div v-if="item.type === 'file'" class="d-flex align-items-center gap-2">
-                    <button @click.stop="showDeleteModal(item)" class="btn btn-outline-danger btn-sm" title="Delete File">
+                    <button @click.stop="showDeleteModal(item)" class="btn btn-outline-danger btn-sm"
+                      title="Delete File">
                       <i class="bi bi-trash"></i>
                     </button>
                     <i class="bi bi-chevron-right"></i>

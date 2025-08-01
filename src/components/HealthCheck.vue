@@ -3,8 +3,13 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h2>
         <i class="bi bi-heart-pulse"></i>
-        Health Check - <code>{{ owner }}/{{ repo }}</code>
+        Health Check
       </h2>
+      <p class="text-muted">
+        <i class="bi bi-github me-2"></i>
+        <code>{{ owner }}/{{ repo }} ({{ branch }})</code>
+      </p>
+
       <div>
         <button @click="runHealthCheck" class="btn btn-primary me-2" :disabled="isRunning">
           <span v-if="isRunning" class="spinner-border spinner-border-sm me-2" role="status">
