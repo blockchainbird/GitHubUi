@@ -86,10 +86,10 @@
                     <strong>{{ filteredTerms.length }}</strong> of {{ allTerms.length }} terms
                   </div>
                   <div class="stats-item" v-if="getTermCounts().local > 0">
-                    <i class="bi bi-folder"></i> {{ getTermCounts().local }} Terms Dir
+                    <i class="bi bi-folder"></i> {{ getTermCounts().local }} Local Terms
                   </div>
                   <div class="stats-item" v-if="getTermCounts().external > 0">
-                    <i class="bi bi-link-45deg"></i> {{ getTermCounts().external }} External
+                    <i class="bi bi-link-45deg"></i> {{ getTermCounts().external }} External Terms
                   </div>
                 </div>
                 <div class="view-mode-buttons btn-group btn-group-sm">
