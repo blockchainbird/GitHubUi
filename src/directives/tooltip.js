@@ -1,4 +1,4 @@
-import { computePosition, offset, flip, shift } from '@floating-ui/dom';
+import { computePosition, offset, flip, shift } from '@floating-ui/vue';
 
 // Tooltip directive that automatically enhances title attributes
 export const vTooltip = {
@@ -56,7 +56,6 @@ export const vTooltip = {
         pointer-events: none;
         transition: opacity 0.2s ease-out, transform 0.2s ease-out;
         transform: translateY(4px);
-        white-space: nowrap;
       `;
       document.body.appendChild(tooltip);
       el._tooltipData.tooltipElement = tooltip;
