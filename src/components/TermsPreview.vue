@@ -158,7 +158,7 @@
                             <i class="bi bi-link-45deg"></i> {{ term.externalSpec }}
                           </span>
                           <span v-else class="badge bg-primary">
-                            <i class="bi bi-folder"></i> Terms
+                            <i class="bi bi-folder"></i> Local
                           </span>
                         </div>
                         
