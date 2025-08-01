@@ -43,12 +43,6 @@
 
             <!-- Main Content -->
             <div v-else>
-              <!-- Repository Info -->
-              <div class="alert alert-info mb-4">
-                <i class="bi bi-info-circle"></i>
-                Managing external specs <strong>{{ owner }}/{{ repo }}</strong> ({{ branch }} branch)
-              </div>
-
               <!-- External Specs List -->
               <div class="mb-4">
                 <h5>Current External Specifications</h5>
