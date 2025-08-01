@@ -164,9 +164,76 @@ export default {
 <style scoped>
 .login-bg {
   min-height: 100vh;
-  background-image: url('/assets/background.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  background: linear-gradient(135deg, 
+    #1e3c72 0%,     /* Deep blue - professional standards */
+    #2a5298 25%,    /* ISO blue - standardization */
+    #3d6db0 50%,    /* Collaboration blue */
+    #4a7bc8 75%,    /* Author workflow blue */
+    #5b8ce0 100%    /* Editor interface blue */
+  );
+  position: relative;
+  overflow: hidden;
+}
+
+.login-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    /* Subtle grid pattern representing structured documents */
+    radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px, 80px 80px, 100px 100px;
+  opacity: 0.6;
+}
+
+.login-bg::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: 
+    /* Flowing lines representing collaboration and workflow */
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 200px,
+      rgba(255, 255, 255, 0.1) 201px,
+      rgba(255, 255, 255, 0.1) 202px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 150px,
+      rgba(255, 255, 255, 0.2) 151px,
+      rgba(255, 255, 255, 0.2) 152px
+    );
+  animation: flow 20s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes flow {
+  0% {
+    transform: translateX(-100px) translateY(-100px);
+  }
+  100% {
+    transform: translateX(100px) translateY(100px);
+  }
+}
+
+/* Ensure card stays on top of background effects */
+.card {
+  position: relative;
+  z-index: 10;
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 </style>
