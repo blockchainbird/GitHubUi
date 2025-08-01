@@ -38,11 +38,6 @@
               Spec Directory: {{ currentDirectory }}
             </h5>
             <div class="d-flex gap-2">
-              <button v-if="isRootDirectory && hasUnsavedChanges" @click="saveOrder" class="btn btn-primary btn-sm"
-                title="Save Order">
-                <i class="bi bi-save"></i>
-                Save Order
-              </button>
               <button @click="showActionModal" class="btn btn-warning btn-sm me-2"
                 title="Trigger GitHub Actions Workflow" :disabled="triggeringWorkflow">
                 <span v-if="triggeringWorkflow">
@@ -114,6 +109,11 @@
               <i class="bi bi-arrow-up"></i> Go Up
             </button>
           </div>
+          <button v-if="isRootDirectory && hasUnsavedChanges" @click="saveOrder" class="btn btn-primary btn-sm"
+            title="Save Order">
+            <i class="bi bi-save"></i>
+            Save Order
+          </button>
           <div v-if="orderedItems.length === 0" class="text-center py-4">
             <i class="bi bi-folder2-open" style="font-size: 3rem; color: #6c757d;"></i>
             <p class="mt-2 text-muted">
