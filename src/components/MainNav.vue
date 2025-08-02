@@ -4,7 +4,7 @@
       <!-- Brand/Logo -->
       <span class="navbar-brand mb-0 h1 d-flex align-items-center">
         <img src="/assets/logo.svg" alt="Spec-Up-T Logo" style="height: 2rem; width: auto; margin-right: 0.5rem;" />
-        Spec-Up-T Editor
+        Spec-Up-T Editor <i role="button" @click="showModalAndClose" class="ms-3 bi bi-info-circle"></i>
       </span>
 
       <!-- Hamburger button for mobile -->
@@ -48,10 +48,6 @@
             title="Run Health Check">
             <i class="bi bi-heart-pulse"></i>
             Health
-          </button>
-          <button @click="showModalAndClose" class="nav-link btn btn-link">
-            <i class="bi bi-info-circle"></i>
-            About
           </button>
           <a v-if="showRepoRelatedButtons" :href="githubRepoUrl" target="_blank" rel="noopener" class="nav-link"
             title="View Repository on GitHub" @click="closeNavbar">

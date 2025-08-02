@@ -11,10 +11,10 @@
         </div>
       </h2>
       <div>
-        <button @click="$router.push('/home')" class="btn btn-outline-secondary">
+        <!-- <button @click="$router.push('/home')" class="btn btn-outline-secondary">
           <i class="bi bi-arrow-left"></i>
           Back to Home
-        </button>
+        </button> -->
       </div>
     </div>
 

@@ -16,9 +16,9 @@
               <span class="badge bg-secondary">{{ branch }}</span>
             </div>
             <div>
-              <button @click="goBack" class="btn btn-outline-secondary me-2">
+              <!-- <button @click="goBack" class="btn btn-outline-secondary me-2">
                 <i class="bi bi-arrow-left"></i> Back
-              </button>
+              </button> -->
               <button @click="saveSpecs" class="btn btn-success" :disabled="saving">
                 <i class="bi bi-save"></i>
                 {{ saving ? 'Saving...' : 'Save Changes' }}

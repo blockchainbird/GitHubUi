@@ -13,10 +13,10 @@
               <span class="badge bg-secondary">{{ branch }}</span>
             </div>
           </div>
-          <button @click="$router.go(-1)" class="btn btn-outline-secondary">
+          <!-- <button @click="$router.go(-1)" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left"></i>
             Back
-          </button>
+          </button> -->
         </div>
 
         <div v-if="error" class="alert alert-warning" role="alert">

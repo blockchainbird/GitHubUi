@@ -20,10 +20,10 @@
           <i v-else class="bi bi-play-circle"></i>
           {{ isRunning ? 'Running...' : 'Run Health Check' }}
         </button>
-        <button @click="$router.push(`/files/${owner}/${repo}/${branch}`)" class="btn btn-outline-secondary">
+        <!-- <button @click="$router.push(`/files/${owner}/${repo}/${branch}`)" class="btn btn-outline-secondary">
           <i class="bi bi-arrow-left"></i>
           Back to Files
-        </button>
+        </button> -->
       </div>
     </div>
 
