@@ -528,7 +528,7 @@ export default {
   left: 50%;
   transform: translate(-50%, -50%) rotate(-20deg);
   font-size: 7vw;
-  color: rgba(0, 0, 0, 0.05);
+  color: rgba(0, 0, 0, 0.02);
   font-weight: 900;
   pointer-events: none;
   z-index: 1;
