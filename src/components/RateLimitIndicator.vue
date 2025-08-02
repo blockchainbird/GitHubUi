@@ -1,8 +1,11 @@
 <template>
-  <div class="rate-limit-indicator">
-    <div class="rate-limit-badge" :class="badgeClass" :title="tooltipText">
-      <i class="bi bi-speedometer2"></i>
-      <span class="rate-limit-text">{{ rateLimitRemaining !== null ? rateLimitRemaining : '0000' }}</span>
+  <div class="alert alert-info" role="alert">
+    <div class="rate-limit-indicator">
+      <div class="rate-limit-badge me-2" :class="badgeClass">
+        <i class="bi bi-speedometer2"></i>
+        <span class="rate-limit-text">{{ rateLimitRemaining !== null ? rateLimitRemaining : '0000' }}</span>
+      </div>
+      {{explanationText}}
     </div>
   </div>
 </template>
@@ -28,7 +31,7 @@ export default {
       return 'rate-limit-normal'
     })
 
-    const tooltipText = computed(() => {
+    const explanationText = computed(() => {
       if (rateLimitRemaining.value === null) return ''
 
       const remaining = rateLimitRemaining.value
@@ -41,7 +44,7 @@ export default {
     return {
       rateLimitRemaining,
       badgeClass,
-      tooltipText
+      explanationText
     }
   }
 }
@@ -61,7 +64,6 @@ export default {
   font-size: 0.875rem;
   font-weight: 500;
   transition: all 0.2s ease;
-  cursor: help;
 }
 
 .rate-limit-badge i {
