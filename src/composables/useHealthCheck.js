@@ -789,6 +789,161 @@ export function useHealthCheck(props) {
     }
   }
 
+  // Version comparison helper
+  const checkSpecUpTVersion = async () => {
+    const results = []
+
+    try {
+      // Get local package.json content
+      const packageContent = await fetchFileContent('package.json')
+      if (!packageContent) {
+        results.push(createResult(
+          'package.json exists',
+          false,
+          'package.json file not found in repository root'
+        ))
+        return results
+      }
+
+      results.push(createResult('package.json exists', true, 'package.json file found'))
+
+      let packageData
+      try {
+        packageData = JSON.parse(packageContent)
+      } catch (error) {
+        results.push(createResult(
+          'package.json is valid JSON',
+          false,
+          `JSON parsing error: ${error.message}`
+        ))
+        return results
+      }
+
+      results.push(createResult('package.json is valid JSON', true, 'JSON syntax is valid'))
+
+      // Check if spec-up-t is in dependencies
+      const specUpTVersion = packageData.dependencies?.['spec-up-t']
+      if (!specUpTVersion) {
+        results.push(createResult(
+          'spec-up-t dependency exists',
+          false,
+          'spec-up-t not found in dependencies'
+        ))
+        return results
+      }
+
+      results.push(createResult(
+        'spec-up-t dependency exists',
+        true,
+        `Local spec-up-t version: ${specUpTVersion}`
+      ))
+
+      // Get latest version from npm registry
+      try {
+        const npmResponse = await axios.get('https://registry.npmjs.org/spec-up-t/latest', {
+          timeout: 10000
+        })
+        const latestVersion = npmResponse.data.version
+
+        results.push(createResult(
+          'Latest spec-up-t version retrieved',
+          true,
+          `Latest npm version: ${latestVersion}`
+        ))
+
+        // Check if local version will install the latest version
+        const willInstallLatest = checkVersionCompatibility(specUpTVersion, latestVersion)
+        results.push(createResult(
+          'spec-up-t version is up to date',
+          willInstallLatest,
+          willInstallLatest ? 
+            `Version ${specUpTVersion} will install latest version ${latestVersion}` :
+            `Version ${specUpTVersion} will NOT install latest version ${latestVersion}. Consider updating dependency.`
+        ))
+
+      } catch (npmError) {
+        results.push(createResult(
+          'Latest spec-up-t version check',
+          false,
+          `Failed to fetch latest version from npm: ${npmError.message}`
+        ))
+      }
+
+    } catch (error) {
+      results.push(createResult(
+        'spec-up-t version check failed',
+        false,
+        `Error: ${error.message}`
+      ))
+    }
+
+    return results
+  }
+
+  // Helper to check if a version range includes the latest version
+  const checkVersionCompatibility = (versionRange, latestVersion) => {
+    // Remove any whitespace
+    const range = versionRange.trim()
+    const latest = latestVersion.trim()
+
+    // If exact version match
+    if (range === latest) return true
+
+    // Parse version numbers for comparison
+    const parseVersion = (version) => {
+      const cleaned = version.replace(/^[^\d]*/, '') // Remove leading non-digits (^, ~, etc.)
+      const parts = cleaned.split('.').map(Number)
+      return { major: parts[0] || 0, minor: parts[1] || 0, patch: parts[2] || 0 }
+    }
+
+    const rangeVersion = parseVersion(range)
+    const latestParsed = parseVersion(latest)
+
+    // Handle caret range (^1.2.3 - compatible within major version)
+    if (range.startsWith('^')) {
+      return rangeVersion.major === latestParsed.major &&
+             (latestParsed.major > rangeVersion.major ||
+              latestParsed.minor > rangeVersion.minor ||
+              (latestParsed.minor === rangeVersion.minor && latestParsed.patch >= rangeVersion.patch))
+    }
+
+    // Handle tilde range (~1.2.3 - compatible within minor version)
+    if (range.startsWith('~')) {
+      return rangeVersion.major === latestParsed.major &&
+             rangeVersion.minor === latestParsed.minor &&
+             latestParsed.patch >= rangeVersion.patch
+    }
+
+    // Handle greater than or equal (>=)
+    if (range.startsWith('>=')) {
+      const rangeNum = parseVersion(range.substring(2))
+      return latestParsed.major > rangeNum.major ||
+             (latestParsed.major === rangeNum.major && latestParsed.minor > rangeNum.minor) ||
+             (latestParsed.major === rangeNum.major && latestParsed.minor === rangeNum.minor && latestParsed.patch >= rangeNum.patch)
+    }
+
+    // Handle greater than (>)
+    if (range.startsWith('>')) {
+      const rangeNum = parseVersion(range.substring(1))
+      return latestParsed.major > rangeNum.major ||
+             (latestParsed.major === rangeNum.major && latestParsed.minor > rangeNum.minor) ||
+             (latestParsed.major === rangeNum.major && latestParsed.minor === rangeNum.minor && latestParsed.patch > rangeNum.patch)
+    }
+
+    // Handle less than or equal (<=)
+    if (range.startsWith('<=')) {
+      return false // Latest version is by definition newer, so <= will not include it
+    }
+
+    // Handle less than (<)
+    if (range.startsWith('<')) {
+      return false // Latest version is by definition newer, so < will not include it
+    }
+
+    // If no prefix, treat as exact version
+    return range === latest
+  }
+
   // Main health check runner
   const runHealthCheck = async () => {
     isRunning.value = true
@@ -804,7 +959,8 @@ export function useHealthCheck(props) {
         createSection('Check External Specs URLs', await checkExternalSpecs()),
         createSection('Check Term References ([[term]])', await checkTrefTermReferences()),
         createSection('Check <code>terms-and-definitions-intro.md</code>', await checkTermsIntroFile()),
-        createSection('Check <code>.gitignore</code>', await checkGitignore())
+        createSection('Check <code>.gitignore</code>', await checkGitignore()),
+        createSection('Check <code>spec-up-t</code> Version', await checkSpecUpTVersion())
       ]
 
       results.value = checkResults
