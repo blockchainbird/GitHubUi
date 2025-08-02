@@ -54,12 +54,6 @@
             <i class="bi bi-github"></i>
             GitHub
           </a>
-          <a title="Go to documentation website"
-            href="https://blockchainbird.github.io/spec-up-t-website/docs/tools/spec-up-t-editor-user-guide/"
-            target="_blank" rel="noopener" class="nav-link" @click="closeNavbar">
-            <i class="bi bi-box-arrow-up-right"></i>
-            Help
-          </a>
           <button v-if="showRepoRelatedButtons" @click="navigateToAdminAndClose"
             :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/admin') }]">
             <i class="bi bi-shield-lock"></i>
@@ -98,6 +92,13 @@
     <template #body>
       <!-- API Rate Limit Indicator -->
       <RateLimitIndicator />
+
+      <a title="Go to documentation website"
+        href="https://blockchainbird.github.io/spec-up-t-website/docs/tools/spec-up-t-editor-user-guide/"
+        target="_blank" rel="noopener" class="btn btn-outline-secondary w-100 mb-5" @click="closeNavbar">
+        <i class="bi bi-box-arrow-up-right"></i> Go To Documentation
+      </a>
+
 
       <p>
         <strong>Spec-Up-T Editor</strong> is a web-based tool designed to help users create and manage specifications
