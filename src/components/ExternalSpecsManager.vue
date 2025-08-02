@@ -343,9 +343,9 @@
                               <div><strong>Date:</strong> {{ set.date }}</div>
                               <div><strong>References:</strong> {{ set.references?.length || 0 }} specifications</div>
                               <div v-if="set.filename">
-                                <strong>Source:</strong> 
-                                <a :href="getRepositoryFileUrl(set)" target="_blank" rel="noopener" 
-                                   class="text-decoration-none small">
+                                <strong>Source:</strong>
+                                <a :href="getRepositoryFileUrl(set)" target="_blank" rel="noopener"
+                                  class="text-decoration-none small">
                                   <i class="bi bi-file-earmark-code"></i> {{ set.filename }}
                                   <i class="bi bi-box-arrow-up-right ms-1"></i>
                                 </a>
@@ -372,6 +372,13 @@
                       <div>No reference sets available</div>
                     </div>
 
+                    <p>
+                      <a :href="'https://github.com/blockchainbird/spec-up-gs/tree/main/external-reference-sets'"
+                        target="_blank" rel="noopener" class="ms-2 text-decoration-none small">
+                        <i class="bi bi-github"></i> GitHub Repository with External Reference Sets
+                      </a>
+                    </p>
+
                     <!-- Reference Set Preview Modal -->
                     <div v-if="showReferenceSetPreview && selectedReferenceSet" class="modal show d-block" tabindex="-1"
                       style="background-color: rgba(0,0,0,0.5);">
@@ -389,9 +396,9 @@
                                 <div><strong>Date:</strong> {{ selectedReferenceSet.date }}</div>
                                 <div><strong>Type:</strong> {{ selectedReferenceSet.type }}</div>
                                 <div v-if="selectedReferenceSet.filename">
-                                  <strong>Source:</strong> 
-                                  <a :href="getRepositoryFileUrl(selectedReferenceSet)" target="_blank" rel="noopener" 
-                                     class="text-decoration-none">
+                                  <strong>Source:</strong>
+                                  <a :href="getRepositoryFileUrl(selectedReferenceSet)" target="_blank" rel="noopener"
+                                    class="text-decoration-none">
                                     <i class="bi bi-file-earmark-code"></i> {{ selectedReferenceSet.filename }}
                                     <i class="bi bi-box-arrow-up-right ms-1"></i>
                                   </a>
