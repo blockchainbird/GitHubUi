@@ -170,7 +170,7 @@
 
               <!-- Editor Textarea -->
               <textarea ref="editor" v-model="content" @input="handleContentChange"
-                class="border-0 rounded-0 technical-editor flex-grow-1"
+                class="p-3 border-0 rounded-0 technical-editor flex-grow-1"
                 style="font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 14px; resize: none;"></textarea>
             </div>
 
