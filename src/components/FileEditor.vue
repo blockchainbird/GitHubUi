@@ -13,7 +13,7 @@
           <i class="bi bi-asterisk"></i>
           New File
         </span>
-        <span v-if="autosaveTimestamp && hasChanges" class="badge bg-secondary ms-2" 
+        <span v-if="autosaveTimestamp && hasChanges" class="badge bg-secondary ms-2"
           :title="`Content autosaved at ${autosaveTimeDisplay} - not yet committed to repository`">
           <i class="bi bi-cloud"></i>
           Autosaved
@@ -60,7 +60,8 @@
         <i class="bi bi-exclamation-triangle-fill me-2 flex-shrink-0 mt-1"></i>
         <div>
           <strong>Unsaved Changes:</strong>
-          Your content was automatically saved locally at {{ autosaveTimeDisplay }}, but has not been committed to the repository yet. 
+          Your content was automatically saved locally at {{ autosaveTimeDisplay }}, but has not been committed to the
+          repository yet.
           Make sure to click "{{ isNewFile ? 'Create & Commit' : 'Save & Commit' }}" to save your changes permanently.
         </div>
       </div>
@@ -118,7 +119,7 @@
               </label>
             </div>
           </div>
-          <div class="card-body p-0">
+          <div class="card-body p-0" style="height: calc(100vh - 300px);">
             <!-- Simple Editor (Terms Files Only) -->
             <div v-if="editMode === 'simple'" class="p-3">
               <SimpleTermsEditor v-model:termType="simpleEditor.termType"
@@ -130,9 +131,9 @@
             </div>
 
             <!-- Technical/Edit Mode -->
-            <div v-else-if="editMode === 'edit'">
+            <div v-else-if="editMode === 'edit'" class="d-flex flex-column h-100">
               <!-- Toolbar -->
-              <div class="editor-toolbar p-2 border-bottom">
+              <div class="editor-toolbar p-2 border-bottom flex-shrink-0">
                 <div class="btn-group btn-group-sm me-2" role="group">
                   <button @click="handleInsertHeading" class="btn btn-outline-secondary" title="Insert Heading">
                     <i class="bi bi-type-h2"></i>
@@ -169,8 +170,8 @@
 
               <!-- Editor Textarea -->
               <textarea ref="editor" v-model="content" @input="handleContentChange"
-                class="form-control border-0 rounded-0"
-                style="min-height: 400px; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 14px; resize: vertical;"></textarea>
+                class="border-0 rounded-0 technical-editor flex-grow-1"
+                style="font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 14px; resize: none;"></textarea>
             </div>
 
             <!-- Preview Mode -->
@@ -1046,5 +1047,10 @@ textarea:focus {
   padding: 0.5rem 0.5rem 0.5rem 1rem;
   border-radius: 0 0.25rem 0.25rem 0;
   line-height: 1.6;
+}
+
+.technical-editor {
+  resize: none;
+  width: 100%;
 }
 </style>
