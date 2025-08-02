@@ -1,5 +1,5 @@
 <template>
-  <div class="row justify-content-center login-bg">
+  <div class="row justify-content-center login-bg mb-5">
     <div class="mt-3 col-md-6 col-lg-4">
       <div class="card">
         <div class="card-body">
@@ -69,6 +69,104 @@
                 <li>Contents (Read and write repository contents)</li>
               </ul>
             </div> -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="container-fluid mt-5 mb-5">
+    <div class="container">
+      <h2 class="text-center mb-5 text-light">
+        <i class="bi bi-shield-lock"></i>
+        How To Create a GitHub Token
+      </h2>
+      <div class="row g-4 instructions">
+        <div class="col-12 col-sm-6 col-lg-4">
+          <div class="card h-100">
+            <div class="card-header bg-primary text-white text-center">
+              <h5 class="card-title mb-0">Step 1</h5>
+              <p class="card-text text-info bg-dark p-3 rounded mt-3">Go to GitHub and log in.</p>
+            </div>
+            <div class="card-body">
+              <img src="/assets/token-creation/create-token-instructions-1.jpg" class="card-img-top" alt="Step 1">
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-4">
+          <div class="card h-100">
+            <div class="card-header bg-primary text-white text-center">
+              <h5 class="card-title mb-0">Step 2</h5>
+              <p class="card-text text-info bg-dark p-3 rounded mt-3">Choose “Settings”.</p>
+            </div>
+            <div class="card-body">
+              <img src="/assets/token-creation/create-token-instructions-2.jpg" class="card-img-top" alt="Step 2">
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-4">
+          <div class="card h-100">
+            <div class="card-header bg-primary text-white text-center">
+              <h5 class="card-title mb-0">Step 3</h5>
+              <p class="card-text text-info bg-dark p-3 rounded mt-3">Choose “Developer settings”.</p>
+            </div>
+            <div class="card-body">
+              <img src="/assets/token-creation/create-token-instructions-3.jpg" class="card-img-top" alt="Step 3">
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-4">
+          <div class="card h-100">
+            <div class="card-header bg-primary text-white text-center">
+              <h5 class="card-title mb-0">Step 4</h5>
+              <p class="card-text text-info bg-dark p-3 rounded mt-3">Choose “Personal access tokens”.</p>
+            </div>
+            <div class="card-body">
+              <img src="/assets/token-creation/create-token-instructions-4.jpg" class="card-img-top" alt="Step 4">
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-4">
+          <div class="card h-100">
+            <div class="card-header bg-primary text-white text-center">
+              <h5 class="card-title mb-0">Step 5</h5>
+              <p class="card-text text-info bg-dark p-3 rounded mt-3">Choose “Tokens (classic)”.</p>
+            </div>
+            <div class="card-body">
+              <img src="/assets/token-creation/create-token-instructions-5.jpg" class="card-img-top" alt="Step 5">
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-4">
+          <div class="card h-100">
+            <div class="card-header bg-primary text-white text-center">
+              <h5 class="card-title mb-0">Step 6</h5>
+              <p class="card-text text-info bg-dark p-3 rounded mt-3">Choose “Tokens (classic)”.</p>
+            </div>
+            <div class="card-body">
+              <img src="/assets/token-creation/create-token-instructions-6.jpg" class="card-img-top" alt="Step 6">
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-4">
+          <div class="card h-100">
+            <div class="card-header bg-primary text-white text-center">
+              <h5 class="card-title mb-0">Step 7</h5>
+              <p class="card-text text-info bg-dark p-3 rounded mt-3">Choose “Generate new token (classic)”.</p>
+            </div>
+            <div class="card-body">
+              <img src="/assets/token-creation/create-token-instructions-7.jpg" class="card-img-top" alt="Step 7">
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-4">
+          <div class="card h-100">
+            <div class="card-header bg-primary text-white text-center">
+              <h5 class="card-title mb-0">Step 8</h5>
+              <p class="card-text text-info bg-dark p-3 rounded mt-3">Check “repo”</p>
+            </div>
+            <div class="card-body">
+              <img src="/assets/token-creation/create-token-instructions-8.jpg" class="card-img-top" alt="Step 8">
+            </div>
           </div>
         </div>
       </div>
@@ -162,78 +260,12 @@ export default {
 </script>
 
 <style scoped>
-.login-bg {
-  min-height: 100vh;
-  background: linear-gradient(135deg, 
-    #1e3c72 0%,     /* Deep blue - professional standards */
-    #2a5298 25%,    /* ISO blue - standardization */
-    #3d6db0 50%,    /* Collaboration blue */
-    #4a7bc8 75%,    /* Author workflow blue */
-    #5b8ce0 100%    /* Editor interface blue */
-  );
-  position: relative;
-  overflow: hidden;
+.instructions {
+  filter: brightness(0.7) contrast(1.2);
+  transition: filter 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.login-bg::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: 
-    /* Subtle grid pattern representing structured documents */
-    radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 60px 60px, 80px 80px, 100px 100px;
-  opacity: 0.6;
-}
-
-.login-bg::after {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: 
-    /* Flowing lines representing collaboration and workflow */
-    repeating-linear-gradient(
-      45deg,
-      transparent,
-      transparent 200px,
-      rgba(255, 255, 255, 0.1) 201px,
-      rgba(255, 255, 255, 0.1) 202px
-    ),
-    repeating-linear-gradient(
-      -45deg,
-      transparent,
-      transparent 150px,
-      rgba(255, 255, 255, 0.2) 151px,
-      rgba(255, 255, 255, 0.2) 152px
-    );
-  animation: flow 20s linear infinite;
-  pointer-events: none;
-}
-
-@keyframes flow {
-  0% {
-    transform: translateX(-100px) translateY(-100px);
-  }
-  100% {
-    transform: translateX(100px) translateY(100px);
-  }
-}
-
-/* Ensure card stays on top of background effects */
-.card {
-  position: relative;
-  z-index: 10;
-  backdrop-filter: blur(10px);
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+.instructions:hover {
+  filter: brightness(1) contrast(1.2);
 }
 </style>
