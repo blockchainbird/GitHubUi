@@ -2,7 +2,9 @@
   <div class="modal fade" id="termsPreviewModal" tabindex="-1" aria-labelledby="termsPreviewModalLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-xl">
-      <div class="modal-content">
+      <div class="modal-content position-relative">
+        <!-- Watermark -->
+        <div class="terms-preview-watermark">Preview</div>
         <div class="modal-header bg-gradient-light border-bottom">
           <div class="w-100">
             <!-- Title Row -->
@@ -519,6 +521,20 @@ export default {
 </script>
 
 <style scoped>
+/* Watermark styles */
+.terms-preview-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-20deg);
+  font-size: 7vw;
+  color: rgba(0, 0, 0, 0.05);
+  font-weight: 900;
+  pointer-events: none;
+  z-index: 1;
+  user-select: none;
+  white-space: nowrap;
+}
 /* Component-specific responsive styles */
 @media (max-width: 768px) {
   .modal-dialog {
