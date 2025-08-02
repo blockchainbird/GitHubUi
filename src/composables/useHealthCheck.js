@@ -193,7 +193,6 @@ export function useHealthCheck(props) {
 
     try {
       const specsContent = await fetchFileContent('specs.json')
-      
       if (!specsContent) {
         results.push(createResult(
           'specs.json exists',
@@ -231,10 +230,44 @@ export function useHealthCheck(props) {
           `Found ${specs.specs.length} spec configuration(s)`
         ))
 
+        // Check logo field inside first spec object
+        const firstSpec = specs.specs[0]
+        if (firstSpec && firstSpec.logo) {
+          const urlPattern = /^(https?:\/\/[^\s]+)$/
+          const isValidUrl = urlPattern.test(firstSpec.logo)
+          results.push(createResult(
+            'logo field is a valid URL',
+            isValidUrl,
+            isValidUrl ? `logo: ${firstSpec.logo}` : `logo field is not a valid URL: ${firstSpec.logo}`
+          ))
+          if (isValidUrl) {
+            let status = 'unknown'
+            try {
+              const response = await axios.get(firstSpec.logo, {
+                timeout: 5000,
+                validateStatus: s => s === 200 || s === 404
+              })
+              status = response.status
+            } catch (err) {
+              status = err.response?.status || 'unknown'
+            }
+            results.push(createResult(
+              'logo URL status',
+              status === 200,
+              `logo URL returned status: ${status}`
+            ))
+          }
+        } else {
+          results.push(createResult(
+            'logo field exists',
+            false,
+            'logo field not found in specs.json'
+          ))
+        }
+
         if (specs.specs.length > 0) {
           const spec = specs.specs[0]
           const requiredFields = ['spec_directory', 'output_path', 'markdown_paths']
-          
           requiredFields.forEach(field => {
             const isDefined = spec[field] !== undefined
             results.push(createResult(
