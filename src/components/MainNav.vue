@@ -52,7 +52,7 @@
           <a v-if="showRepoRelatedButtons" :href="githubRepoUrl" target="_blank" rel="noopener" class="nav-link"
             title="View Repository on GitHub" @click="closeNavbar">
             <i class="bi bi-github"></i>
-            GitHub
+            Repo
           </a>
           <button v-if="showRepoRelatedButtons" @click="navigateToAdminAndClose"
             :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/admin') }]">
@@ -101,7 +101,7 @@
 
 
       <p>
-        <strong>Spec-Up-T Editor</strong> is a web-based tool designed to help users create and manage specifications
+        <strong>Spec-Up-T Editor</strong> is a web-based tool designed to gith users create and manage specifications
         in a
         user-friendly manner. It provides an intuitive interface for editing, validating, and visualizing
         specifications, making it easier for teams to collaborate and maintain their documentation.
