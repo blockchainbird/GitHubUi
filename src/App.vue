@@ -93,11 +93,12 @@ export default {
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: linear-gradient(135deg,
-      #1e3c72 0%,
-      #2a5298 25%,
-      #3d6db0 50%,
-      #4a7bc8 75%,
-      #5b8ce0 100%);
+      #e3ecfa 0%,
+      #c7daf6 25%,
+      #cfdcf4 50%,
+      #c9d2ea 75%,
+      #c5d1ef 100%);
+  min-height: 100vh;
 }
 
 .navbar-brand {
