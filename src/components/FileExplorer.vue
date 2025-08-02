@@ -71,7 +71,7 @@
                 </button>
               </div>
             </div>
-            <div class="col-auto">
+            <!-- <div class="col-auto">
               <div class="dropdown">
                 <button ref="dropdownButton" class="btn btn-outline-secondary dropdown-toggle" type="button"
                   @click="toggleDropdown" title="Filter options">
@@ -90,7 +90,7 @@
                   <li><a class="dropdown-item" href="#" @click.prevent="selectFilter('.html')">.html Files</a></li>
                 </ul>
               </div>
-            </div>
+            </div> -->
           </div>
 
           <!-- Results info -->
