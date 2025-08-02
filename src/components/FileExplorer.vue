@@ -398,6 +398,9 @@
       </div>
     </div>
   </div>
+
+  <!-- Terms Preview Modal -->
+  <TermsPreview :owner="owner" :repo="repo" :branch="branch" />
 </template>
 
 <script>
@@ -405,9 +408,12 @@ import { ref, onMounted, onUnmounted, nextTick, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import { addToVisitedRepos } from '../utils/visitedRepos.js'
+import { setupFragmentHandling, handleTermsPreviewFragment } from '../utils/urlFragments.js'
+import TermsPreview from './TermsPreview.vue'
 
 export default {
   name: 'FileExplorer',
+  components: { TermsPreview },
   props: ['owner', 'repo', 'branch'],
   setup(props) {
     const router = useRouter()
@@ -421,6 +427,9 @@ export default {
     const currentDirectory = ref('')
     const specsConfig = ref(null)
     const specTermsDirectory = ref('')
+
+    // Fragment handling cleanup
+    const fragmentCleanup = ref(null)
 
     // Drag and drop state
     const isDragMode = ref(false)
@@ -1476,6 +1485,14 @@ export default {
       document.addEventListener('click', handleClickOutside)
       document.addEventListener('visibilitychange', handleVisibilityChange)
 
+      // Set up fragment handling for terms preview
+      const cleanupFragmentHandling = setupFragmentHandling((hash) => {
+        handleTermsPreviewFragment(hash, router, route)
+      })
+
+      // Store cleanup function for unmount
+      fragmentCleanup.value = cleanupFragmentHandling
+
       // Check if we have a recently created file in localStorage
       const storedRecentFile = localStorage.getItem('recentlyCreatedFile')
       if (storedRecentFile) {
@@ -1579,6 +1596,11 @@ export default {
     onUnmounted(() => {
       document.removeEventListener('click', handleClickOutside)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
+      
+      // Clean up fragment handling
+      if (fragmentCleanup.value) {
+        fragmentCleanup.value()
+      }
       
       // Clean up drag throttle timer
       if (dragThrottleTimer) {

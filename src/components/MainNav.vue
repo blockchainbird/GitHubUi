@@ -38,10 +38,19 @@
             <i class="bi bi-link-45deg"></i>
             External
           </button>
-          <button v-if="showRepoRelatedButtons" @click="closeNavbar" class="nav-link btn btn-link"
-            data-bs-toggle="modal" data-bs-target="#termsPreviewModal" title="Preview All Terms and Definitions">
+          <!-- <button v-if="showRepoRelatedButtons" @click="closeNavbar" class="nav-link btn btn-link"
+            data-bs-toggle="modal" data-bs-target="#termsPreviewModal" title="Preview All Terms and Definitions (Modal)">
             <i class="bi bi-book"></i>
-            Preview
+            <span class="d-md-none">Preview</span>
+            <span class="d-none d-md-inline">Quick Preview</span>
+          </button> -->
+          <button v-if="showRepoRelatedButtons"
+            @click="navigateAndClose(`/terms-preview/${route.params.owner}/${route.params.repo}/${route.params.branch}`)"
+            :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/terms-preview') }]"
+            title="View Terms & Definitions (Full Page)">
+            <i class="bi bi-book-half"></i>
+            <span class="d-md-none">Preview</span>
+            <span class="d-none d-md-inline">Preview</span>
           </button>
           <button v-if="showRepoRelatedButtons" @click="navigateToHealthCheckAndClose"
             :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/health-check') }]"

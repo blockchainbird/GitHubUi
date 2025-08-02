@@ -1,5 +1,333 @@
 <template>
-  <div class="modal fade" id="termsPreviewModal" tabindex="-1" aria-labelledby="termsPreviewModalLabel"
+  <!-- Full Page View (when accessed via route) -->
+  <div v-if="isStandaloneView" class="terms-preview-standalone">
+    <div class="container-fluid mt-3">
+      <!-- Header Section -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <div class="d-flex align-items-center">
+              <!-- <button type="button" class="btn btn-outline-secondary me-3" @click="navigateBack">
+                <i class="bi bi-arrow-left"></i>
+                <span class="d-none d-sm-inline ms-1">Back</span>
+              </button> -->
+              <h2 class="mb-0 d-flex align-items-center">
+                <i class="bi bi-book text-primary me-2"></i>
+                <span class="fw-semibold">Terms & Definitions Preview</span>
+              </h2>
+            </div>
+            <button type="button" class="btn btn-outline-primary d-flex align-items-center gap-1" 
+              @click="refreshPreview" :disabled="loading" 
+              :title="loading ? 'Refreshing terms...' : 'Clear cache and reload all terms'">
+              <i class="bi" :class="loading ? 'bi-arrow-clockwise spin' : 'bi-arrow-clockwise'"></i>
+              <span class="d-none d-sm-inline">Refresh</span>
+            </button>
+          </div>
+          <!-- Repository Info -->
+          <div class="repository-info d-flex align-items-center text-muted mb-4">
+            <i class="bi bi-github me-2"></i>
+            <code class="bg-light px-2 py-1 rounded border">{{ owner }}/{{ repo }}</code>
+            <span class="mx-2">•</span>
+            <span class="badge bg-secondary">{{ branch }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Section (reuse modal content) -->
+      <div class="terms-preview-content">
+        <template v-if="loading || error || allTerms.length > 0">
+          <!-- Search and Filter Controls (reuse from modal) -->
+          <div class="search-controls-section mb-4">
+            <div class="card border-0 shadow-sm">
+              <div class="card-body p-3">
+                <div class="row g-3 align-items-end">
+                  <div class="col-md-7">
+                    <label class="form-label small text-muted fw-medium mb-1">Search Terms</label>
+                    <div class="input-group">
+                      <span class="input-group-text bg-light border-end-0">
+                        <i class="bi bi-search text-muted"></i>
+                      </span>
+                      <input type="text" class="form-control border-start-0 ps-0" v-model="searchQuery"
+                        placeholder="Search by term name, definition, or alias..." @input="filterTerms">
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label small text-muted fw-medium mb-1">Filter Type</label>
+                    <select class="form-select" v-model="filterType" @change="filterTerms">
+                      <option value="all">All Terms</option>
+                      <option value="local">Local Only</option>
+                      <option value="external">External Only</option>
+                    </select>
+                  </div>
+                  <div class="col-md-2">
+                    <div class="view-mode-toggle btn-group w-100" role="group">
+                      <input type="radio" class="btn-check" id="compact-view-standalone" v-model="viewMode" value="compact">
+                      <label class="btn btn-outline-secondary btn-sm" for="compact-view-standalone" title="Compact View">
+                        <i class="bi bi-list"></i>
+                      </label>
+                      <input type="radio" class="btn-check" id="detailed-view-standalone" v-model="viewMode" value="detailed">
+                      <label class="btn btn-outline-secondary btn-sm" for="detailed-view-standalone" title="Detailed View">
+                        <i class="bi bi-card-text"></i>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Include the rest of the modal content -->
+          <div v-if="loading" class="loading-state-container">
+            <!-- Same loading content as modal -->
+            <div class="text-center py-5">
+              <div class="loading-spinner spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">{{ loadingMessage }}</span>
+              </div>
+              <h6 class="fw-medium text-dark mb-2">Loading Terms & Definitions</h6>
+              <p class="text-muted mb-0">{{ loadingMessage }}</p>
+            </div>
+
+            <!-- Progress indicator for external specs -->
+            <div v-if="proxyInfo && specsConfig?.specs?.[0]?.external_specs?.length" class="mt-4">
+              <div class="alert alert-info border-0 shadow-sm d-flex align-items-start">
+                <i class="bi bi-info-circle text-info me-3 mt-1"></i>
+                <div class="flex-grow-1">
+                  <div class="fw-medium mb-1">Processing External Specifications</div>
+                  <div class="small text-muted">
+                    Loading {{ specsConfig.specs[0].external_specs.length }} external spec(s) may take a moment...
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Error State -->
+          <div v-else-if="error" class="alert alert-danger" role="alert">
+            <i class="bi bi-exclamation-triangle"></i>
+            {{ error }}
+          </div>
+
+          <!-- Terms Display (reuse from modal) -->
+          <div v-else class="terms-preview-container">
+            <!-- Statistics and Status -->
+            <div class="stats-section mb-4">
+              <div class="card border-0 bg-light">
+                <div class="card-body p-3">
+                  <div class="row align-items-center">
+                    <div class="col-md-8">
+                      <div class="d-flex flex-wrap align-items-center gap-3">
+                        <div class="stats-metric">
+                          <span class="fw-bold text-primary fs-5">{{ filteredTerms.length }}</span>
+                          <span class="text-muted small">of {{ allTerms.length }} terms displayed</span>
+                        </div>
+                        <div v-if="getTermCounts().local > 0" class="stats-badge">
+                          <i class="bi bi-folder text-primary me-1"></i>
+                          <span class="fw-medium">{{ getTermCounts().local }}</span>
+                          <span class="text-muted small">Local</span>
+                        </div>
+                        <div v-if="getTermCounts().external > 0" class="stats-badge">
+                          <i class="bi bi-link-45deg text-success me-1"></i>
+                          <span class="fw-medium">{{ getTermCounts().external }}</span>
+                          <span class="text-muted small">External</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-4 text-md-end mt-2 mt-md-0">
+                      <span class="small text-muted">View Mode:</span>
+                      <div class="btn-group btn-group-sm ms-2" role="group">
+                        <button class="btn" :class="viewMode === 'compact' ? 'btn-primary' : 'btn-outline-secondary'"
+                          @click="viewMode = 'compact'" title="Compact View">
+                          <i class="bi bi-list"></i> <span class="d-none d-lg-inline">Compact</span>
+                        </button>
+                        <button class="btn" :class="viewMode === 'detailed' ? 'btn-primary' : 'btn-outline-secondary'"
+                          @click="viewMode = 'detailed'" title="Detailed View">
+                          <i class="bi bi-card-text"></i> <span class="d-none d-lg-inline">Detailed</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Status Messages -->
+                  <div v-if="proxyInfo && !loading" class="mt-3">
+                    <div class="alert alert-success alert-sm border-0 d-flex align-items-center mb-0 py-2">
+                      <i class="bi bi-check-circle text-success me-2"></i>
+                      <small class="mb-0">{{ proxyInfo }}</small>
+                    </div>
+                  </div>
+
+                  <div v-if="refreshSuccess && !loading" class="mt-3">
+                    <div class="alert alert-info alert-sm border-0 d-flex align-items-center mb-0 py-2">
+                      <i class="bi bi-arrow-clockwise text-info me-2"></i>
+                      <small class="mb-0">Terms refreshed successfully! Cache cleared and reloaded {{ allTerms.length }} terms.</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Include terms list content from modal (same structure) -->
+            <!-- No Results -->
+            <div v-if="filteredTerms.length === 0 && !loading" class="empty-results-state">
+              <div class="text-center py-5">
+                <div class="empty-icon mb-3">
+                  <i class="bi bi-search text-muted" style="font-size: 3rem;"></i>
+                </div>
+                <h6 class="fw-medium text-dark mb-2">
+                  {{ searchQuery ? 'No Terms Found' : 'No Terms Available' }}
+                </h6>
+                <p class="text-muted mb-3">
+                  {{ searchQuery ? 'No terms found matching your search criteria.' : 'This repository does not contain any term definitions.' }}
+                </p>
+                <div v-if="!searchQuery && allTerms.length === 0" class="alert alert-light border d-inline-block">
+                  <div class="d-flex align-items-start">
+                    <i class="bi bi-info-circle text-info me-2 mt-1"></i>
+                    <div class="text-start">
+                      <div class="small fw-medium mb-1">Possible Reasons:</div>
+                      <ul class="small text-muted mb-0 ps-3">
+                        <li>Terms may be located in a different directory structure</li>
+                        <li>Repository may not contain Spec-Up term definitions</li>
+                        <li>External specifications may not be accessible</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                <div v-if="searchQuery" class="mt-3">
+                  <button class="btn btn-outline-secondary btn-sm" @click="searchQuery = ''; filterTerms()">
+                    <i class="bi bi-x-circle me-1"></i> Clear Search
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Terms List (reuse from modal) -->
+            <div v-else class="terms-list">
+              <!-- Compact View -->
+              <template v-if="viewMode === 'compact'">
+                <div class="compact-terms-container">
+                  <div class="list-group list-group-flush">
+                    <div v-for="term in filteredTerms" :key="getTermKey(term)" 
+                      class="list-group-item compact-term-item border-0 border-bottom">
+                      <div class="row align-items-start">
+                        <div class="col-md-4 col-lg-3 mb-2 mb-md-0">
+                          <div class="term-header">
+                            <div class="term-name-container d-flex align-items-center mb-1">
+                              <strong class="term-name text-primary me-2">{{ term.id }}</strong>
+                              <span v-if="term.external" class="badge bg-success badge-sm">
+                                <i class="bi bi-link-45deg"></i> {{ term.externalSpec }}
+                              </span>
+                              <span v-else class="badge bg-primary badge-sm">
+                                <i class="bi bi-folder"></i> Local
+                              </span>
+                            </div>
+                            
+                            <div v-if="term.aliases && term.aliases.length > 0" class="aliases-compact">
+                              <div class="small text-muted mb-1">
+                                <i class="bi bi-tags me-1"></i>Aliases:
+                              </div>
+                              <div class="alias-tags">
+                                <span v-for="alias in term.aliases.slice(0, 3)" :key="alias" class="alias-tag">
+                                  {{ alias }}
+                                </span>
+                                <span v-if="term.aliases.length > 3" class="text-muted small">
+                                  +{{ term.aliases.length - 3 }} more
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div class="col-md-8 col-lg-9">
+                          <div class="definition-preview">
+                            <div v-if="term.definitionText" class="text-secondary small lh-base">
+                              {{ truncateText(term.definitionText, 150) }}
+                            </div>
+                            <div v-else class="text-muted fst-italic small">
+                              <i class="bi bi-exclamation-circle me-1"></i>
+                              No definition available
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </template>
+
+              <!-- Detailed View -->
+              <template v-else>
+                <div class="detailed-terms-container">
+                  <div class="row g-4">
+                    <div v-for="term in filteredTerms" :key="getTermKey(term)" class="col-12 col-lg-6">
+                      <div class="card term-card h-100 shadow-sm border-0">
+                        <div class="card-header bg-light border-0 d-flex justify-content-between align-items-start">
+                          <div class="term-header-info flex-grow-1">
+                            <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+                              <h6 class="term-name text-primary mb-0 fw-semibold">{{ term.id }}</h6>
+                              <span v-if="term.external" class="badge bg-success d-flex align-items-center gap-1">
+                                <i class="bi bi-link-45deg"></i>
+                                <span class="small">{{ term.externalSpec }}</span>
+                              </span>
+                              <span v-else class="badge bg-primary d-flex align-items-center gap-1">
+                                <i class="bi bi-folder"></i>
+                                <span class="small">Local</span>
+                              </span>
+                            </div>
+                            <div class="small text-muted">
+                              <i class="bi bi-file-text me-1"></i>
+                              {{ term.source || (term.external ? 'External Reference' : 'Local Definition') }}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div class="card-body">
+                          <!-- Aliases Section -->
+                          <div v-if="term.aliases && term.aliases.length > 0" class="aliases-section mb-3">
+                            <div class="small fw-medium text-muted mb-2 d-flex align-items-center">
+                              <i class="bi bi-tags me-1"></i>
+                              Also known as:
+                            </div>
+                            <div class="alias-tags-detailed">
+                              <span v-for="alias in term.aliases" :key="alias" class="alias-tag-detailed me-1 mb-1">
+                                {{ alias }}
+                              </span>
+                            </div>
+                          </div>
+
+                          <!-- Definition Section -->
+                          <div class="definition-section">
+                            <div class="small fw-medium text-muted mb-2 d-flex align-items-center">
+                              <i class="bi bi-blockquote-left me-1"></i>
+                              Definition:
+                            </div>
+                            <div class="definition-content-detailed">
+                              <div v-if="term.definition" v-html="term.definition" 
+                                class="terms-and-definitions-list rendered-definition"></div>
+                              <div v-else-if="term.definitionText" class="definition-text-plain">
+                                {{ term.definitionText }}
+                              </div>
+                              <div v-else class="no-definition-notice">
+                                <div class="alert alert-light border d-flex align-items-center mb-0">
+                                  <i class="bi bi-info-circle text-warning me-2"></i>
+                                  <span class="small">No definition available for this term</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal View (when opened as modal) -->
+  <div v-else class="modal fade" id="termsPreviewModal" tabindex="-1" aria-labelledby="termsPreviewModalLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-xl">
       <div class="modal-content position-relative">
@@ -336,9 +664,12 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useTermsManagement } from '../composables/useTermsManagement.js'
 import { getLoadingMessage } from '../utils/loadingMessages.js'
+import { handleTermsPreviewFragment, setupFragmentHandling } from '../utils/urlFragments.js'
+
 import '../styles/terms-preview.css'
 
 export default {
@@ -358,6 +689,25 @@ export default {
     }
   },
   setup(props) {
+    const router = useRouter()
+    const route = useRoute()
+
+    // Determine if this is a standalone view (accessed via route) or modal
+    const isStandaloneView = computed(() => {
+      return route.name === 'terms-preview' || route.path.includes('/terms-preview/')
+    })
+
+    // Navigation function for standalone view
+    const navigateBack = () => {
+      // Navigate back to the file explorer for this repository
+      router.push(`/files/${props.owner}/${props.repo}/${props.branch}`)
+    }
+
+    // Handle URL fragments for modal access
+    const handleUrlFragment = (hash) => {
+      return handleTermsPreviewFragment(hash || window.location.hash, router, route)
+    }
+
     // Mock auth function for terms management
     const checkAuthAndRedirect = (err) => {
       if (err?.response?.status === 401) {
@@ -441,7 +791,7 @@ export default {
       return counts
     }
 
-    // Load terms when modal is shown
+    // Load terms when modal is shown or component is mounted in standalone view
     const loadAllTerms = async () => {
       try {
         await initializeTerms()
@@ -474,24 +824,48 @@ export default {
       }
     }
 
-    // Set up modal event listeners
+    // Set up modal event listeners and fragment handling
+    let cleanupFragmentHandling
     onMounted(() => {
-      const modalElement = document.getElementById('termsPreviewModal')
-      if (modalElement) {
-        // Load terms when modal is shown
-        modalElement.addEventListener('show.bs.modal', () => {
-          loadAllTerms()
-        })
-        
-        // Clean up when modal is hidden
-        modalElement.addEventListener('hidden.bs.modal', () => {
-          // Reset state when modal closes
-          searchQuery.value = ''
-          filterType.value = 'all'
-          allTerms.value = []
-          filteredTerms.value = []
-          refreshSuccess.value = false
-        })
+      // If standalone view, load terms immediately
+      if (isStandaloneView.value) {
+        loadAllTerms()
+      } else {
+        // Set up modal event listeners for modal mode
+        const modalElement = document.getElementById('termsPreviewModal')
+        if (modalElement) {
+          // Load terms when modal is shown
+          modalElement.addEventListener('show.bs.modal', () => {
+            loadAllTerms()
+          })
+          
+          // Clean up when modal is hidden
+          modalElement.addEventListener('hidden.bs.modal', () => {
+            // Reset state when modal closes
+            searchQuery.value = ''
+            filterType.value = 'all'
+            allTerms.value = []
+            filteredTerms.value = []
+            refreshSuccess.value = false
+          })
+        }
+
+        // Set up fragment handling for modal access
+        cleanupFragmentHandling = setupFragmentHandling(handleUrlFragment)
+      }
+    })
+
+    // Clean up event listeners
+    onUnmounted(() => {
+      if (cleanupFragmentHandling) {
+        cleanupFragmentHandling()
+      }
+    })
+
+    // Watch for route changes to update standalone view status
+    watch(() => route.path, () => {
+      if (isStandaloneView.value) {
+        loadAllTerms()
       }
     })
 
@@ -508,20 +882,35 @@ export default {
       proxyInfo,
       specsConfig,
       refreshSuccess,
+      isStandaloneView,
       
       // Methods
       filterTerms,
       getTermKey,
       truncateText,
       getTermCounts,
-      refreshPreview
+      refreshPreview,
+      navigateBack
     }
   }
 }
 </script>
 
 <style scoped>
-/* Watermark styles */
+/* Standalone view styles */
+.terms-preview-standalone {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.terms-preview-standalone .terms-preview-content {
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05);
+  padding: 2rem;
+}
+
+/* Watermark styles for modal */
 .terms-preview-watermark {
   position: absolute;
   top: 50%;
@@ -535,6 +924,7 @@ export default {
   user-select: none;
   white-space: nowrap;
 }
+
 /* Component-specific responsive styles */
 @media (max-width: 768px) {
   .modal-dialog {
@@ -575,6 +965,13 @@ export default {
   .view-mode-toggle {
     justify-content: center;
   }
+
+  /* Standalone view responsive adjustments */
+  .terms-preview-standalone .terms-preview-content {
+    padding: 1rem;
+    margin: 0.5rem;
+    border-radius: 0.25rem;
+  }
 }
 
 @media (max-width: 576px) {
@@ -601,6 +998,15 @@ export default {
   .detailed-terms-container .term-card {
     margin-bottom: 1rem;
   }
+
+  /* Standalone view mobile adjustments */
+  .terms-preview-standalone h2 {
+    font-size: 1.5rem;
+  }
+
+  .terms-preview-standalone .btn {
+    font-size: 0.875rem;
+  }
 }
 
 /* Enhanced focus states for accessibility */
@@ -622,5 +1028,11 @@ export default {
   -moz-user-select: text;
   -ms-user-select: text;
   user-select: text;
+}
+
+/* Ensure proper scrolling in standalone view */
+.terms-preview-standalone .terms-list {
+  max-height: none !important;
+  overflow-y: visible !important;
 }
 </style>

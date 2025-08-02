@@ -33,7 +33,13 @@ const routes = [
   { path: '/files/:owner/:repo/:branch', component: FileExplorer, props: true },
   { path: '/editor/:owner/:repo/:branch/:path+', component: FileEditor, props: true },
   { path: '/external-specs/:owner/:repo/:branch', component: ExternalSpecsManager, props: true },
-  { path: '/health-check/:owner/:repo/:branch', component: HealthCheck, props: true }
+  { path: '/health-check/:owner/:repo/:branch', component: HealthCheck, props: true },
+  { 
+    path: '/terms-preview/:owner/:repo/:branch', 
+    name: 'terms-preview',
+    component: () => import('./components/TermsPreview.vue'), 
+    props: true 
+  }
 ]
 
 const basePath = import.meta.env.VITE_BASE_PATH || '/';
