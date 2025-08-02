@@ -56,7 +56,7 @@
           <a v-if="showRepoRelatedButtons" :href="githubRepoUrl" target="_blank" rel="noopener" class="nav-link"
             title="View Repository on GitHub" @click="closeNavbar">
             <i class="bi bi-github"></i>
-            GitHub <i class="ms-1 bi bi-box-arrow-up-right"></i>
+            GitHub
           </a>
           <a title="Go to documentation website"
             href="https://blockchainbird.github.io/spec-up-t-website/docs/tools/spec-up-t-editor-user-guide/"
