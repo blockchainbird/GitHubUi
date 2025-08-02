@@ -71,10 +71,6 @@
             <i class="bi bi-gear"></i>
             Settings
           </button>
-          <!-- API Rate Limit Indicator -->
-          <div class="nav-item d-flex align-items-center">
-            <RateLimitIndicator />
-          </div>
           <!-- Authentication UI -->
           <div class="nav-item d-flex align-items-center ms-2">
             <div v-if="isAuthenticated" class="d-flex align-items-center">
@@ -100,6 +96,9 @@
       <h2>About Spec-Up-T Editor</h2>
     </template>
     <template #body>
+      <!-- API Rate Limit Indicator -->
+      <RateLimitIndicator />
+
       <p>
         <strong>Spec-Up-T Editor</strong> is a web-based tool designed to help users create and manage specifications
         in a
