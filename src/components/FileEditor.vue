@@ -13,6 +13,11 @@
           <i class="bi bi-asterisk"></i>
           New File
         </span>
+        <span v-if="autosaveTimestamp && hasChanges" class="badge bg-secondary ms-2" 
+          :title="`Content autosaved at ${autosaveTimeDisplay} - not yet committed to repository`">
+          <i class="bi bi-cloud"></i>
+          Autosaved
+        </span>
       </h2>
       <div>
         <button @click="handleTogglePublish" class="btn me-2" :class="isDraft ? 'btn-success' : 'btn-warning'"
@@ -35,6 +40,10 @@
           <i class="bi bi-x-circle me-2"></i>
           Close
         </button>
+        <!-- Debug autosave button - remove in production -->
+        <button @click="forceAutosave" class="btn btn-outline-info ms-2" title="Force Autosave (Debug)">
+          <i class="bi bi-cloud-arrow-up"></i>
+        </button>
       </div>
     </div>
 
@@ -44,6 +53,17 @@
 
     <div v-if="success" class="alert alert-success" role="alert">
       {{ success }}
+    </div>
+
+    <div v-if="autosaveTimestamp && hasChanges" class="alert alert-warning" role="alert">
+      <div class="d-flex align-items-start">
+        <i class="bi bi-exclamation-triangle-fill me-2 flex-shrink-0 mt-1"></i>
+        <div>
+          <strong>Unsaved Changes:</strong>
+          Your content was automatically saved locally at {{ autosaveTimeDisplay }}, but has not been committed to the repository yet. 
+          Make sure to click "{{ isNewFile ? 'Create & Commit' : 'Save & Commit' }}" to save your changes permanently.
+        </div>
+      </div>
     </div>
 
     <div v-if="isNewFile" class="alert alert-info" role="alert">
@@ -238,6 +258,7 @@ import { useTermsManagement } from '../composables/useTermsManagement.js'
 import { useSimpleEditor } from '../composables/useSimpleEditor.js'
 import { useContentValidation } from '../composables/useContentValidation.js'
 import { usePublishToggle } from '../composables/usePublishToggle.js'
+import { useAutosave } from '../composables/useAutosave.js'
 import {
   insertText,
   insertHeading,
@@ -336,6 +357,20 @@ export default {
     // Publish toggle
     const publishToggle = usePublishToggle(props, checkAuthAndRedirect)
     const { togglePublishStatus } = publishToggle
+
+    // Autosave functionality
+    const autosave = useAutosave(props, content, isNewFile)
+    const {
+      hasAutosavedContent,
+      autosaveTimeDisplay,
+      autosaveTimestamp,
+      saveToLocalStorage,
+      clearAutosave,
+      restoreFromAutosave,
+      checkForAutosavedContent,
+      initializeAutosave,
+      forceAutosave
+    } = autosave
 
     // Editor state
     const editMode = ref('edit')
@@ -615,6 +650,12 @@ export default {
 
     const commitChanges = async () => {
       await saveFile()
+      
+      // Clear autosave after successful commit
+      if (success.value && !error.value) {
+        clearAutosave()
+      }
+      
       trackFileOperation(isNewFile.value ? 'create_complete' : 'save', getFileExtension(decodedPath.value))
 
       const modal = bootstrap.Modal.getInstance(document.getElementById('commitModal'))
@@ -672,7 +713,33 @@ export default {
     // Lifecycle
     onMounted(async () => {
       addToVisitedRepos(props.owner, props.repo, props.branch)
-      loadFileContent()
+      
+      // Check for autosaved content BEFORE loading file content
+      const autosaveCheck = checkForAutosavedContent()
+      let shouldRestoreAutosave = false
+      
+      if (autosaveCheck.hasAutosave) {
+        // Show confirmation dialog for autosaved content
+        shouldRestoreAutosave = confirm(
+          `Found unsaved changes from ${new Date(autosaveCheck.timestamp).toLocaleString()}. ` +
+          'Would you like to restore them? Click Cancel to use the saved version from the repository.'
+        )
+        
+        if (!shouldRestoreAutosave) {
+          clearAutosave()
+        }
+      }
+      
+      // Load file content
+      await loadFileContent()
+
+      // If user wanted to restore autosave, do it AFTER file content is loaded
+      if (shouldRestoreAutosave) {
+        restoreFromAutosave()
+      }
+
+      // Initialize autosave system AFTER content is loaded
+      initializeAutosave()
 
       // Initialize terms for preview mode
       await initializeTerms()
@@ -772,6 +839,12 @@ export default {
       // Validation
       validationWarnings,
       showValidationWarnings,
+
+      // Autosave
+      hasAutosavedContent,
+      autosaveTimeDisplay,
+      autosaveTimestamp,
+      forceAutosave,
 
       // Methods
       handleContentChange,
