@@ -5,7 +5,7 @@
         <i class="bi bi-speedometer2"></i>
         <span class="rate-limit-text">{{ rateLimitRemaining !== null ? rateLimitRemaining : '0000' }}</span>
       </div>
-      {{ explanationText }}
+      <small>{{ explanationText }}</small>
     </div>
   </div>
 </template>
