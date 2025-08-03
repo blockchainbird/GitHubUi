@@ -13,10 +13,12 @@
           <i class="bi bi-asterisk"></i>
           New File
         </span>
-        <span v-if="autosaveTimestamp && hasChanges" class="badge bg-secondary ms-2"
-          :title="`Content autosaved at ${autosaveTimeDisplay} - not yet committed to repository`">
+        <span v-if="autosaveTimestamp && hasChanges" class="badge bg-secondary ms-2">
           <i class="bi bi-cloud"></i>
-          Autosaved
+          Autosaved <span class="d-block text-muted fs-6">at {{ autosaveTimeDisplay }}</span>
+          <button @click="clearAutosaveAndReload" class="btn btn-primary p-2 ms-2">Clear</button>
+          <i :title="`Use Ctrl/Cmd+S to autosave. Content autosaved at ${autosaveTimeDisplay} - not yet committed to repository`"
+            class="ms-3 fs-4 bi bi-info-circle"></i>
         </span>
       </h2>
       <div>
