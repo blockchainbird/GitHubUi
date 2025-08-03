@@ -8,7 +8,10 @@ export function useAutosave(props, content, isNewFile) {
   // Autosave state
   const lastSavedToLocalStorage = ref(null)
   const autosaveInterval = ref(null)
-  const AUTOSAVE_DELAY = 5000 // 5 seconds
+  const AUTOSAVE_DELAY = 60000 // 1 minute
+
+  // Flag to track the first change
+  let isFirstChange = true
 
   // Generate unique key for localStorage
   const getAutosaveKey = () => {
@@ -38,11 +41,11 @@ export function useAutosave(props, content, isNewFile) {
         timestamp: Date.now(),
         isNewFile: isNewFile.value
       }
-      
+
       localStorage.setItem(key, JSON.stringify(autosaveData))
       lastSavedToLocalStorage.value = content.value
       autosaveTimestamp.value = Date.now()
-      
+
       console.log('🔄 Content autosaved to localStorage', { key, timestamp: autosaveTimestamp.value })
     } catch (error) {
       console.warn('Failed to autosave to localStorage:', error)
@@ -54,7 +57,7 @@ export function useAutosave(props, content, isNewFile) {
     try {
       const key = getAutosaveKey()
       const saved = localStorage.getItem(key)
-      
+
       if (saved) {
         const autosaveData = JSON.parse(saved)
         return {
@@ -100,7 +103,7 @@ export function useAutosave(props, content, isNewFile) {
     if (autosaveInterval.value) {
       clearTimeout(autosaveInterval.value)
     }
-    
+
     autosaveInterval.value = setTimeout(() => {
       if (content.value && content.value.trim()) {
         saveToLocalStorage()
@@ -112,7 +115,7 @@ export function useAutosave(props, content, isNewFile) {
   // Initialize autosave system
   const initializeAutosave = () => {
     console.log('🚀 Initializing autosave system...')
-    
+
     // Check for existing autosaved content on initialization
     const saved = loadFromLocalStorage()
     if (saved && saved.timestamp) {
@@ -121,18 +124,23 @@ export function useAutosave(props, content, isNewFile) {
       console.log('📦 Found existing autosave data', { timestamp: saved.timestamp })
     }
 
-    // Watch for content changes and schedule autosave
+    // Watch for content changes and handle autosave
     watch(content, (newContent, oldContent) => {
-      console.log('📝 Content changed, scheduling autosave...', { 
-        newLength: newContent?.length || 0, 
-        oldLength: oldContent?.length || 0 
+      console.log('📝 Content changed, scheduling autosave...', {
+        newLength: newContent?.length || 0,
+        oldLength: oldContent?.length || 0
       })
-      
-      if (newContent && newContent !== lastSavedToLocalStorage.value) {
-        scheduleAutosave()
+
+      if (newContent && newContent.trim() && newContent !== lastSavedToLocalStorage.value) {
+        if (isFirstChange) {
+          saveToLocalStorage()
+          isFirstChange = false
+        } else {
+          scheduleAutosave()
+        }
       }
     }, { immediate: false })
-    
+
     console.log('✅ Autosave system initialized')
   }
 
@@ -140,12 +148,11 @@ export function useAutosave(props, content, isNewFile) {
   const checkForAutosavedContent = () => {
     const saved = loadFromLocalStorage()
     if (saved && saved.content) {
-      // For new check, compare with current content if it exists, or assume different if no current content
       const currentContent = content.value || ''
       if (saved.content !== currentContent && saved.content.trim() !== '') {
-        console.log('🔍 Found different autosaved content', { 
-          savedLength: saved.content.length, 
-          currentLength: currentContent.length 
+        console.log('🔍 Found different autosaved content', {
+          savedLength: saved.content.length,
+          currentLength: currentContent.length
         })
         return {
           hasAutosave: true,
