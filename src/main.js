@@ -10,6 +10,7 @@ import HealthCheck from './components/HealthCheck.vue'
 import AdminScreen from './components/AdminScreen.vue'
 import CreateSpecUpProject from './components/CreateSpecUpProject.vue'
 import Settings from './components/Settings.vue'
+import GitHubActions from './components/GitHubActions.vue'
 import { autoEnhanceTooltips } from './directives/tooltip.js'
 
 import * as bootstrap from 'bootstrap/dist/js/bootstrap.bundle.min.js'
@@ -34,6 +35,7 @@ const routes = [
   { path: '/editor/:owner/:repo/:branch/:path+', component: FileEditor, props: true },
   { path: '/external-specs/:owner/:repo/:branch', component: ExternalSpecsManager, props: true },
   { path: '/health-check/:owner/:repo/:branch', component: HealthCheck, props: true },
+  { path: '/actions/:owner/:repo/:branch', component: GitHubActions, props: true },
   { 
     path: '/terms-preview/:owner/:repo/:branch', 
     name: 'terms-preview',

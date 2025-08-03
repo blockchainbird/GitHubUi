@@ -241,103 +241,6 @@
       </div>
     </div>
 
-    <!-- GitHub Actions Modal -->
-    <div v-if="showActionsModal" class="modal fade show d-block" tabindex="-1"
-      style="background-color: rgba(0,0,0,0.5);" @click.self="closeActionsModal" @keyup.escape="closeActionsModal">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">
-              <i class="bi bi-play-circle"></i>
-              Run GitHub Actions
-            </h5>
-            <button @click="closeActionsModal" type="button" class="btn-close"></button>
-          </div>
-          <div class="modal-body">
-            <div v-if="actionError" class="alert alert-danger" role="alert">
-              {{ actionError }}
-            </div>
-
-            <p class="mb-3">
-              Select the action you want to run on the specification:
-            </p>
-
-            <div class="mb-3">
-              <label class="form-label">Action Type</label>
-              <div class="form-check">
-                <input v-model="selectedAction" class="form-check-input" type="radio" value="render" id="action-render">
-                <label class="form-check-label" for="action-render">
-                  <strong>Render Specification</strong><br>
-                  <small class="text-muted">Generate HTML output from markdown files</small>
-                </label>
-              </div>
-              <div class="form-check">
-                <input v-model="selectedAction" class="form-check-input" type="radio" value="topdf" id="action-topdf">
-                <label class="form-check-label" for="action-topdf">
-                  <strong>Generate PDF</strong><br>
-                  <small class="text-muted">Create a PDF version of the specification</small>
-                </label>
-              </div>
-              <div class="form-check">
-                <input v-model="selectedAction" class="form-check-input" type="radio" value="todocx" id="action-todocx">
-                <label class="form-check-label" for="action-todocx">
-                  <strong>Generate DOCX</strong><br>
-                  <small class="text-muted">Create a Word document version</small>
-                </label>
-              </div>
-              <div class="form-check">
-                <input v-model="selectedAction" class="form-check-input" type="radio" value="freeze" id="action-freeze">
-                <label class="form-check-label" for="action-freeze">
-                  <strong>Freeze Specification</strong><br>
-                  <small class="text-muted">Lock the current version and commit changes</small>
-                </label>
-              </div>
-              <div class="form-check">
-                <input v-model="selectedAction" class="form-check-input" type="radio" value="custom-update"
-                  id="action-custom">
-                <label class="form-check-label" for="action-custom">
-                  <strong>Custom Update</strong><br>
-                  <small class="text-muted">Run custom specification updates</small>
-                </label>
-              </div>
-              <div class="form-check">
-                <input v-model="selectedAction" class="form-check-input" type="radio" value="collectExternalReferences"
-                  id="action-external">
-                <label class="form-check-label" for="action-external">
-                  <strong>Collect External References</strong><br>
-                  <small class="text-muted">Gather and process external term references</small>
-                </label>
-              </div>
-            </div>
-
-            <div class="mb-3">
-              <small class="text-info">
-                <i class="bi bi-info-circle"></i>
-                The action will run on branch: <strong>{{ branch }}</strong>
-                <span v-if="selectedWorkflow">
-                  <br>Using workflow: <strong>{{ selectedWorkflow }}</strong>
-                </span>
-              </small>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button @click="closeActionsModal" type="button" class="btn btn-secondary">Cancel</button>
-            <button @click="triggerWorkflow" type="button" class="btn btn-warning"
-              :disabled="!selectedAction || triggeringWorkflow">
-              <span v-if="triggeringWorkflow">
-                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-                Triggering...
-              </span>
-              <span v-else>
-                <i class="bi bi-play-circle"></i>
-                Run Action
-              </span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Delete File Confirmation Modal -->
     <div v-if="showDeleteFileModal" class="modal fade show d-block" tabindex="-1"
       style="background-color: rgba(0,0,0,0.5);" @click.self="closeDeleteFileModal"
@@ -398,7 +301,6 @@ import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import { addToVisitedRepos } from '../utils/visitedRepos.js'
 import { setupFragmentHandling, handleTermsPreviewFragment } from '../utils/urlFragments.js'
-import { useGitHubActions } from '../composables/useGitHubActions.js'
 import TermsPreview from './TermsPreview.vue'
 
 export default {
@@ -408,15 +310,6 @@ export default {
   setup(props) {
     const router = useRouter()
     const route = useRoute()
-    
-    // Use GitHub Actions composable
-    const { 
-      showActionsModal, 
-      triggeringWorkflow, 
-      closeActionsModal: closeActionModal, 
-      setTriggeringWorkflow 
-    } = useGitHubActions()
-    
     const loading = ref(true)
     const loadingMessage = ref('')
     const error = ref('')
@@ -468,12 +361,6 @@ export default {
     const deleteFileCommitMessage = ref('Delete file')
     const deletingFile = ref(false)
     const deleteFileError = ref('')
-
-    // Actions modal state (keeping local state for form data)
-    const selectedAction = ref('render')
-    const actionError = ref('')
-    const availableWorkflows = ref([])
-    const selectedWorkflow = ref('')
 
     // Computed properties for filtered results
     const filteredFiles = computed(() => {
@@ -1043,57 +930,6 @@ export default {
       deleteFileError.value = ''
     }
 
-    // Actions modal methods
-    const showActionModal = async () => {
-      // The modal state is managed by the composable, just reset local form state
-      selectedAction.value = 'render' // Default selection
-      actionError.value = ''
-      selectedWorkflow.value = '' // Clear previous workflow info
-
-      // Try to determine which workflow will be used
-      try {
-        const token = localStorage.getItem('github_token')
-        if (!token) return
-
-        const config = {
-          headers: {
-            'Authorization': `token ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          }
-        }
-
-        const workflowsResponse = await axios.get(
-          `https://api.github.com/repos/${props.owner}/${props.repo}/actions/workflows`,
-          config
-        )
-
-        const workflows = workflowsResponse.data.workflows.filter(w => w.state === 'active')
-
-        // Find spec-related workflow
-        const specWorkflow = workflows.find(w => {
-          const name = w.name.toLowerCase()
-          return name.includes('spec-up') || name === 'spec-up-t render'
-        })
-
-        if (specWorkflow) {
-          selectedWorkflow.value = specWorkflow.name
-        } else {
-          const renderWorkflow = workflows.find(w => w.name.toLowerCase().includes('render'))
-          selectedWorkflow.value = renderWorkflow?.name || 'Will determine at runtime'
-        }
-      } catch (err) {
-        console.warn('Could not pre-determine workflow:', err)
-        selectedWorkflow.value = 'Will determine at runtime'
-      }
-    }
-
-    const closeActionsModal = () => {
-      closeActionModal() // Use composable method
-      selectedAction.value = 'render'
-      actionError.value = ''
-      selectedWorkflow.value = ''
-    }
-
     const deleteFile = async () => {
       if (!fileToDelete.value) return
 
@@ -1213,213 +1049,6 @@ export default {
           recentlyCreatedFile.value = ''
           localStorage.removeItem('recentlyCreatedFile')
         }, 2000)
-      }
-    }
-
-    // GitHub Actions Workflow Trigger
-    const triggerWorkflow = async () => {
-      try {
-        setTriggeringWorkflow(true)
-        loadingMessage.value = 'Triggering GitHub Actions workflow...'
-
-        const token = localStorage.getItem('github_token')
-        if (!token) {
-          actionError.value = 'GitHub token not found. Please log in again.'
-          return
-        }
-
-        const config = {
-          headers: {
-            'Authorization': `token ${token}`,
-            'Accept': 'application/vnd.github.v3+json',
-            'Content-Type': 'application/json'
-          }
-        }
-
-        console.log(`🔍 Checking workflows for ${props.owner}/${props.repo}...`)
-
-        // First, let's check what workflows are available
-        const workflowsResponse = await axios.get(
-          `https://api.github.com/repos/${props.owner}/${props.repo}/actions/workflows`,
-          config
-        )
-
-        const workflows = workflowsResponse.data.workflows
-        console.log(`📋 Found ${workflows.length} workflows:`, workflows.map(w => w.name))
-
-        if (workflows.length === 0) {
-          actionError.value = 'No GitHub Actions workflows found in this repository. Please add a workflow file to .github/workflows/ first.'
-          return
-        }
-
-        // Check each workflow to see if it supports workflow_dispatch
-        let targetWorkflow = null
-        const candidateWorkflows = []
-
-        for (const workflow of workflows) {
-          if (workflow.state !== 'active') {
-            console.log(`⏭️ Skipping inactive workflow: ${workflow.name}`)
-            continue
-          }
-
-          try {
-            console.log(`🔍 Checking workflow: ${workflow.name} (${workflow.path})`)
-
-            // Get the workflow file content to check for workflow_dispatch
-            const workflowFileResponse = await axios.get(
-              `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${workflow.path}?ref=${props.branch}`,
-              config
-            )
-
-            const workflowContent = atob(workflowFileResponse.data.content)
-
-            // Check if workflow supports workflow_dispatch
-            if (workflowContent.includes('workflow_dispatch')) {
-              console.log(`✅ Found workflow with manual trigger support: ${workflow.name}`)
-              candidateWorkflows.push({ workflow, content: workflowContent })
-            } else {
-              console.log(`❌ Workflow ${workflow.name} does not support workflow_dispatch`)
-            }
-          } catch (workflowErr) {
-            console.warn(`⚠️ Could not check workflow ${workflow.name}:`, workflowErr)
-            continue
-          }
-        }
-
-        if (candidateWorkflows.length === 0) {
-          actionError.value = 'No workflows found that support manual triggering (workflow_dispatch). Please add workflow_dispatch to a workflow\'s "on" triggers.'
-          return
-        }
-
-        // Prefer spec-related workflows with more specific matching
-        const specWorkflows = candidateWorkflows.filter(({ workflow }) => {
-          const name = workflow.name.toLowerCase()
-          const path = workflow.path.toLowerCase()
-
-          // Prioritize workflows that are clearly spec-related
-          return name.includes('spec-up') ||
-            name.includes('render') && (name.includes('spec') || path.includes('spec')) ||
-            name === 'spec-up-t render' ||
-            path.includes('render-spec') ||
-            path.includes('spec-render')
-        })
-
-        const buildWorkflows = candidateWorkflows.filter(({ workflow }) => {
-          const name = workflow.name.toLowerCase()
-          return name.includes('build') || name.includes('deploy')
-        })
-
-        if (specWorkflows.length > 0) {
-          targetWorkflow = specWorkflows[0].workflow
-          console.log(`🎯 Using spec-related workflow: ${targetWorkflow.name}`)
-        } else if (buildWorkflows.length > 0) {
-          targetWorkflow = buildWorkflows[0].workflow
-          console.log(`🎯 Using build-related workflow: ${targetWorkflow.name}`)
-        } else {
-          targetWorkflow = candidateWorkflows[0].workflow
-          console.log(`🎯 Using first available workflow: ${targetWorkflow.name}`)
-          console.warn(`⚠️ This workflow (${targetWorkflow.name}) may not be designed for spec operations`)
-        }
-
-        if (!targetWorkflow) {
-          actionError.value = 'No workflows found that support manual triggering (workflow_dispatch). Please add workflow_dispatch to a workflow\'s "on" triggers.'
-          return
-        }
-
-        console.log(`🚀 Triggering workflow: ${targetWorkflow.name} (${targetWorkflow.id}) with action: ${selectedAction.value}`)
-
-        // Get the workflow content to determine what inputs it expects
-        const selectedWorkflowData = candidateWorkflows.find(({ workflow }) => workflow.id === targetWorkflow.id)
-        const workflowContent = selectedWorkflowData?.content || ''
-
-        // Build inputs based on what the workflow expects
-        let inputs = {}
-
-        // Check if workflow expects specific inputs by looking for input definitions
-        const hasInputSection = workflowContent.includes('inputs:')
-
-        if (hasInputSection) {
-          // Only add inputs that seem to be defined in the workflow
-          if (workflowContent.includes('action_type:') || workflowContent.includes('action_type')) {
-            inputs.action_type = selectedAction.value || 'render'
-          }
-
-          if (workflowContent.includes('repository:') || workflowContent.includes('repository')) {
-            inputs.repository = `${props.owner}/${props.repo}`
-          }
-
-          if (workflowContent.includes('branch:') || workflowContent.includes('branch')) {
-            inputs.branch = props.branch
-          }
-
-          if (workflowContent.includes('triggered_by:') || workflowContent.includes('triggered_by')) {
-            inputs.triggered_by = 'GitHubUI'
-          }
-        }
-
-        console.log(`📋 Workflow inputs section found: ${hasInputSection}`)
-        console.log(`📋 Inputs to send:`, inputs)
-
-        // Trigger the workflow using workflow_dispatch
-        const dispatchData = {
-          ref: props.branch,
-          ...(Object.keys(inputs).length > 0 ? { inputs } : {})
-        }
-
-        console.log('📤 Dispatch data:', dispatchData)
-
-        await axios.post(
-          `https://api.github.com/repos/${props.owner}/${props.repo}/actions/workflows/${targetWorkflow.id}/dispatches`,
-          dispatchData,
-          config
-        )
-
-        // Clear any previous errors and show success message
-        error.value = ''
-        actionError.value = ''
-        console.log(`✅ Successfully triggered workflow: "${targetWorkflow.name}" with action "${selectedAction.value}" on branch ${props.branch}`)
-        console.log(`View workflow runs: https://github.com/${props.owner}/${props.repo}/actions`)
-
-        // Close the modal on success
-        closeActionsModal()
-
-        // Show temporary success message in loading area
-        loadingMessage.value = `✅ Successfully triggered ${selectedAction.value} action`
-        setTimeout(() => {
-          if (loadingMessage.value.includes('Successfully triggered')) {
-            loadingMessage.value = ''
-          }
-        }, 5000)
-
-      } catch (err) {
-        console.error('❌ Error triggering workflow:', err)
-        console.error('Response details:', {
-          status: err.response?.status,
-          statusText: err.response?.statusText,
-          data: err.response?.data,
-          headers: err.response?.headers
-        })
-
-        if (checkAuthAndRedirect(err)) return
-
-        if (err.response?.status === 404) {
-          actionError.value = 'Workflow not found or this repository has no GitHub Actions workflows set up.'
-        } else if (err.response?.status === 422) {
-          const errorMsg = err.response?.data?.message || ''
-          console.log('422 Error message:', errorMsg)
-
-          if (errorMsg.includes('Unexpected inputs')) {
-            actionError.value = `Workflow "${targetWorkflow?.name || 'selected'}" doesn't accept the inputs we tried to send. This workflow may not be designed for this interface.`
-          } else if (errorMsg.includes('workflow_dispatch')) {
-            actionError.value = 'This workflow does not support manual triggering. Please add "workflow_dispatch:" to the workflow\'s "on" section.'
-          } else {
-            actionError.value = `Cannot trigger workflow: ${errorMsg}`
-          }
-        } else {
-          actionError.value = 'Failed to trigger workflow: ' + (err.response?.data?.message || err.message)
-        }
-      } finally {
-        setTriggeringWorkflow(false)
       }
     }
 
@@ -1586,13 +1215,6 @@ export default {
         console.log('Query dir parameter changed, loading new directory:', newDir)
         const decodedDir = decodeURIComponent(newDir)
         loadSpecFiles(decodedDir)
-      }
-    })
-
-    // Watch for showActionsModal changes from composable to trigger modal logic
-    watch(showActionsModal, (newValue) => {
-      if (newValue) {
-        showActionModal()
       }
     })
 
@@ -2087,21 +1709,12 @@ export default {
       deleteFileCommitMessage,
       deletingFile,
       deleteFileError,
-      showActionsModal,
-      selectedAction,
-      actionError,
-      availableWorkflows,
-      selectedWorkflow,
-      showActionModal,
-      closeActionsModal,
       toggleDropdown,
       selectFilter,
       setFilter,
       clearFilter,
       clearFilterCompletely,
       applyFilter,
-      triggerWorkflow,
-      triggeringWorkflow,
       goUpDirectory,
       showGoUpButton,
       isRootDirectory,

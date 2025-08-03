@@ -58,17 +58,11 @@
             <i class="bi bi-heart-pulse"></i>
             Health
           </button>
-          <button v-if="showRepoRelatedButtons" @click="showActionModalAndClose"
-            class="nav-link btn btn-link"
-            title="Trigger GitHub Actions Workflow" :disabled="triggeringWorkflow">
-            <span v-if="triggeringWorkflow">
-              <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-              Actions...
-            </span>
-            <span v-else>
-              <i class="bi bi-play-circle"></i>
-              Actions
-            </span>
+          <button v-if="showRepoRelatedButtons" @click="navigateToActionsAndClose"
+            :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/actions') }]"
+            title="Run GitHub Actions">
+            <i class="bi bi-play-circle"></i>
+            Actions
           </button>
           <a v-if="showRepoRelatedButtons" :href="githubRepoUrl" target="_blank" rel="noopener" class="nav-link"
             title="View Repository on GitHub" @click="closeNavbar">
@@ -161,7 +155,6 @@
 <script>
 import { computed, ref, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useGitHubActions } from '../composables/useGitHubActions.js';
 import Modal from './Modal.vue';
 import RateLimitIndicator from './RateLimitIndicator.vue';
 import TermsPreview from './TermsPreview.vue';
@@ -184,9 +177,6 @@ export default {
     const route = useRoute();
     const router = useRouter();
     const isNavbarOpen = ref(false);
-
-    // Use GitHub Actions composable
-    const { triggeringWorkflow, openActionsModal } = useGitHubActions();
 
     const showRepoRelatedButtons = computed(() => {
       // Show repository-specific buttons only when we have repository context
@@ -255,12 +245,15 @@ export default {
       closeNavbar();
     };
 
-    const showActionModalAndClose = () => {
-      // Navigate to files page and trigger the actions modal
-      navigateToFiles();
+    const navigateToActions = () => {
+      if (route.params.owner && route.params.repo && route.params.branch) {
+        router.push(`/actions/${route.params.owner}/${route.params.repo}/${route.params.branch}`);
+      }
+    };
+
+    const navigateToActionsAndClose = () => {
+      navigateToActions();
       closeNavbar();
-      // Use Vue's reactive state instead of custom events
-      openActionsModal();
     };
 
     const handleLogout = () => {
@@ -348,8 +341,8 @@ export default {
       navigateToAdminAndClose,
       navigateToFiles,
       navigateToFilesAndClose,
-      showActionModalAndClose,
-      triggeringWorkflow,
+      navigateToActions,
+      navigateToActionsAndClose,
       handleLogout,
       buildInfo,
       isAuthenticated,
