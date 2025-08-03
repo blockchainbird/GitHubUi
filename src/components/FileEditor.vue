@@ -781,7 +781,7 @@ export default {
     })
 
     watch(content, async () => {
-      if (!loading.value && !isSyncing.value && isInTermsOrDefinitionsDir.value) {
+      if (!loading.value && !isSyncing.value) {
         await validateContent(content.value, filename.value, specsConfig.value)
       }
     }, { flush: 'post' })
