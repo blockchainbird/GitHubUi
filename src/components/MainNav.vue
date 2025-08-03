@@ -74,7 +74,7 @@
             <i class="bi bi-shield-lock"></i>
             Admin
           </button>
-          <button @click="navigateAndClose('/settings')"
+          <button @click="navigateAndClose(`/settings/${route.params.owner}/${route.params.repo}/${route.params.branch}`)"
             :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/settings') }]"
             title="Application Settings">
             <i class="bi bi-gear"></i>
@@ -183,10 +183,10 @@ export default {
       return route.params.owner && route.params.repo && route.params.branch;
     });
 
-    const showAlwaysVisibleButtons = computed(() => {
-      // These buttons should always be visible regardless of route
-      return true;
-    });
+    // const showAlwaysVisibleButtons = computed(() => {
+    //   // These buttons should always be visible regardless of route
+    //   return true;
+    // });
 
     const githubRepoUrl = computed(() => {
       if (route.params.owner && route.params.repo && route.params.branch) {
@@ -329,7 +329,7 @@ export default {
     return {
       route,
       showRepoRelatedButtons,
-      showAlwaysVisibleButtons,
+      // showAlwaysVisibleButtons,
       githubRepoUrl,
       isNavbarOpen,
       toggleNavbar,

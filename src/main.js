@@ -28,7 +28,7 @@ const routes = [
   { path: '/login', component: LoginPage },
   { path: '/home', component: HomePage },
   { path: '/create-project', component: CreateSpecUpProject },
-  { path: '/settings', component: Settings },
+  { path: '/settings/:owner/:repo/:branch', component: Settings, props: true },
 
   { path: '/admin/:owner/:repo/:branch', component: AdminScreen, props: true },
   { path: '/files/:owner/:repo/:branch', component: FileExplorer, props: true },
