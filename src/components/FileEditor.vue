@@ -15,8 +15,10 @@
         </span>
       </h2>
       <div>
+
+        <!-- Autosave status -->
         <div v-if="autosaveTimestamp && hasChanges"
-          class="fs-6 d-inline-flex align-items-center gap-0 px-4 py-1 rounded border me-2"
+          class="fs-6 d-inline-flex align-items-center gap-0 px-4 pt-1 pb-2 rounded border me-2"
           :class="hasUnsavedContent ? 'border-warning bg-warning bg-opacity-10' : 'border-info'">
           <span class="d-flex align-items-center">
             <i class="bi bi-save me-1"></i>
@@ -26,33 +28,36 @@
           <!-- <span class="text-muted small">at {{ autosaveTimeDisplay }}</span> -->
           <button @click="clearAutosaveAndReload"
             class="btn btn-outline-primary bg-primary text-dark btn-sm px-2 py-0 ms-2">Remove</button>
-          <i role="button"
-            :title="`Use Ctrl/Cmd+S to autosave. ${hasUnsavedContent ? 'Has unsaved changes since' : 'Saved locally at'} ${autosaveTimeDisplay} - not yet committed to repository`"
-            class="fs-5 bi bi-info-circle text-primary ms-2"></i>
         </div>
 
         <!-- Autosave button -->
-        <button @click="forceAutosave" class="btn me-2" :class="hasUnsavedContent ? 'btn-warning' : 'btn-outline-info'"
-          :title="hasUnsavedContent ? 'Autosave - You have unsaved changes! (Ctrl/Cmd+S)' : 'Save locally (Ctrl/Cmd+S)'">
-          <i class="bi" :class="hasUnsavedContent ? 'bi-exclamation-triangle' : 'bi-cloud-arrow-up'"></i>
-          <span v-if="hasUnsavedContent" class="d-none d-sm-inline ms-1">Unsaved</span>
+        <button @click="localSave" class="btn me-2" :class="hasUnsavedContent ? 'btn-warning' : 'btn-outline-info'"
+          :title="hasUnsavedContent ? 'Autosave - You have unsaved changes! (Ctrl/Cmd+S)' : 'Save locally (Ctrl/Cmd+S)'"
+          :disabled="!hasUnsavedContent">
+          <i class="bi bi-save me-1"></i> Save
         </button>
+
+        <!-- Publish/Unpublish button -->
         <button @click="handleTogglePublish" class="btn me-2" :class="isDraft ? 'btn-success' : 'btn-warning'"
           :disabled="saving || isNewFile"
           :title="isNewFile ? 'Create the file first before publishing/unpublishing' : ''">
           <i class="bi" :class="isDraft ? 'bi-eye' : 'bi-eye-slash'"></i>
           {{ isDraft ? 'Publish' : 'Unpublish' }}
         </button>
-        <button @click="handleSaveFile" class="btn btn-success" :disabled="saving || !hasChanges">
+
+        <!-- Commit button -->
+        <button @click="handleCommitFile" class="btn btn-success" :disabled="saving || !hasChanges">
           <span v-if="saving">
             <span class="spinner-border spinner-border-sm me-2" role="status"></span>
             Saving...
           </span>
           <span v-else>
-            <i class="bi" :class="isNewFile ? 'bi-plus-circle' : 'bi-cloud'"></i>
+            <i class="bi" :class="isNewFile ? 'bi-plus-circle' : 'bi-cloud-arrow-up'"></i>
             {{ isNewFile ? 'Create & Commit' : 'Commit' }}
           </span>
         </button>
+
+        <!--  -->
         <button @click="goBack" class="btn btn-outline-secondary ms-2">
           <i class="bi bi-x-circle me-2"></i>
           Close
@@ -74,7 +79,8 @@
         <i class="bi bi-exclamation-triangle-fill me-2 flex-shrink-0 mt-1"></i>
         <div>
           <strong>Unsaved changes detected!</strong>
-          You have unsaved changes that haven't been Saved locally yet. Use <kbd>Ctrl/Cmd+S</kbd> to force an autosave, or
+          You have unsaved changes that haven't been Saved locally yet. Use <kbd>Ctrl/Cmd+S</kbd> to force an autosave,
+          or
           wait for the automatic save in {{ Math.ceil((60000 - (timeSinceLastChange || 0)) / 1000) }} seconds.
         </div>
       </div>
@@ -386,7 +392,7 @@ export default {
       restoreFromAutosave,
       checkForAutosavedContent,
       initializeAutosave,
-      forceAutosave
+      localSave
     } = autosave
 
     // Editor state
@@ -396,7 +402,7 @@ export default {
 
     // State to track if file was detected as terms file (for stability)
     const wasDetectedAsTermsFile = ref(false)
-    
+
     // Add new method: clear autosave and reload file content
     const clearAutosaveAndReload = async () => {
       clearAutosave()
@@ -664,7 +670,7 @@ export default {
     }
 
     // File operations
-    const handleSaveFile = () => {
+    const handleCommitFile = () => {
       if (!hasChanges.value) return
       commitMessage.value = `${isNewFile.value ? 'Create' : 'Update'} ${filename.value}`
       const modal = new bootstrap.Modal(document.getElementById('commitModal'))
@@ -673,12 +679,12 @@ export default {
 
     const commitChanges = async () => {
       await saveFile()
-      
+
       // Clear autosave after successful commit
       if (success.value && !error.value) {
         clearAutosave()
       }
-      
+
       trackFileOperation(isNewFile.value ? 'create_complete' : 'save', getFileExtension(decodedPath.value))
 
       const modal = bootstrap.Modal.getInstance(document.getElementById('commitModal'))
@@ -738,20 +744,20 @@ export default {
       // Ctrl+S or Cmd+S for force autosave
       if ((event.ctrlKey || event.metaKey) && event.key === 's') {
         event.preventDefault()
-        forceAutosave()
+        localSave()
       }
     }
 
     // Lifecycle
     onMounted(async () => {
       addToVisitedRepos(props.owner, props.repo, props.branch)
-      
+
       // Check for autosaved content BEFORE loading file content
       const autosaveCheck = checkForAutosavedContent()
       let shouldRestoreAutosave = false
-    
+
       shouldRestoreAutosave = autosaveCheck.hasAutosave;
-      
+
       // Load file content
       await loadFileContent()
 
@@ -785,7 +791,7 @@ export default {
     onUnmounted(() => {
       // Remove keyboard event listener
       document.removeEventListener('keydown', handleKeyboardShortcuts)
-      
+
       if (window.fileEditorBeforeUnload) {
         window.removeEventListener('beforeunload', window.fileEditorBeforeUnload)
         delete window.fileEditorBeforeUnload
@@ -877,7 +883,7 @@ export default {
       autosaveTimeDisplay,
       autosaveTimestamp,
       timeSinceLastChange,
-      forceAutosave,
+      localSave,
 
       // Methods
       handleContentChange,
@@ -891,7 +897,7 @@ export default {
       handleInsertList,
       handleInsertBold,
       handleInsertItalic,
-      handleSaveFile,
+      handleCommitFile,
       commitChanges,
       handleTogglePublish,
       showAddTermModal,
