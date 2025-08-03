@@ -13,7 +13,6 @@
           <i class="bi bi-asterisk"></i>
           New File
         </span>
-        <!-- <span v-if="autosaveTimestamp && hasChanges" class="fs-6"> -->
         <div v-if="autosaveTimestamp && hasChanges"
           class="fs-6 d-inline-flex align-items-center gap-2 px-4 py-2 rounded border border-info">
           <span class="">
@@ -25,7 +24,6 @@
             :title="`Use Ctrl/Cmd+S to autosave. Autosaved at ${autosaveTimeDisplay} - not yet committed to repository`"
             class="fs-5 bi bi-info-circle text-primary ms-2"></i>
         </div>
-        <!-- </span> -->
       </h2>
       <div>
         <button @click="handleTogglePublish" class="btn me-2" :class="isDraft ? 'btn-success' : 'btn-warning'"
