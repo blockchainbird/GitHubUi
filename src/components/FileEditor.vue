@@ -63,6 +63,7 @@
           Your content was automatically saved locally at {{ autosaveTimeDisplay }}, but has not been committed to the
           repository yet.
           Make sure to click "{{ isNewFile ? 'Create & Commit' : 'Save & Commit' }}" to save your changes permanently.
+          <button @click="clearAutosave" class="btn btn-primary p-2 ms-2">Clear</button>
         </div>
       </div>
     </div>
@@ -800,6 +801,7 @@ export default {
       editMode,
       editor,
       proxyInfo,
+      clearAutosave,
 
       // Computed
       filename,
