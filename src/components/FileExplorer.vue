@@ -38,17 +38,6 @@
               Spec Directory: {{ currentDirectory }}
             </h5>
             <div class="d-flex gap-2">
-              <button @click="showActionModal" class="btn btn-warning btn-sm me-2"
-                title="Trigger GitHub Actions Workflow" :disabled="triggeringWorkflow">
-                <span v-if="triggeringWorkflow">
-                  <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                  Triggering...
-                </span>
-                <span v-else>
-                  <i class="bi bi-play-circle"></i>
-                  Run Actions
-                </span>
-              </button>
               <button @click="showCreateModal" class="btn btn-success btn-sm" title="Create New File">
                 <i class="bi bi-plus-circle"></i>
                 New File
@@ -1477,6 +1466,11 @@ export default {
       }
     }
 
+    // Listen for custom event from MainNav to trigger actions modal
+    const handleTriggerActionsModal = () => {
+      showActionModal()
+    }
+
     onMounted(() => {
       // Add this repository to visited history
       addToVisitedRepos(props.owner, props.repo, props.branch)
@@ -1484,6 +1478,9 @@ export default {
       loadSpecsConfig()
       document.addEventListener('click', handleClickOutside)
       document.addEventListener('visibilitychange', handleVisibilityChange)
+
+      // Listen for custom event from MainNav to trigger actions modal
+      window.addEventListener('trigger-actions-modal', handleTriggerActionsModal)
 
       // Set up fragment handling for terms preview
       const cleanupFragmentHandling = setupFragmentHandling((hash) => {
@@ -1596,6 +1593,7 @@ export default {
     onUnmounted(() => {
       document.removeEventListener('click', handleClickOutside)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('trigger-actions-modal', handleTriggerActionsModal)
       
       // Clean up fragment handling
       if (fragmentCleanup.value) {

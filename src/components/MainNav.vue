@@ -58,6 +58,18 @@
             <i class="bi bi-heart-pulse"></i>
             Health
           </button>
+          <button v-if="showRepoRelatedButtons" @click="showActionModalAndClose"
+            class="nav-link btn btn-link"
+            title="Trigger GitHub Actions Workflow" :disabled="triggeringWorkflow">
+            <span v-if="triggeringWorkflow">
+              <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+              Actions...
+            </span>
+            <span v-else>
+              <i class="bi bi-play-circle"></i>
+              Actions
+            </span>
+          </button>
           <a v-if="showRepoRelatedButtons" :href="githubRepoUrl" target="_blank" rel="noopener" class="nav-link"
             title="View Repository on GitHub" @click="closeNavbar">
             <i class="bi bi-github"></i>
@@ -172,6 +184,9 @@ export default {
     const router = useRouter();
     const isNavbarOpen = ref(false);
 
+    // GitHub Actions state
+    const triggeringWorkflow = ref(false);
+
     const showRepoRelatedButtons = computed(() => {
       // Show repository-specific buttons only when we have repository context
       return route.params.owner && route.params.repo && route.params.branch;
@@ -237,6 +252,17 @@ export default {
     const navigateToFilesAndClose = () => {
       navigateToFiles();
       closeNavbar();
+    };
+
+    const showActionModalAndClose = () => {
+      // Navigate to files page and trigger the actions modal
+      navigateToFiles();
+      closeNavbar();
+      // Use a small delay to ensure the FileExplorer component has mounted
+      setTimeout(() => {
+        // Dispatch a custom event to trigger the actions modal in FileExplorer
+        window.dispatchEvent(new CustomEvent('trigger-actions-modal'));
+      }, 100);
     };
 
     const handleLogout = () => {
@@ -324,6 +350,8 @@ export default {
       navigateToAdminAndClose,
       navigateToFiles,
       navigateToFilesAndClose,
+      showActionModalAndClose,
+      triggeringWorkflow,
       handleLogout,
       buildInfo,
       isAuthenticated,
