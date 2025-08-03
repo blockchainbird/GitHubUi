@@ -8,7 +8,7 @@ export function useAutosave(props, content, isNewFile) {
   // Autosave state
   const lastSavedToLocalStorage = ref(null)
   const autosaveInterval = ref(null)
-  const AUTOSAVE_DELAY = 10000 // 10 seconds
+  const AUTOSAVE_DELAY = 5000 // 5 seconds
 
   // Generate unique key for localStorage
   const getAutosaveKey = () => {
