@@ -398,6 +398,7 @@ import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import { addToVisitedRepos } from '../utils/visitedRepos.js'
 import { setupFragmentHandling, handleTermsPreviewFragment } from '../utils/urlFragments.js'
+import { useGitHubActions } from '../composables/useGitHubActions.js'
 import TermsPreview from './TermsPreview.vue'
 
 export default {
@@ -407,6 +408,15 @@ export default {
   setup(props) {
     const router = useRouter()
     const route = useRoute()
+    
+    // Use GitHub Actions composable
+    const { 
+      showActionsModal, 
+      triggeringWorkflow, 
+      closeActionsModal: closeActionModal, 
+      setTriggeringWorkflow 
+    } = useGitHubActions()
+    
     const loading = ref(true)
     const loadingMessage = ref('')
     const error = ref('')
@@ -451,7 +461,6 @@ export default {
     const creatingFile = ref(false)
     const createFileError = ref('')
     const fileNameInput = ref(null)
-    const triggeringWorkflow = ref(false)
 
     // Delete file modal state
     const showDeleteFileModal = ref(false)
@@ -460,8 +469,7 @@ export default {
     const deletingFile = ref(false)
     const deleteFileError = ref('')
 
-    // Actions modal state
-    const showActionsModal = ref(false)
+    // Actions modal state (keeping local state for form data)
     const selectedAction = ref('render')
     const actionError = ref('')
     const availableWorkflows = ref([])
@@ -1037,7 +1045,7 @@ export default {
 
     // Actions modal methods
     const showActionModal = async () => {
-      showActionsModal.value = true
+      // The modal state is managed by the composable, just reset local form state
       selectedAction.value = 'render' // Default selection
       actionError.value = ''
       selectedWorkflow.value = '' // Clear previous workflow info
@@ -1080,7 +1088,7 @@ export default {
     }
 
     const closeActionsModal = () => {
-      showActionsModal.value = false
+      closeActionModal() // Use composable method
       selectedAction.value = 'render'
       actionError.value = ''
       selectedWorkflow.value = ''
@@ -1211,7 +1219,7 @@ export default {
     // GitHub Actions Workflow Trigger
     const triggerWorkflow = async () => {
       try {
-        triggeringWorkflow.value = true
+        setTriggeringWorkflow(true)
         loadingMessage.value = 'Triggering GitHub Actions workflow...'
 
         const token = localStorage.getItem('github_token')
@@ -1411,7 +1419,7 @@ export default {
           actionError.value = 'Failed to trigger workflow: ' + (err.response?.data?.message || err.message)
         }
       } finally {
-        triggeringWorkflow.value = false
+        setTriggeringWorkflow(false)
       }
     }
 
@@ -1466,11 +1474,6 @@ export default {
       }
     }
 
-    // Listen for custom event from MainNav to trigger actions modal
-    const handleTriggerActionsModal = () => {
-      showActionModal()
-    }
-
     onMounted(() => {
       // Add this repository to visited history
       addToVisitedRepos(props.owner, props.repo, props.branch)
@@ -1478,9 +1481,6 @@ export default {
       loadSpecsConfig()
       document.addEventListener('click', handleClickOutside)
       document.addEventListener('visibilitychange', handleVisibilityChange)
-
-      // Listen for custom event from MainNav to trigger actions modal
-      window.addEventListener('trigger-actions-modal', handleTriggerActionsModal)
 
       // Set up fragment handling for terms preview
       const cleanupFragmentHandling = setupFragmentHandling((hash) => {
@@ -1589,11 +1589,17 @@ export default {
       }
     })
 
+    // Watch for showActionsModal changes from composable to trigger modal logic
+    watch(showActionsModal, (newValue) => {
+      if (newValue) {
+        showActionModal()
+      }
+    })
+
     // Clean up event listener
     onUnmounted(() => {
       document.removeEventListener('click', handleClickOutside)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
-      window.removeEventListener('trigger-actions-modal', handleTriggerActionsModal)
       
       // Clean up fragment handling
       if (fragmentCleanup.value) {

@@ -161,6 +161,7 @@
 <script>
 import { computed, ref, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useGitHubActions } from '../composables/useGitHubActions.js';
 import Modal from './Modal.vue';
 import RateLimitIndicator from './RateLimitIndicator.vue';
 import TermsPreview from './TermsPreview.vue';
@@ -184,8 +185,8 @@ export default {
     const router = useRouter();
     const isNavbarOpen = ref(false);
 
-    // GitHub Actions state
-    const triggeringWorkflow = ref(false);
+    // Use GitHub Actions composable
+    const { triggeringWorkflow, openActionsModal } = useGitHubActions();
 
     const showRepoRelatedButtons = computed(() => {
       // Show repository-specific buttons only when we have repository context
@@ -258,11 +259,8 @@ export default {
       // Navigate to files page and trigger the actions modal
       navigateToFiles();
       closeNavbar();
-      // Use a small delay to ensure the FileExplorer component has mounted
-      setTimeout(() => {
-        // Dispatch a custom event to trigger the actions modal in FileExplorer
-        window.dispatchEvent(new CustomEvent('trigger-actions-modal'));
-      }, 100);
+      // Use Vue's reactive state instead of custom events
+      openActionsModal();
     };
 
     const handleLogout = () => {
