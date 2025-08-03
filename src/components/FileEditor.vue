@@ -40,8 +40,8 @@
           <i class="bi bi-x-circle me-2"></i>
           Close
         </button>
-        <!-- Debug autosave button - remove in production -->
-        <button @click="forceAutosave" class="btn btn-outline-info ms-2" title="Force Autosave (Debug)">
+        <!-- Autosave button -->
+        <button @click="forceAutosave" class="btn btn-outline-info ms-2" title="Force Autosave (Ctrl/Cmd+S)">
           <i class="bi bi-cloud-arrow-up"></i>
         </button>
       </div>
@@ -718,6 +718,15 @@ export default {
       }
     }
 
+    // Keyboard shortcut handler
+    const handleKeyboardShortcuts = (event) => {
+      // Ctrl+S or Cmd+S for force autosave
+      if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+        event.preventDefault()
+        forceAutosave()
+      }
+    }
+
     // Lifecycle
     onMounted(async () => {
       addToVisitedRepos(props.owner, props.repo, props.branch)
@@ -742,6 +751,9 @@ export default {
       // Initialize terms for preview mode
       await initializeTerms()
 
+      // Add keyboard event listener
+      document.addEventListener('keydown', handleKeyboardShortcuts)
+
       // Browser navigation guard
       const handleBeforeUnload = (event) => {
         if (isNewFile.value && hasChanges.value) {
@@ -756,6 +768,9 @@ export default {
     })
 
     onUnmounted(() => {
+      // Remove keyboard event listener
+      document.removeEventListener('keydown', handleKeyboardShortcuts)
+      
       if (window.fileEditorBeforeUnload) {
         window.removeEventListener('beforeunload', window.fileEditorBeforeUnload)
         delete window.fileEditorBeforeUnload

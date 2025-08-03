@@ -158,7 +158,7 @@ export function useAutosave(props, content, isNewFile) {
     return { hasAutosave: false }
   }
 
-  // Force immediate save for testing
+  // Force immediate save
   const forceAutosave = () => {
     console.log('🔧 Force autosave triggered')
     saveToLocalStorage()
@@ -186,6 +186,6 @@ export function useAutosave(props, content, isNewFile) {
     checkForAutosavedContent,
     initializeAutosave,
     scheduleAutosave,
-    forceAutosave // For testing
+    forceAutosave
   }
 }
