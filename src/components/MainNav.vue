@@ -74,7 +74,7 @@
             <i class="bi bi-shield-lock"></i>
             Admin
           </button>
-          <button @click="navigateAndClose(`/settings/${route.params.owner}/${route.params.repo}/${route.params.branch}`)"
+          <button v-if="showRepoRelatedButtons" @click="navigateAndClose(`/settings/${route.params.owner}/${route.params.repo}/${route.params.branch}`)"
             :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/settings') }]"
             title="Application Settings">
             <i class="bi bi-gear"></i>
