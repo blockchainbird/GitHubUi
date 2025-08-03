@@ -13,6 +13,10 @@ export function useAutosave(props, content, isNewFile) {
   // Flag to track the first change
   let isFirstChange = true
 
+  // Track unsaved content since last autosave
+  const hasUnsavedContentSinceAutosave = ref(false)
+  const lastContentChangeTimestamp = ref(null)
+
   // Generate unique key for localStorage
   const getAutosaveKey = () => {
     const pathStr = Array.isArray(props.path) ? props.path.join('/') : props.path || 'new-file'
@@ -23,6 +27,13 @@ export function useAutosave(props, content, isNewFile) {
   const hasAutosavedContent = computed(() => {
     if (!lastSavedToLocalStorage.value) return false
     return content.value !== lastSavedToLocalStorage.value
+  })
+
+  // Check if there's unsaved content since last autosave
+  const hasUnsavedContent = computed(() => {
+    return hasUnsavedContentSinceAutosave.value && 
+           content.value !== lastSavedToLocalStorage.value &&
+           content.value.trim() !== ''
   })
 
   // Get autosave timestamp for display
@@ -45,6 +56,9 @@ export function useAutosave(props, content, isNewFile) {
       localStorage.setItem(key, JSON.stringify(autosaveData))
       lastSavedToLocalStorage.value = content.value
       autosaveTimestamp.value = Date.now()
+      
+      // Reset unsaved content flag since we just saved
+      hasUnsavedContentSinceAutosave.value = false
 
       console.log('🔄 Content autosaved to localStorage', { key, timestamp: autosaveTimestamp.value })
     } catch (error) {
@@ -79,6 +93,8 @@ export function useAutosave(props, content, isNewFile) {
       localStorage.removeItem(key)
       lastSavedToLocalStorage.value = null
       autosaveTimestamp.value = null
+      hasUnsavedContentSinceAutosave.value = false
+      lastContentChangeTimestamp.value = null
       console.log('🗑️ Autosaved content cleared from localStorage', { key })
     } catch (error) {
       console.warn('Failed to clear autosaved content:', error)
@@ -92,6 +108,7 @@ export function useAutosave(props, content, isNewFile) {
       content.value = saved.content
       lastSavedToLocalStorage.value = saved.content
       autosaveTimestamp.value = saved.timestamp
+      hasUnsavedContentSinceAutosave.value = false
       console.log('✅ Content restored from autosave', { timestamp: saved.timestamp })
       return true
     }
@@ -132,6 +149,10 @@ export function useAutosave(props, content, isNewFile) {
       })
 
       if (newContent && newContent.trim() && newContent !== lastSavedToLocalStorage.value) {
+        // Mark that we have unsaved content since last autosave
+        hasUnsavedContentSinceAutosave.value = true
+        lastContentChangeTimestamp.value = Date.now()
+        
         if (isFirstChange) {
           saveToLocalStorage()
           isFirstChange = false
@@ -171,6 +192,19 @@ export function useAutosave(props, content, isNewFile) {
     saveToLocalStorage()
   }
 
+  // Get time since last content change for warning display
+  const timeSinceLastChange = computed(() => {
+    if (!lastContentChangeTimestamp.value) return null
+    return Date.now() - lastContentChangeTimestamp.value
+  })
+
+  // Check if content has been unsaved for too long (e.g., more than 30 seconds)
+  const hasUnsavedContentWarning = computed(() => {
+    return hasUnsavedContent.value && 
+           timeSinceLastChange.value && 
+           timeSinceLastChange.value > 30000 // 30 seconds
+  })
+
   // Cleanup on unmount
   onUnmounted(() => {
     if (autosaveInterval.value) {
@@ -182,8 +216,11 @@ export function useAutosave(props, content, isNewFile) {
   return {
     // State
     hasAutosavedContent,
+    hasUnsavedContent,
+    hasUnsavedContentWarning,
     autosaveTimeDisplay,
     autosaveTimestamp,
+    timeSinceLastChange,
 
     // Methods
     saveToLocalStorage,

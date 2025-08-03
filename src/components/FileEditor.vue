@@ -13,19 +13,30 @@
           <i class="bi bi-asterisk"></i>
           New File
         </span>
-        <div v-if="autosaveTimestamp && hasChanges"
-          class="fs-6 d-inline-flex align-items-center gap-2 px-4 py-2 rounded border border-info">
-          <span class="">
-            <i class="bi bi-save me-1"></i> Autosaved
-          </span>
-          <!-- <span class="text-muted small">at {{ autosaveTimeDisplay }}</span> -->
-          <button @click="clearAutosaveAndReload" class="btn btn-outline-primary bg-primary text-dark btn-sm px-2 py-0 ms-2">Remove</button>
-          <i role="button"
-            :title="`Use Ctrl/Cmd+S to autosave. Autosaved at ${autosaveTimeDisplay} - not yet committed to repository`"
-            class="fs-5 bi bi-info-circle text-primary ms-2"></i>
-        </div>
       </h2>
       <div>
+        <div v-if="autosaveTimestamp && hasChanges"
+          class="fs-6 d-inline-flex align-items-center gap-0 px-4 py-1 rounded border me-2"
+          :class="hasUnsavedContent ? 'border-warning bg-warning bg-opacity-10' : 'border-info'">
+          <span class="d-flex align-items-center">
+            <i class="bi bi-save me-1"></i>
+            <span v-if="hasUnsavedContent" class="text-warning fw-semibold">Unsaved</span>
+            <span v-else>Saved locally</span>
+          </span>
+          <!-- <span class="text-muted small">at {{ autosaveTimeDisplay }}</span> -->
+          <button @click="clearAutosaveAndReload"
+            class="btn btn-outline-primary bg-primary text-dark btn-sm px-2 py-0 ms-2">Remove</button>
+          <i role="button"
+            :title="`Use Ctrl/Cmd+S to autosave. ${hasUnsavedContent ? 'Has unsaved changes since' : 'Saved locally at'} ${autosaveTimeDisplay} - not yet committed to repository`"
+            class="fs-5 bi bi-info-circle text-primary ms-2"></i>
+        </div>
+
+        <!-- Autosave button -->
+        <button @click="forceAutosave" class="btn me-2" :class="hasUnsavedContent ? 'btn-warning' : 'btn-outline-info'"
+          :title="hasUnsavedContent ? 'Autosave - You have unsaved changes! (Ctrl/Cmd+S)' : 'Save locally (Ctrl/Cmd+S)'">
+          <i class="bi" :class="hasUnsavedContent ? 'bi-exclamation-triangle' : 'bi-cloud-arrow-up'"></i>
+          <span v-if="hasUnsavedContent" class="d-none d-sm-inline ms-1">Unsaved</span>
+        </button>
         <button @click="handleTogglePublish" class="btn me-2" :class="isDraft ? 'btn-success' : 'btn-warning'"
           :disabled="saving || isNewFile"
           :title="isNewFile ? 'Create the file first before publishing/unpublishing' : ''">
@@ -38,17 +49,13 @@
             Saving...
           </span>
           <span v-else>
-            <i class="bi" :class="isNewFile ? 'bi-plus-circle' : 'bi-save'"></i>
-            {{ isNewFile ? 'Create & Commit' : 'Save & Commit' }}
+            <i class="bi" :class="isNewFile ? 'bi-plus-circle' : 'bi-cloud'"></i>
+            {{ isNewFile ? 'Create & Commit' : 'Commit' }}
           </span>
         </button>
         <button @click="goBack" class="btn btn-outline-secondary ms-2">
           <i class="bi bi-x-circle me-2"></i>
           Close
-        </button>
-        <!-- Autosave button -->
-        <button @click="forceAutosave" class="btn btn-outline-info ms-2" title="Force Autosave (Ctrl/Cmd+S)">
-          <i class="bi bi-cloud-arrow-up"></i>
         </button>
       </div>
     </div>
@@ -59,6 +66,18 @@
 
     <div v-if="success" class="alert alert-success" role="alert">
       {{ success }}
+    </div>
+
+    <!-- Warning for unsaved content -->
+    <div v-if="hasUnsavedContentWarning" class="alert alert-warning" role="alert">
+      <div class="d-flex align-items-start">
+        <i class="bi bi-exclamation-triangle-fill me-2 flex-shrink-0 mt-1"></i>
+        <div>
+          <strong>Unsaved changes detected!</strong>
+          You have unsaved changes that haven't been Saved locally yet. Use <kbd>Ctrl/Cmd+S</kbd> to force an autosave, or
+          wait for the automatic save in {{ Math.ceil((60000 - (timeSinceLastChange || 0)) / 1000) }} seconds.
+        </div>
+      </div>
     </div>
 
     <div v-if="isNewFile" class="alert alert-info" role="alert">
@@ -357,8 +376,11 @@ export default {
     const autosave = useAutosave(props, content, isNewFile)
     const {
       hasAutosavedContent,
+      hasUnsavedContent,
+      hasUnsavedContentWarning,
       autosaveTimeDisplay,
       autosaveTimestamp,
+      timeSinceLastChange,
       saveToLocalStorage,
       clearAutosave,
       restoreFromAutosave,
@@ -850,8 +872,11 @@ export default {
 
       // Autosave
       hasAutosavedContent,
+      hasUnsavedContent,
+      hasUnsavedContentWarning,
       autosaveTimeDisplay,
       autosaveTimestamp,
+      timeSinceLastChange,
       forceAutosave,
 
       // Methods

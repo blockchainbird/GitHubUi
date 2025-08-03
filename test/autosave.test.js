@@ -95,4 +95,83 @@ describe('useAutosave', () => {
     expect(restored).toBe(true)
     expect(content.value).toBe('restored content')
   })
+
+  it('should detect unsaved content between autosaves', async () => {
+    const { 
+      hasUnsavedContent, 
+      hasUnsavedContentWarning,
+      saveToLocalStorage,
+      initializeAutosave 
+    } = useAutosave(props, content, isNewFile)
+    
+    // Initialize the autosave system
+    initializeAutosave()
+    
+    // Initially no unsaved content
+    expect(hasUnsavedContent.value).toBe(false)
+    expect(hasUnsavedContentWarning.value).toBe(false)
+    
+    // Change content - should mark as unsaved
+    content.value = 'changed content'
+    
+    // Wait for reactivity
+    await new Promise(resolve => setTimeout(resolve, 10))
+    
+    expect(hasUnsavedContent.value).toBe(true)
+    expect(hasUnsavedContentWarning.value).toBe(false) // Not yet past warning threshold
+    
+    // Save content - should clear unsaved flag
+    saveToLocalStorage()
+    
+    expect(hasUnsavedContent.value).toBe(false)
+    expect(hasUnsavedContentWarning.value).toBe(false)
+  })
+
+  it('should show warning for long unsaved content', async () => {
+    vi.useFakeTimers()
+    
+    const { 
+      hasUnsavedContent, 
+      hasUnsavedContentWarning,
+      initializeAutosave 
+    } = useAutosave(props, content, isNewFile)
+    
+    // Initialize the autosave system
+    initializeAutosave()
+    
+    // Change content
+    content.value = 'changed content'
+    
+    // Wait for reactivity
+    await new Promise(resolve => setTimeout(resolve, 10))
+    
+    expect(hasUnsavedContent.value).toBe(true)
+    expect(hasUnsavedContentWarning.value).toBe(false)
+    
+    // Fast-forward time past warning threshold (30 seconds)
+    vi.advanceTimersByTime(31000)
+    
+    expect(hasUnsavedContentWarning.value).toBe(true)
+    
+    vi.useRealTimers()
+  })
+
+  it('should clear unsaved content flags when clearing autosave', () => {
+    const { 
+      hasUnsavedContent, 
+      clearAutosave,
+      initializeAutosave 
+    } = useAutosave(props, content, isNewFile)
+    
+    // Initialize and change content
+    initializeAutosave()
+    content.value = 'changed content'
+    
+    expect(hasUnsavedContent.value).toBe(true)
+    
+    // Clear autosave should reset flags
+    clearAutosave()
+    
+    expect(hasUnsavedContent.value).toBe(false)
+  })
 })
