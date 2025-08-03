@@ -13,13 +13,19 @@
           <i class="bi bi-asterisk"></i>
           New File
         </span>
-        <span v-if="autosaveTimestamp && hasChanges" class="badge bg-secondary ms-2">
-          <i class="bi bi-cloud"></i>
-          Autosaved <span class="d-block text-muted fs-6">at {{ autosaveTimeDisplay }}</span>
-          <button @click="clearAutosaveAndReload" class="btn btn-primary p-2 ms-2">Clear</button>
-          <i :title="`Use Ctrl/Cmd+S to autosave. Content autosaved at ${autosaveTimeDisplay} - not yet committed to repository`"
-            class="ms-3 fs-4 bi bi-info-circle"></i>
-        </span>
+        <!-- <span v-if="autosaveTimestamp && hasChanges" class="fs-6"> -->
+        <div v-if="autosaveTimestamp && hasChanges"
+          class="fs-6 d-inline-flex align-items-center gap-2 px-4 py-2 rounded border border-info">
+          <span class="">
+            <i class="bi bi-save me-1"></i> Autosaved
+          </span>
+          <!-- <span class="text-muted small">at {{ autosaveTimeDisplay }}</span> -->
+          <button @click="clearAutosaveAndReload" class="btn btn-outline-primary bg-primary text-dark btn-sm px-2 py-0 ms-2">Remove</button>
+          <i role="button"
+            :title="`Use Ctrl/Cmd+S to autosave. Autosaved at ${autosaveTimeDisplay} - not yet committed to repository`"
+            class="fs-5 bi bi-info-circle text-primary ms-2"></i>
+        </div>
+        <!-- </span> -->
       </h2>
       <div>
         <button @click="handleTogglePublish" class="btn me-2" :class="isDraft ? 'btn-success' : 'btn-warning'"
@@ -55,19 +61,6 @@
 
     <div v-if="success" class="alert alert-success" role="alert">
       {{ success }}
-    </div>
-
-    <div v-if="autosaveTimestamp && hasChanges" class="alert alert-warning" role="alert">
-      <div class="d-flex align-items-start">
-        <i class="bi bi-exclamation-triangle-fill me-2 flex-shrink-0 mt-1"></i>
-        <div>
-          <strong>Unsaved Changes:</strong>
-          Your content was automatically saved locally at {{ autosaveTimeDisplay }}, but has not been committed to the
-          repository yet.
-          Make sure to click "{{ isNewFile ? 'Create & Commit' : 'Save & Commit' }}" to save your changes permanently.
-          <button @click="clearAutosaveAndReload" class="btn btn-primary p-2 ms-2">Clear</button>
-        </div>
-      </div>
     </div>
 
     <div v-if="isNewFile" class="alert alert-info" role="alert">
