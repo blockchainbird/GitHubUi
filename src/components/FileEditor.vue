@@ -63,7 +63,7 @@
           Your content was automatically saved locally at {{ autosaveTimeDisplay }}, but has not been committed to the
           repository yet.
           Make sure to click "{{ isNewFile ? 'Create & Commit' : 'Save & Commit' }}" to save your changes permanently.
-          <button @click="clearAutosave" class="btn btn-primary p-2 ms-2">Clear</button>
+          <button @click="clearAutosaveAndReload" class="btn btn-primary p-2 ms-2">Clear</button>
         </div>
       </div>
     </div>
@@ -381,6 +381,12 @@ export default {
 
     // State to track if file was detected as terms file (for stability)
     const wasDetectedAsTermsFile = ref(false)
+    
+    // Add new method: clear autosave and reload file content
+    const clearAutosaveAndReload = async () => {
+      clearAutosave()
+      await loadFileContent()
+    }
 
     // Check if file is terms file
     const isTermsFileComputed = computed(() => {
@@ -802,6 +808,7 @@ export default {
       editor,
       proxyInfo,
       clearAutosave,
+      clearAutosaveAndReload,
 
       // Computed
       filename,
