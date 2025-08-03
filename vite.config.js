@@ -27,9 +27,6 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       open: true
     },
-    preview: {
-      port: 3000
-    },
     // sets the Rollup output option manualChunks to undefined during the build process. This disables code splitting for dynamic imports, so all code will be bundled into a single output file instead of splitting into multiple chunks. This can be useful if you want a single JavaScript file for deployment, but it may increase the bundle size and affect loading performance for larger apps.
     build: {
       rollupOptions: {
