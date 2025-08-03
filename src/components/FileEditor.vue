@@ -718,18 +718,8 @@ export default {
       // Check for autosaved content BEFORE loading file content
       const autosaveCheck = checkForAutosavedContent()
       let shouldRestoreAutosave = false
-      
-      if (autosaveCheck.hasAutosave) {
-        // Show confirmation dialog for autosaved content
-        shouldRestoreAutosave = confirm(
-          `Found unsaved changes from ${new Date(autosaveCheck.timestamp).toLocaleString()}. ` +
-          'Would you like to restore them? Click Cancel to use the saved version from the repository.'
-        )
-        
-        if (!shouldRestoreAutosave) {
-          clearAutosave()
-        }
-      }
+    
+      shouldRestoreAutosave = autosaveCheck.hasAutosave;
       
       // Load file content
       await loadFileContent()
