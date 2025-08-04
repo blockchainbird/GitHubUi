@@ -40,17 +40,6 @@
                   </select>
                   <div class="form-text">Choose repository visibility</div>
                 </div>
-
-                <div class="col-md-6 mb-3">
-                  <div class="form-check mt-4">
-                    <input id="enableActions" v-model="projectForm.enableActions" class="form-check-input"
-                      type="checkbox">
-                    <label class="form-check-label" for="enableActions">
-                      Enable GitHub Actions
-                    </label>
-                    <div class="form-text">Automatically set up CI/CD for your spec project</div>
-                  </div>
-                </div>
               </div>
 
               <!-- Advanced Options -->
@@ -159,8 +148,7 @@
                     </div>
                     <div class="col-md-6">
                       <p class="mb-2"><strong>Authors:</strong> {{ projectForm.authors || 'Not specified' }}</p>
-                      <p class="mb-2"><strong>Actions:</strong> {{ projectForm.enableActions ? 'Enabled' : 'Disabled' }}
-                      </p>
+                      <p class="mb-2"><strong>Actions:</strong> Enabled (from template)</p>
                       <p class="mb-2"><strong>Visibility:</strong> {{ projectForm.isPrivate ? 'Private' : 'Public' }}
                       </p>
                     </div>
@@ -198,7 +186,7 @@
             </p>
             <ul class="list-unstyled">
               <li><i class="bi bi-check text-success"></i> Pre-configured Spec-Up-T environment</li>
-              <li><i class="bi bi-check text-success"></i> GitHub Actions for automated building</li>
+              <li><i class="bi bi-check text-success"></i> GitHub Actions workflows from template</li>
               <li><i class="bi bi-check text-success"></i> Sample specification structure</li>
               <li><i class="bi bi-check text-success"></i> Ready for GitHub Pages deployment</li>
             </ul>
@@ -223,7 +211,6 @@ export default {
       name: '',
       description: '',
       isPrivate: false,
-      enableActions: true,
       specTitle: '',
       specVersion: '1.0.0',
       authors: ''
@@ -243,7 +230,6 @@ export default {
         name: '',
         description: '',
         isPrivate: false,
-        enableActions: true,
         specTitle: '',
         specVersion: '1.0.0',
         authors: ''
@@ -397,16 +383,12 @@ jobs:
       - name: Create project structure
         run: |
           npx create-spec-up-t temp-project
-          find temp-project -maxdepth 1 -not -name temp-project -not -name .git -exec cp -r {} . \\;
+          # Copy everything except .github/workflows to avoid permission issues
+          find temp-project -maxdepth 1 -not -name temp-project -not -name .git -not -name .github -exec cp -r {} . \\;
+          # Copy .github directory but exclude workflows
+          mkdir -p .github
+          find temp-project/.github -maxdepth 1 -not -name .github -not -name workflows -exec cp -r {} .github/ \\; 2>/dev/null || true
           rm -rf temp-project
-
-      - name: Remove all workflow files from template
-        run: |
-          # Remove the entire .github/workflows directory from the template
-          # We'll add our own build workflow separately if needed
-          rm -rf .github/workflows 2>/dev/null || true
-          # Recreate the .github directory structure if it was removed
-          mkdir -p .github 2>/dev/null || true
 
       - name: Customize configuration
         run: |
@@ -458,6 +440,9 @@ jobs:
         run: |
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
+          # Show what files we're about to commit for debugging
+          echo "Files to be committed:"
+          git status --porcelain
           git add .
           git commit -m "Initialize Spec-Up-T project: $PROJECT_NAME" || echo "No changes to commit"
           git push origin main
@@ -601,6 +586,100 @@ jobs:
       return await response.json()
     }
 
+    const addWorkflowFilesFromTemplate = async (token, username, repoName) => {
+      // Define the standard Spec-Up-T workflow files that should be added
+      const workflowFiles = {
+        'menu.yml': `name: Menu
+
+on:
+  workflow_call:
+
+jobs:
+  menu:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Generate menu
+        run: npm run menu`,
+
+        'render-specs.yml': `name: Render Specs
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      run: npm install
+      
+    - name: Build specs
+      run: npm run render
+      
+    - name: Deploy to GitHub Pages
+      if: github.ref == 'refs/heads/main'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: \${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./docs`,
+
+        'set-gh-pages.yml': `name: Setup GitHub Pages
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup-pages:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+        with:
+          token: \${{ secrets.GITHUB_TOKEN }}`
+      }
+
+      // Upload each workflow file
+      for (const [filename, content] of Object.entries(workflowFiles)) {
+        try {
+          await uploadFile(
+            token,
+            username,
+            repoName,
+            `.github/workflows/${filename}`,
+            content,
+            `Add ${filename} workflow`
+          )
+        } catch (error) {
+          console.warn(`Failed to add workflow ${filename}:`, error.message)
+          // Continue with other files even if one fails
+        }
+      }
+    }
+
     const createProject = async () => {
       try {
         isCreating.value = true
@@ -630,53 +709,21 @@ jobs:
         // Wait for the workflow to complete
         await waitForWorkflowCompletion(token, user.login, projectForm.value.name)
 
-        updateProgress(80, 'Setting up additional configuration...')
+        updateProgress(80, 'Adding workflow files from template...')
+        /*
+          Add the workflow files from the template via API after the main commit
+          Note: We cannot commit workflow files from within a workflow, which GitHub prevents for security reasons(workflows cannot modify other workflows using the default GITHUB_TOKEN).
 
-        // If GitHub Actions are enabled, add the build workflow
-        if (projectForm.value.enableActions) {
-          const buildWorkflow = `name: Build and Deploy Spec
+          How it now works:
+          Repository Creation: Creates empty GitHub repository with proper permissions
+          Project Initialization: Runs npx create-spec-up-t but excludes workflow files
+          Content Customization: Updates specs.json, package.json, README.md with user details
+          Main Content Commit: Commits all project files except workflows
+            Workflow Files Addition: Separately adds workflow files via GitHub API
+          Cleanup: Removes the initialization workflow
+        */
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        
-    - name: Install dependencies
-      run: npm install
-      
-    - name: Build specification
-      run: npm run build
-      
-    - name: Deploy to GitHub Pages
-      if: github.ref == 'refs/heads/main'
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: \${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./docs
-`
-
-          await uploadFile(
-            token,
-            user.login,
-            projectForm.value.name,
-            '.github/workflows/build.yml',
-            buildWorkflow,
-            'Add build and deploy workflow'
-          )
-        }
+        await addWorkflowFilesFromTemplate(token, user.login, projectForm.value.name)
 
         updateProgress(95, 'Finalizing project setup...')
 
