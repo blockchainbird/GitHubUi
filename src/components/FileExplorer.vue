@@ -301,6 +301,7 @@ import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import { addToVisitedRepos } from '../utils/visitedRepos.js'
 import { setupFragmentHandling, handleTermsPreviewFragment } from '../utils/urlFragments.js'
+import { getGitHubHeaders, addCacheBusting } from '../utils/apiUtils.js'
 import TermsPreview from './TermsPreview.vue'
 
 export default {
@@ -507,14 +508,13 @@ export default {
         console.log('Props:', { owner: props.owner, repo: props.repo, branch: props.branch })
 
         const config = {
-          headers: {
-            'Authorization': `token ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          }
+          headers: getGitHubHeaders(token)
         }
 
-        // Try to get specs.json from repository root, with branch
-        const specsUrl = `https://api.github.com/repos/${props.owner}/${props.repo}/contents/specs.json?ref=${props.branch}`
+        // Try to get specs.json from repository root, with branch and cache-busting
+        const specsUrl = addCacheBusting(
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/specs.json?ref=${props.branch}`
+        )
         console.log('Loading specs config from:', specsUrl)
 
         const response = await axios.get(specsUrl, config)
@@ -627,26 +627,13 @@ export default {
 
         const token = localStorage.getItem('github_token')
         const config = {
-          headers: {
-            'Authorization': `token ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          }
+          headers: getGitHubHeaders(token)
         }
 
-        // Only add cache-busting headers and timestamp for retry attempts
-        if (retryCount > 0) {
-          config.headers['Cache-Control'] = 'no-cache'
-          config.headers['If-None-Match'] = ''
-        }
-
-        // Get files and folders from the given directory, with branch
-        let url = `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${directory}?ref=${props.branch}`
-
-        // Add timestamp to URL only for retry attempts to prevent caching
-        if (retryCount > 0) {
-          const timestamp = Date.now()
-          url += `&t=${timestamp}`
-        }
+        // Always add cache-busting to ensure fresh data
+        const url = addCacheBusting(
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${directory}?ref=${props.branch}`
+        )
 
         console.log('Making API request to:', url)
         const response = await axios.get(url, config)
@@ -945,17 +932,14 @@ export default {
 
         const token = localStorage.getItem('github_token')
         const config = {
-          headers: {
-            'Authorization': `token ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          }
+          headers: getGitHubHeaders(token)
         }
 
-        // Get the current file to get its SHA
-        const fileResponse = await axios.get(
-          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${fileInfo.path}?ref=${props.branch}`,
-          config
+        // Get the current file to get its SHA with cache-busting
+        const fileUrl = addCacheBusting(
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${fileInfo.path}?ref=${props.branch}`
         )
+        const fileResponse = await axios.get(fileUrl, config)
 
         // Delete the file
         const deleteData = {
@@ -1542,52 +1526,87 @@ export default {
       dragPosition.value = '';
     };
 
+    // Refresh order with retry logic after saving
+    const refreshOrderWithRetry = async (maxRetries = 3) => {
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          if (attempt > 0) {
+            console.log(`Retry ${attempt + 1}: Refreshing order after save...`)
+            // Wait before retry with increasing delay
+            const delay = 1500 + (attempt * 1000) // 1.5s, 2.5s, 3.5s
+            await new Promise(resolve => setTimeout(resolve, delay))
+          } else {
+            // First attempt with initial delay
+            await new Promise(resolve => setTimeout(resolve, 1500))
+          }
+
+          // Reload specs config first to get fresh order data
+          await loadSpecsConfig()
+          
+          // Then reload files which will apply the updated order
+          await loadSpecFiles(currentDirectory.value, attempt)
+          
+          // If we get here without error, break out of retry loop
+          console.log(`Order refresh successful on attempt ${attempt + 1}`)
+          return
+          
+        } catch (refreshErr) {
+          console.error(`Order refresh attempt ${attempt + 1} failed:`, refreshErr)
+          if (attempt === maxRetries - 1) {
+            console.error('All order refresh attempts failed')
+          }
+        }
+      }
+    }
+
     const saveOrder = async () => {
-      if (!isRootDirectory.value || !hasUnsavedChanges.value) return;
+      if (!isRootDirectory.value || !hasUnsavedChanges.value) return
 
       try {
-        loading.value = true;
-        loadingMessage.value = 'Saving file order...';
+        loading.value = true
+        loadingMessage.value = 'Saving file order...'
+        
+        console.log('Saving order for items:', draggedItems.value.map(item => `${item.name} (${item.type})`))
 
-        const token = localStorage.getItem('github_token');
+        const token = localStorage.getItem('github_token')
         const config = {
-          headers: {
-            'Authorization': `token ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          }
-        };
+          headers: getGitHubHeaders(token)
+        }
 
-        // Get current specs.json
-        const response = await axios.get(
-          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/specs.json?ref=${props.branch}`,
-          config
-        );
+        // Get current specs.json with cache-busting
+        const specsUrl = addCacheBusting(
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/specs.json?ref=${props.branch}`
+        )
+        const response = await axios.get(specsUrl, config)
 
-        const currentContent = JSON.parse(atob(response.data.content));
+        const currentContent = JSON.parse(atob(response.data.content))
 
         // Build markdown_paths array
-        const markdownPaths = [];
+        const markdownPaths = []
 
         draggedItems.value.forEach(item => {
           if (item.type === 'folder') {
             // Special handling for spec_terms_directory
             if (item.name === specTermsDirectory.value) {
-              markdownPaths.push('terms-and-definitions-intro.md');
+              markdownPaths.push('terms-and-definitions-intro.md')
             } else {
-              markdownPaths.push(item.name);
+              markdownPaths.push(item.name)
             }
           } else {
             // Only add files that are NOT "terms-and-definitions-intro.md" 
             // since that filename is reserved for representing the terms directory
             if (item.name !== 'terms-and-definitions-intro.md') {
-              markdownPaths.push(item.name);
+              markdownPaths.push(item.name)
             }
           }
-        });
+        })
+
+        console.log('Generated markdown_paths:', markdownPaths)
 
         // Update the specs configuration
         if (currentContent.specs && currentContent.specs.length > 0) {
-          currentContent.specs[0].markdown_paths = markdownPaths;
+          currentContent.specs[0].markdown_paths = markdownPaths
+          console.log('Updated specs config with new markdown_paths')
         }
 
         // Save back to GitHub
@@ -1604,8 +1623,11 @@ export default {
           config
         );
 
-        hasUnsavedChanges.value = false;
-        originalOrder.value = [...draggedItems.value];
+        hasUnsavedChanges.value = false
+        originalOrder.value = [...draggedItems.value]
+        
+        // Force refresh with retry logic to ensure we get the updated order
+        refreshOrderWithRetry()
 
       } catch (err) {
         console.error('Error saving file order:', err);
@@ -1621,34 +1643,36 @@ export default {
     // Apply saved order from specs.json markdown_paths
     const applySavedOrder = () => {
       if (!specsConfig.value?.specs?.[0]?.markdown_paths) {
-        return; // No saved order, use default
+        console.log('No saved order found in specs.json, using default order')
+        return // No saved order, use default
       }
 
-      const savedPaths = specsConfig.value.specs[0].markdown_paths;
-      const orderedItems = [];
+      const savedPaths = specsConfig.value.specs[0].markdown_paths
+      console.log('Applying saved order from specs.json:', savedPaths)
+      const orderedItems = []
 
       // Process each item in the saved order
       savedPaths.forEach(path => {
         if (path === 'terms-and-definitions-intro.md') {
           // This represents the terms directory
-          const termsFolder = folders.value.find(f => f.name === specTermsDirectory.value);
+          const termsFolder = folders.value.find(f => f.name === specTermsDirectory.value)
           if (termsFolder) {
-            orderedItems.push({ ...termsFolder, type: 'folder' });
+            orderedItems.push({ ...termsFolder, type: 'folder' })
           }
         } else {
           // Check if it's a folder
-          const folder = folders.value.find(f => f.name === path);
+          const folder = folders.value.find(f => f.name === path)
           if (folder) {
-            orderedItems.push({ ...folder, type: 'folder' });
+            orderedItems.push({ ...folder, type: 'folder' })
           } else {
             // It's a file
-            const file = files.value.find(f => f.name === path);
+            const file = files.value.find(f => f.name === path)
             if (file) {
-              orderedItems.push({ ...file, type: 'file' });
+              orderedItems.push({ ...file, type: 'file' })
             }
           }
         }
-      });
+      })
 
       // Add any items not in the saved order at the end
       folders.value.forEach(folder => {
@@ -1665,9 +1689,12 @@ export default {
 
       // Set the ordered items
       if (orderedItems.length > 0) {
-        draggedItems.value = orderedItems;
-        originalOrder.value = [...orderedItems];
-        console.log('Applied saved order:', orderedItems.map(item => `${item.name} (${item.type})`));
+        draggedItems.value = orderedItems
+        originalOrder.value = [...orderedItems]
+        console.log('Applied saved order:', orderedItems.map(item => `${item.name} (${item.type})`))
+        console.log('Updated draggedItems.value length:', draggedItems.value.length)
+      } else {
+        console.log('No items found to apply saved order')
       }
     };
 

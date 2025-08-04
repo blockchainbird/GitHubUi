@@ -683,6 +683,11 @@ export default {
       // Clear autosave after successful commit
       if (success.value && !error.value) {
         clearAutosave()
+        
+        // Force refresh of file content to see changes immediately
+        setTimeout(async () => {
+          await loadFileContent()
+        }, 500)
       }
 
       trackFileOperation(isNewFile.value ? 'create_complete' : 'save', getFileExtension(decodedPath.value))

@@ -6,6 +6,7 @@
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
+import { getGitHubHeaders, addCacheBusting, cacheBustedRequest } from '../utils/apiUtils.js'
 
 export function useFileContent(props) {
   const router = useRouter()
@@ -107,16 +108,14 @@ export function useFileContent(props) {
 
       const token = localStorage.getItem('github_token')
       const config = {
-        headers: {
-          'Authorization': `token ${token}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
+        headers: getGitHubHeaders(token)
       }
 
-      const response = await axios.get(
-        `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${decodedPath.value}?ref=${props.branch}`,
-        config
+      const url = addCacheBusting(
+        `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${decodedPath.value}?ref=${props.branch}`
       )
+      
+      const response = await axios.get(url, config)
 
       fileSha.value = response.data.sha
       // Properly decode UTF-8 content from base64
@@ -151,10 +150,16 @@ export function useFileContent(props) {
     try {
       const token = localStorage.getItem('github_token')
       const config = {
-        headers: {
-          'Authorization': `token ${token}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
+        headers: getGitHubHeaders(token)
+      }
+
+      // For existing files, get latest SHA with cache-busting to ensure we have the most recent version
+      if (!isNewFile.value) {
+        const shaUrl = addCacheBusting(
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${decodedPath.value}?ref=${props.branch}`
+        )
+        const shaResponse = await axios.get(shaUrl, config)
+        fileSha.value = shaResponse.data.sha
       }
 
       const data = {

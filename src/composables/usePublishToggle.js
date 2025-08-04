@@ -5,6 +5,7 @@
 
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
+import { getGitHubHeaders, addCacheBusting } from '../utils/apiUtils.js'
 
 export function usePublishToggle(props, checkAuthAndRedirect) {
   const router = useRouter()
@@ -14,11 +15,7 @@ export function usePublishToggle(props, checkAuthAndRedirect) {
     try {
       const token = localStorage.getItem('github_token')
       const config = {
-        headers: {
-          'Authorization': `token ${token}`,
-          'Accept': 'application/vnd.github.v3+json',
-          'Content-Type': 'application/json'
-        }
+        headers: getGitHubHeaders(token)
       }
 
       const currentPath = decodedPath
@@ -37,11 +34,11 @@ export function usePublishToggle(props, checkAuthAndRedirect) {
       const action = currentFilename.startsWith('_') ? 'Published' : 'Unpublished'
       const commitMsg = `${action} ${currentFilename} -> ${newFilename}`
 
-      // Get latest SHA
-      const currentFileResponse = await axios.get(
-        `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${currentPath}?ref=${props.branch}`,
-        config
+      // Get latest SHA with cache-busting
+      const currentFileUrl = addCacheBusting(
+        `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${currentPath}?ref=${props.branch}`
       )
+      const currentFileResponse = await axios.get(currentFileUrl, config)
       
       const latestSha = currentFileResponse.data.sha
 
@@ -79,6 +76,14 @@ export function usePublishToggle(props, checkAuthAndRedirect) {
         newName: newFilename,
         action: action.toLowerCase()
       }))
+
+      // Store rename info for FileExplorer to detect and refresh
+      const renameInfo = {
+        oldName: currentFilename,
+        newName: newFilename,
+        action: action.toLowerCase()
+      }
+      localStorage.setItem('recentlyRenamedFile', JSON.stringify(renameInfo))
 
       // Navigate to new path
       const encodedNewPath = encodeURIComponent(newPath)

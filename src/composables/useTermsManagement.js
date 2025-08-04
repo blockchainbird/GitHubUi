@@ -6,6 +6,7 @@
 import { ref, computed } from 'vue'
 import axios from 'axios'
 import { consoleMessages } from '../utils/loadingMessages.js'
+import { getGitHubHeaders, addCacheBusting } from '../utils/apiUtils.js'
 
 export function useTermsManagement(props, checkAuthAndRedirect) {
   // Terms state
@@ -74,16 +75,13 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
     try {
       const token = localStorage.getItem('github_token')
       const config = {
-        headers: {
-          'Authorization': `token ${token}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
+        headers: getGitHubHeaders(token)
       }
 
-      const response = await axios.get(
-        `https://api.github.com/repos/${props.owner}/${props.repo}/contents/specs.json?ref=${props.branch}`,
-        config
+      const url = addCacheBusting(
+        `https://api.github.com/repos/${props.owner}/${props.repo}/contents/specs.json?ref=${props.branch}`
       )
+      const response = await axios.get(url, config)
 
       const content = JSON.parse(atob(response.data.content))
       specsConfig.value = content
@@ -136,16 +134,13 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
     try {
       const token = localStorage.getItem('github_token')
       const config = {
-        headers: {
-          'Authorization': `token ${token}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
+        headers: getGitHubHeaders(token)
       }
 
-      const response = await axios.get(
-        `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${filePath}?ref=${props.branch}`,
-        config
+      const url = addCacheBusting(
+        `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${filePath}?ref=${props.branch}`
       )
+      const response = await axios.get(url, config)
 
       const content = atob(response.data.content)
       const lines = content.split('\n')
@@ -370,10 +365,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
 
       const token = localStorage.getItem('github_token')
       const requestConfig = {
-        headers: {
-          'Authorization': `token ${token}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
+        headers: getGitHubHeaders(token)
       }
 
       const termsData = []
@@ -381,10 +373,10 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
       // Load terms from the traditional terms directory
       try {
         proxyInfo.value = 'Loading local terms from repository...'
-        const response = await axios.get(
-          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${fullTermsPath}?ref=${props.branch}`,
-          requestConfig
+        const url = addCacheBusting(
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${fullTermsPath}?ref=${props.branch}`
         )
+        const response = await axios.get(url, requestConfig)
 
         const files = response.data.filter(item =>
           item.type === 'file' &&
