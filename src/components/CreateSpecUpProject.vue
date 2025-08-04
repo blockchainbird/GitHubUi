@@ -253,14 +253,9 @@ export default {
       // Navigate to file explorer with the newly created repository
       const user = JSON.parse(localStorage.getItem('github_user') || '{}')
       if (user.login && projectForm.value.name) {
-        // Navigate to home page with repository loaded
+        // Go to the correct project files route
         router.push({
-          path: '/home',
-          query: {
-            repo: `${user.login}/${projectForm.value.name}`,
-            owner: user.login,
-            name: projectForm.value.name
-          }
+          path: `/files/${user.login}/${projectForm.value.name}/main`
         })
       }
     }
