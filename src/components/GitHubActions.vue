@@ -28,7 +28,7 @@
             <!-- Error Alert -->
             <div v-if="actionError" class="alert alert-danger" role="alert">
               <i class="bi bi-exclamation-triangle me-2"></i>
-              {{ actionError }}
+              <div style="white-space: pre-line;">{{ actionError }}</div>
             </div>
 
             <!-- Success Message -->
@@ -301,9 +301,43 @@ export default {
         if (err.response?.status === 404) {
           actionError.value = 'menu.yml workflow not found. Please ensure the menu.yml workflow file exists in .github/workflows/'
         } else if (err.response?.status === 422) {
-          const errorMsg = err.response?.data?.message || ''
-          if (errorMsg.includes('workflow_dispatch')) {
-            actionError.value = 'The menu.yml workflow does not support manual triggering. Please add "workflow_dispatch:" to the workflow\'s "on" section.'
+          const errorData = err.response?.data
+          const errorMsg = errorData?.message || ''
+          
+          console.log('422 Error details:', errorData)
+          
+          // Check for specific workflow_dispatch error
+          if (errorMsg.toLowerCase().includes('workflow_dispatch') || 
+              errorMsg.toLowerCase().includes('does not support') ||
+              errorData?.errors?.some(e => e.message?.includes('workflow_dispatch'))) {
+            actionError.value = `The menu.yml workflow does not support manual triggering. 
+            
+To fix this, add the following to the top of your .github/workflows/menu.yml file:
+
+on:
+  workflow_dispatch:
+    inputs:
+      action_type:
+        description: 'Action to perform'
+        required: true
+        default: 'render'
+        type: choice
+        options:
+          - render
+          - topdf
+          - todocx
+          - freeze
+          - custom-update
+          - collectExternalReferences
+      repository:
+        description: 'Repository'
+        required: false
+      branch:
+        description: 'Branch'
+        required: false
+      triggered_by:
+        description: 'Triggered by'
+        required: false`
           } else {
             actionError.value = `Cannot trigger menu.yml workflow: ${errorMsg}`
           }
