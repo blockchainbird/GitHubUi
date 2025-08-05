@@ -217,7 +217,7 @@
 
 <script>
 import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 
 export default {
@@ -225,6 +225,7 @@ export default {
   props: ['owner', 'repo', 'branch'],
   setup(props) {
     const route = useRoute()
+    const router = useRouter()
     
     // State
     const selectedAction = ref('render')
@@ -426,33 +427,38 @@ export default {
         }
 
         await axios.post(
-          `https://api.github.com/repos/${props.owner}/${props.repo}/actions/workflows/${targetWorkflow.id}/dispatches`,
+          `https://api.github.com/repos/${props.owner}/${props.repo}/actions/workflows/menu.yml/dispatches`,
           dispatchData,
           config
         )
 
         // Show success message
-        successMessage.value = `Successfully triggered "${selectedAction.value}" action using workflow "${targetWorkflow.name}"`
-        console.log(`✅ Successfully triggered workflow: "${targetWorkflow.name}" with action "${selectedAction.value}" on branch ${props.branch}`)
+        successMessage.value = `Successfully triggered "${selectedAction.value}" action using menu.yml workflow`
+        console.log(`✅ Successfully triggered menu.yml workflow with action "${selectedAction.value}" on branch ${props.branch}`)
 
       } catch (err) {
         console.error('❌ Error triggering workflow:', err)
+        console.error('❌ Full error response:', err.response?.data)
         
         if (checkAuthAndRedirect(err)) return
 
         if (err.response?.status === 404) {
-          actionError.value = 'Workflow not found or this repository has no GitHub Actions workflows set up.'
+          actionError.value = 'menu.yml workflow not found. Please ensure the menu.yml workflow file exists in .github/workflows/'
         } else if (err.response?.status === 422) {
           const errorMsg = err.response?.data?.message || ''
+          console.error('❌ 422 Error details:', err.response.data)
+          
           if (errorMsg.includes('Unexpected inputs')) {
-            actionError.value = `Workflow doesn't accept the inputs we tried to send. This workflow may not be designed for this interface.`
+            actionError.value = `The menu.yml workflow doesn't accept the inputs we're sending. This workflow may not be designed for this interface.`
           } else if (errorMsg.includes('workflow_dispatch')) {
-            actionError.value = 'This workflow does not support manual triggering. Please add "workflow_dispatch:" to the workflow\'s "on" section.'
+            actionError.value = 'The menu.yml workflow does not support manual triggering. Please add "workflow_dispatch:" to the workflow\'s "on" section.'
+          } else if (errorMsg.includes('No ref named')) {
+            actionError.value = `Branch "${props.branch}" not found. Please check that the branch exists in the repository.`
           } else {
-            actionError.value = `Cannot trigger workflow: ${errorMsg}`
+            actionError.value = `Cannot trigger menu.yml workflow: ${errorMsg}. Please check the workflow configuration.`
           }
         } else {
-          actionError.value = 'Failed to trigger workflow: ' + (err.response?.data?.message || err.message)
+          actionError.value = 'Failed to trigger menu.yml workflow: ' + (err.response?.data?.message || err.message)
         }
       } finally {
         triggeringWorkflow.value = false
