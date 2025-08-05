@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300">
+  <!-- Background Circle -->
+  <circle cx="150" cy="150" r="140" fill="#f39c12" stroke="#e67e22" stroke-width="8"/>
+  
+  <!-- Inner Circle -->
+  <circle cx="150" cy="150" r="110" fill="#fff" stroke="#f39c12" stroke-width="4"/>
+  
+  <!-- Trophy Icon -->
+  <g transform="translate(150, 120)">
+    <!-- Trophy Cup -->
+    <path d="M-20,-20 L-15,-40 L15,-40 L20,-20 L20,0 L15,10 L-15,10 L-20,0 Z" fill="#f39c12"/>
+    <!-- Trophy Handles -->
+    <ellipse cx="-25" cy="-10" rx="8" ry="15" fill="none" stroke="#f39c12" stroke-width="3"/>
+    <ellipse cx="25" cy="-10" rx="8" ry="15" fill="none" stroke="#f39c12" stroke-width="3"/>
+    <!-- Trophy Base -->
+    <rect x="-25" y="10" width="50" height="8" fill="#e67e22"/>
+    <rect x="-20" y="18" width="40" height="6" fill="#d35400"/>
+  </g>
+  
+  <!-- Star decorations -->
+  <g fill="#f39c12">
+    <polygon points="80,80 85,90 95,90 87,97 90,107 80,100 70,107 73,97 65,90 75,90" />
+    <polygon points="220,80 225,90 235,90 227,97 230,107 220,100 210,107 213,97 205,90 215,90" />
+    <polygon points="80,220 85,230 95,230 87,237 90,247 80,240 70,247 73,237 65,230 75,230" />
+    <polygon points="220,220 225,230 235,230 227,237 230,247 220,240 210,247 213,237 205,230 215,230" />
+  </g>
+  
+  <!-- Text -->
+  <text x="150" y="190" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#2c3e50">CERTIFIED</text>
+  <text x="150" y="210" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#2c3e50">SPEC-UP-T</text>
+  <text x="150" y="230" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#2c3e50">EDITOR</text>
+  
+  <!-- Achievement markers -->
+  <circle cx="150" cy="250" r="3" fill="#27ae60"/>
+  <circle cx="140" cy="250" r="3" fill="#27ae60"/>
+  <circle cx="160" cy="250" r="3" fill="#27ae60"/>
+  <circle cx="130" cy="250" r="3" fill="#27ae60"/>
+  <circle cx="170" cy="250" r="3" fill="#27ae60"/>
+</svg>
