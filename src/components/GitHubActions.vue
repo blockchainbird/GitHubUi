@@ -54,12 +54,13 @@
             <div class="mb-4">
               <label class="form-label fw-semibold">Select Action Type</label>
               <p class="text-muted small mb-3">Choose the action you want to run on the specification:</p>
-              
+
               <div class="row g-3">
                 <div class="col-md-6">
                   <div class="form-check card h-100">
                     <div class="card-body">
-                      <input v-model="selectedAction" class="form-check-input" type="radio" value="render" id="action-render">
+                      <input v-model="selectedAction" class="form-check-input" type="radio" value="render"
+                        id="action-render">
                       <label class="form-check-label w-100" for="action-render">
                         <div class="d-flex align-items-start">
                           <i class="bi bi-file-earmark-text me-2 text-primary"></i>
@@ -72,11 +73,12 @@
                     </div>
                   </div>
                 </div>
-                
+
                 <div class="col-md-6">
                   <div class="form-check card h-100">
                     <div class="card-body">
-                      <input v-model="selectedAction" class="form-check-input" type="radio" value="topdf" id="action-topdf">
+                      <input v-model="selectedAction" class="form-check-input" type="radio" value="topdf"
+                        id="action-topdf">
                       <label class="form-check-label w-100" for="action-topdf">
                         <div class="d-flex align-items-start">
                           <i class="bi bi-file-earmark-pdf me-2 text-danger"></i>
@@ -89,11 +91,12 @@
                     </div>
                   </div>
                 </div>
-                
+
                 <div class="col-md-6">
                   <div class="form-check card h-100">
                     <div class="card-body">
-                      <input v-model="selectedAction" class="form-check-input" type="radio" value="todocx" id="action-todocx">
+                      <input v-model="selectedAction" class="form-check-input" type="radio" value="todocx"
+                        id="action-todocx">
                       <label class="form-check-label w-100" for="action-todocx">
                         <div class="d-flex align-items-start">
                           <i class="bi bi-file-earmark-word me-2 text-info"></i>
@@ -106,11 +109,12 @@
                     </div>
                   </div>
                 </div>
-                
+
                 <div class="col-md-6">
                   <div class="form-check card h-100">
                     <div class="card-body">
-                      <input v-model="selectedAction" class="form-check-input" type="radio" value="freeze" id="action-freeze">
+                      <input v-model="selectedAction" class="form-check-input" type="radio" value="freeze"
+                        id="action-freeze">
                       <label class="form-check-label w-100" for="action-freeze">
                         <div class="d-flex align-items-start">
                           <i class="bi bi-lock me-2 text-warning"></i>
@@ -123,11 +127,12 @@
                     </div>
                   </div>
                 </div>
-                
+
                 <div class="col-md-6">
                   <div class="form-check card h-100">
                     <div class="card-body">
-                      <input v-model="selectedAction" class="form-check-input" type="radio" value="custom-update" id="action-custom">
+                      <input v-model="selectedAction" class="form-check-input" type="radio" value="custom-update"
+                        id="action-custom">
                       <label class="form-check-label w-100" for="action-custom">
                         <div class="d-flex align-items-start">
                           <i class="bi bi-wrench me-2 text-secondary"></i>
@@ -140,11 +145,12 @@
                     </div>
                   </div>
                 </div>
-                
+
                 <div class="col-md-6">
                   <div class="form-check card h-100">
                     <div class="card-body">
-                      <input v-model="selectedAction" class="form-check-input" type="radio" value="collectExternalReferences" id="action-external">
+                      <input v-model="selectedAction" class="form-check-input" type="radio"
+                        value="collectExternalReferences" id="action-external">
                       <label class="form-check-label w-100" for="action-external">
                         <div class="d-flex align-items-start">
                           <i class="bi bi-link-45deg me-2 text-success"></i>
@@ -167,12 +173,7 @@
                 <div class="small">
                   <strong>Workflow Information:</strong><br>
                   The action will run on branch: <strong>{{ branch }}</strong><br>
-                  <span v-if="selectedWorkflow">
-                    Using workflow: <strong>{{ selectedWorkflow }}</strong>
-                  </span>
-                  <span v-else>
-                    Workflow will be determined automatically based on available workflows.
-                  </span>
+                  Using workflow: <strong>menu.yml</strong>
                 </div>
               </div>
             </div>
@@ -183,9 +184,7 @@
                 <i class="bi bi-arrow-left me-1"></i>
                 Back
               </button>
-              <button 
-                @click="triggerWorkflow" 
-                class="btn btn-warning"
+              <button @click="triggerWorkflow" class="btn btn-warning"
                 :disabled="!selectedAction || triggeringWorkflow">
                 <span v-if="triggeringWorkflow">
                   <span class="spinner-border spinner-border-sm me-2" role="status"></span>
@@ -202,10 +201,8 @@
 
         <!-- GitHub Actions Link -->
         <div class="text-center mt-4">
-          <a :href="`https://github.com/${owner}/${repo}/actions`" 
-             target="_blank" 
-             rel="noopener" 
-             class="btn btn-outline-primary">
+          <a :href="`https://github.com/${owner}/${repo}/actions`" target="_blank" rel="noopener"
+            class="btn btn-outline-primary">
             <i class="bi bi-github me-1"></i>
             View on GitHub Actions
           </a>
@@ -217,7 +214,7 @@
 
 <script>
 import { ref, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import axios from 'axios'
 
 export default {
@@ -225,13 +222,11 @@ export default {
   props: ['owner', 'repo', 'branch'],
   setup(props) {
     const route = useRoute()
-    const router = useRouter()
-    
+
     // State
     const selectedAction = ref('render')
     const actionError = ref('')
     const successMessage = ref('')
-    const availableWorkflows = ref([])
     const selectedWorkflow = ref('')
     const triggeringWorkflow = ref(false)
 
@@ -246,45 +241,12 @@ export default {
       return false
     }
 
-    // Load available workflows on mount
+    // Set the workflow to always use menu.yml
     const loadWorkflows = async () => {
-      try {
-        const token = localStorage.getItem('github_token')
-        if (!token) return
-
-        const config = {
-          headers: {
-            'Authorization': `token ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          }
-        }
-
-        const workflowsResponse = await axios.get(
-          `https://api.github.com/repos/${props.owner}/${props.repo}/actions/workflows`,
-          config
-        )
-
-        const workflows = workflowsResponse.data.workflows.filter(w => w.state === 'active')
-        availableWorkflows.value = workflows
-
-        // Find spec-related workflow
-        const specWorkflow = workflows.find(w => {
-          const name = w.name.toLowerCase()
-          return name.includes('spec-up') || name === 'spec-up-t render'
-        })
-
-        if (specWorkflow) {
-          selectedWorkflow.value = specWorkflow.name
-        } else {
-          const renderWorkflow = workflows.find(w => w.name.toLowerCase().includes('render'))
-          selectedWorkflow.value = renderWorkflow?.name || ''
-        }
-      } catch (err) {
-        console.warn('Could not load workflows:', err)
-      }
+      selectedWorkflow.value = 'menu.yml'
     }
 
-    // Trigger workflow function
+    // Trigger workflow function - always uses menu.yml
     const triggerWorkflow = async () => {
       try {
         triggeringWorkflow.value = true
@@ -305,127 +267,22 @@ export default {
           }
         }
 
-        console.log(`🔍 Checking workflows for ${props.owner}/${props.repo}...`)
+        console.log(`� Triggering menu.yml workflow with action: ${selectedAction.value}`)
 
-        // Get available workflows
-        const workflowsResponse = await axios.get(
-          `https://api.github.com/repos/${props.owner}/${props.repo}/actions/workflows`,
-          config
-        )
-
-        const workflows = workflowsResponse.data.workflows
-        console.log(`📋 Found ${workflows.length} workflows:`, workflows.map(w => w.name))
-
-        if (workflows.length === 0) {
-          actionError.value = 'No GitHub Actions workflows found in this repository. Please add a workflow file to .github/workflows/ first.'
-          return
+        // Build inputs for the menu.yml workflow
+        const inputs = {
+          action_type: selectedAction.value || 'render',
+          repository: `${props.owner}/${props.repo}`,
+          branch: props.branch,
+          triggered_by: 'GitHubUI'
         }
 
-        // Check each workflow to see if it supports workflow_dispatch
-        let targetWorkflow = null
-        const candidateWorkflows = []
-
-        for (const workflow of workflows) {
-          if (workflow.state !== 'active') {
-            console.log(`⏭️ Skipping inactive workflow: ${workflow.name}`)
-            continue
-          }
-
-          try {
-            console.log(`🔍 Checking workflow: ${workflow.name} (${workflow.path})`)
-
-            // Get the workflow file content to check for workflow_dispatch
-            const workflowFileResponse = await axios.get(
-              `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${workflow.path}?ref=${props.branch}`,
-              config
-            )
-
-            const workflowContent = atob(workflowFileResponse.data.content)
-
-            // Check if workflow supports workflow_dispatch
-            if (workflowContent.includes('workflow_dispatch')) {
-              console.log(`✅ Found workflow with manual trigger support: ${workflow.name}`)
-              candidateWorkflows.push({ workflow, content: workflowContent })
-            } else {
-              console.log(`❌ Workflow ${workflow.name} does not support workflow_dispatch`)
-            }
-          } catch (workflowErr) {
-            console.warn(`⚠️ Could not check workflow ${workflow.name}:`, workflowErr)
-            continue
-          }
-        }
-
-        if (candidateWorkflows.length === 0) {
-          actionError.value = 'No workflows found that support manual triggering (workflow_dispatch). Please add workflow_dispatch to a workflow\'s "on" triggers.'
-          return
-        }
-
-        // Prefer spec-related workflows
-        const specWorkflows = candidateWorkflows.filter(({ workflow }) => {
-          const name = workflow.name.toLowerCase()
-          const path = workflow.path.toLowerCase()
-
-          return name.includes('spec-up') ||
-            name.includes('render') && (name.includes('spec') || path.includes('spec')) ||
-            name === 'spec-up-t render' ||
-            path.includes('render-spec') ||
-            path.includes('spec-render')
-        })
-
-        const buildWorkflows = candidateWorkflows.filter(({ workflow }) => {
-          const name = workflow.name.toLowerCase()
-          return name.includes('build') || name.includes('deploy')
-        })
-
-        if (specWorkflows.length > 0) {
-          targetWorkflow = specWorkflows[0].workflow
-          console.log(`🎯 Using spec-related workflow: ${targetWorkflow.name}`)
-        } else if (buildWorkflows.length > 0) {
-          targetWorkflow = buildWorkflows[0].workflow
-          console.log(`🎯 Using build-related workflow: ${targetWorkflow.name}`)
-        } else {
-          targetWorkflow = candidateWorkflows[0].workflow
-          console.log(`🎯 Using first available workflow: ${targetWorkflow.name}`)
-        }
-
-        if (!targetWorkflow) {
-          actionError.value = 'No suitable workflow found for manual triggering.'
-          return
-        }
-
-        console.log(`🚀 Triggering workflow: ${targetWorkflow.name} (${targetWorkflow.id}) with action: ${selectedAction.value}`)
-
-        // Get the workflow content to determine what inputs it expects
-        const selectedWorkflowData = candidateWorkflows.find(({ workflow }) => workflow.id === targetWorkflow.id)
-        const workflowContent = selectedWorkflowData?.content || ''
-
-        // Build inputs based on what the workflow expects
-        let inputs = {}
-        const hasInputSection = workflowContent.includes('inputs:')
-
-        if (hasInputSection) {
-          if (workflowContent.includes('action_type:') || workflowContent.includes('action_type')) {
-            inputs.action_type = selectedAction.value || 'render'
-          }
-          if (workflowContent.includes('repository:') || workflowContent.includes('repository')) {
-            inputs.repository = `${props.owner}/${props.repo}`
-          }
-          if (workflowContent.includes('branch:') || workflowContent.includes('branch')) {
-            inputs.branch = props.branch
-          }
-          if (workflowContent.includes('triggered_by:') || workflowContent.includes('triggered_by')) {
-            inputs.triggered_by = 'GitHubUI'
-          }
-        }
-
-        console.log(`📋 Inputs to send:`, inputs)
-
-        // Trigger the workflow using workflow_dispatch
         const dispatchData = {
           ref: props.branch,
-          ...(Object.keys(inputs).length > 0 ? { inputs } : {})
+          inputs
         }
 
+        // Trigger the menu.yml workflow using workflow_dispatch
         await axios.post(
           `https://api.github.com/repos/${props.owner}/${props.repo}/actions/workflows/menu.yml/dispatches`,
           dispatchData,
@@ -438,24 +295,17 @@ export default {
 
       } catch (err) {
         console.error('❌ Error triggering workflow:', err)
-        console.error('❌ Full error response:', err.response?.data)
-        
+
         if (checkAuthAndRedirect(err)) return
 
         if (err.response?.status === 404) {
           actionError.value = 'menu.yml workflow not found. Please ensure the menu.yml workflow file exists in .github/workflows/'
         } else if (err.response?.status === 422) {
           const errorMsg = err.response?.data?.message || ''
-          console.error('❌ 422 Error details:', err.response.data)
-          
-          if (errorMsg.includes('Unexpected inputs')) {
-            actionError.value = `The menu.yml workflow doesn't accept the inputs we're sending. This workflow may not be designed for this interface.`
-          } else if (errorMsg.includes('workflow_dispatch')) {
+          if (errorMsg.includes('workflow_dispatch')) {
             actionError.value = 'The menu.yml workflow does not support manual triggering. Please add "workflow_dispatch:" to the workflow\'s "on" section.'
-          } else if (errorMsg.includes('No ref named')) {
-            actionError.value = `Branch "${props.branch}" not found. Please check that the branch exists in the repository.`
           } else {
-            actionError.value = `Cannot trigger menu.yml workflow: ${errorMsg}. Please check the workflow configuration.`
+            actionError.value = `Cannot trigger menu.yml workflow: ${errorMsg}`
           }
         } else {
           actionError.value = 'Failed to trigger menu.yml workflow: ' + (err.response?.data?.message || err.message)
@@ -473,7 +323,6 @@ export default {
       selectedAction,
       actionError,
       successMessage,
-      availableWorkflows,
       selectedWorkflow,
       triggeringWorkflow,
       triggerWorkflow
