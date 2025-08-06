@@ -113,7 +113,7 @@ export function useNotepad() {
         if (!newContent || !newContent.trim()) return
 
         const timestamp = getCurrentTimestamp()
-        const separator = content.value.trim() ? '\n\n---\n\n' : ''
+        const separator = content.value.trim() ? '\n\n------------------------------------------------------\n\n' : ''
         const header = `[${timestamp}] From ${source}:\n`
 
         content.value = content.value + separator + header + newContent.trim()
