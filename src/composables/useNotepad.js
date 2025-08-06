@@ -12,6 +12,7 @@ const CHUNK_SIZE_KB = 50 // Remove 50KB chunks when over limit
 // Global state
 const isOpen = ref(false)
 const content = ref('')
+const notepadMessage = ref('')
 
 export function useNotepad() {
   // Load content from localStorage
@@ -109,18 +110,18 @@ export function useNotepad() {
   }
 
   // Add new content with timestamp and separator
-  const addContent = (newContent, source = 'Manual') => {
+  const addContent = (newContent, source = 'Manual', showMessage = false) => {
     if (!newContent || !newContent.trim()) return
     
-      const timestamp = getCurrentTimestamp()
-      const dateObj = new Date(timestamp)
-      const humanReadable = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) +
-        ', ' + dateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
-      const separatorStart = '–––––––––––––––––––––––––––––– 👇\n'
-      const separatorEnd = '\n\n============================ 👆\n\n'
-      const header = `${humanReadable}\nFrom ${source}\n`
+    const timestamp = getCurrentTimestamp()
+    const dateObj = new Date(timestamp)
+    const humanReadable = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) +
+      ', ' + dateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+    const separatorStart = '–––––––––––––––––––––––––––––– 👇\n'
+    const separatorEnd = '\n\n============================ 👆\n\n'
+    const header = `${humanReadable}\nFrom ${source}\n`
 
-      content.value = separatorStart + header + separatorStart + '\n\n' + newContent.trim() + separatorEnd + '\n\n\n' + content.value
+    content.value = separatorStart + header + separatorStart + '\n\n' + newContent.trim() + separatorEnd + '\n\n\n' + content.value
     // Auto-save
     saveContent()
     
@@ -128,7 +129,10 @@ export function useNotepad() {
     if (!isOpen.value) {
       openNotepad()
     }
-    
+    // Show message if requested
+    if (showMessage) {
+      notepadMessage.value = 'Content copied to notepad!'
+    }
     // Scroll to top when content is added automatically
     if (source !== 'Manual') {
       setTimeout(() => {
@@ -175,6 +179,11 @@ export function useNotepad() {
     saveContent()
   }
 
+  // Set notepad message
+  const setNotepadMessage = (msg) => {
+    notepadMessage.value = msg
+  }
+
   // Watch for content changes and auto-save
   watch(content, () => {
     saveContent()
@@ -190,6 +199,7 @@ export function useNotepad() {
     isOpen,
     content,
     currentSize,
+    notepadMessage,
     
     // Methods
     openNotepad,
@@ -199,7 +209,8 @@ export function useNotepad() {
     clearContent,
     formatSize,
     loadContent,
-    saveContent
+    saveContent,
+    setNotepadMessage
   }
 }
 

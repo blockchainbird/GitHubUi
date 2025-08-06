@@ -721,15 +721,7 @@ export default {
       }
 
       const fileName = filename.value || 'Unnamed file'
-      addToNotepad(content.value, `File Editor (${fileName})`)
-
-      // Optional: Show a brief success message
-      success.value = 'Content copied to notepad!'
-      setTimeout(() => {
-        if (success.value === 'Content copied to notepad!') {
-          success.value = ''
-        }
-      }, 2000)
+      addToNotepad(content.value, `File Editor (${fileName})`, true)
     }
 
     // Remote change handling

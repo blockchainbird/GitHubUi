@@ -29,6 +29,11 @@
 
             <!-- Notepad content -->
             <div class="notepad-body">
+                <div v-if="notepadMessage" class="notepad-message">
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                    {{ notepadMessage }}
+                </div>
+
                 <textarea data-notepad-content ref="notepadTextarea" v-model="content" @input="handleContentChange"
                     class="notepad-textarea" placeholder="Your notes will be auto-saved here..."></textarea>
                 <div class="notepad-footer">
@@ -66,7 +71,9 @@ export default {
             addContent,
             copyContent,
             clearContent,
-            formatSize
+            formatSize,
+            notepadMessage,
+            setNotepadMessage
         } = useNotepad()
 
         // Position and size state
@@ -208,6 +215,15 @@ export default {
             }
         })
 
+        // Watch for notepadMessage and auto-clear after 2s
+        watch(notepadMessage, (msg) => {
+            if (msg) {
+                setTimeout(() => {
+                    setNotepadMessage('')
+                }, 2000)
+            }
+        })
+
         // Handle window resize
         const handleWindowResize = () => {
             // Ensure notepad stays within viewport
@@ -252,6 +268,7 @@ export default {
             currentSize,
             position,
             size,
+            notepadMessage,
 
             // Methods
             openNotepad,
@@ -262,7 +279,8 @@ export default {
             formatSize,
             handleContentChange,
             startDrag,
-            startResize
+            startResize,
+            setNotepadMessage
         }
     }
 }
@@ -367,6 +385,20 @@ export default {
 .notepad-textarea::placeholder {
     color: #74c0fc;
     font-style: italic;
+}
+
+.notepad-message {
+    position: absolute;
+    padding: 8px 12px;
+    background: rgba(76, 175, 79, 0.885);
+    color: #f2f7f2;
+    border-left: 4px solid #4caf50;
+    margin: 8px 0;
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
 }
 
 .notepad-footer {
