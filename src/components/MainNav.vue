@@ -64,8 +64,7 @@
             Health
           </button>
           <button v-if="showRepoRelatedButtons" @click="navigateToActionsAndClose"
-            :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/actions') }]"
-            title="Run GitHub Actions">
+            :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/actions') }]" title="Run GitHub Actions">
             <i class="bi bi-play-circle"></i>
             Actions
           </button>
@@ -79,7 +78,8 @@
             <i class="bi bi-shield-lock"></i>
             Admin
           </button>
-          <button v-if="showRepoRelatedButtons" @click="navigateAndClose(`/settings/${route.params.owner}/${route.params.repo}/${route.params.branch}`)"
+          <button v-if="showRepoRelatedButtons"
+            @click="navigateAndClose(`/settings/${route.params.owner}/${route.params.repo}/${route.params.branch}`)"
             :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/settings') }]"
             title="Application Settings">
             <i class="bi bi-gear"></i>

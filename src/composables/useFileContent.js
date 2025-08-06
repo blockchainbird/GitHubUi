@@ -11,7 +11,7 @@ import { getGitHubHeaders, addCacheBusting, cacheBustedRequest } from '../utils/
 export function useFileContent(props) {
   const router = useRouter()
   const route = useRoute()
-  
+
   // Content state
   const loading = ref(true)
   const saving = ref(false)
@@ -21,7 +21,7 @@ export function useFileContent(props) {
   const originalContent = ref('')
   const fileSha = ref('')
   const commitMessage = ref('')
-  
+
   // New file state
   const isNewFile = ref(false)
 
@@ -66,43 +66,43 @@ export function useFileContent(props) {
       // Check if this is a new file being created
       if (route.query.new === 'true') {
         isNewFile.value = true
-        
+
         // Decode the initial content and commit message from query params
         try {
           // Handle content parameter - ensure we properly decode even empty content
-          const newFileInitialContent = route.query.content !== undefined 
-            ? decodeURIComponent(route.query.content) 
+          const newFileInitialContent = route.query.content !== undefined
+            ? decodeURIComponent(route.query.content)
             : ''
-          const newFileCommitMessage = route.query.commitMessage 
-            ? decodeURIComponent(route.query.commitMessage) 
+          const newFileCommitMessage = route.query.commitMessage
+            ? decodeURIComponent(route.query.commitMessage)
             : `Create ${filename.value}`
-          
+
           // Set up the editor with initial content
           content.value = newFileInitialContent
           originalContent.value = '' // New file has no original content
           commitMessage.value = newFileCommitMessage
-          
+
           // No SHA for new file
           fileSha.value = ''
-          
+
         } catch (decodeError) {
           console.warn('Error decoding query parameters:', decodeError)
           content.value = ''
           commitMessage.value = `Create ${filename.value}`
         }
-        
+
         loading.value = false
-        
+
         // Add a small delay to ensure everything is initialized properly
         setTimeout(() => {
           // Additional safeguard: re-set content if it was lost
-          const expectedContent = route.query.content !== undefined 
+          const expectedContent = route.query.content !== undefined
             ? decodeURIComponent(route.query.content) : ''
           if (!content.value && expectedContent) {
             content.value = expectedContent
           }
         }, 100)
-        
+
         return
       }
 
@@ -114,7 +114,7 @@ export function useFileContent(props) {
       const url = addCacheBusting(
         `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${decodedPath.value}?ref=${props.branch}`
       )
-      
+
       // Always use cache-busting to ensure fresh content from remote
       const response = await cacheBustedRequest(url, config)
 
@@ -181,11 +181,11 @@ export function useFileContent(props) {
 
       fileSha.value = response.data.content.sha
       originalContent.value = content.value
-      
+
       if (isNewFile.value) {
         success.value = 'File created and committed successfully!'
         isNewFile.value = false
-        
+
         // Store recently created file info for FileExplorer to detect
         const fileName = decodedPath.value.split('/').pop()
         localStorage.setItem('recentlyCreatedFile', fileName)
@@ -229,14 +229,14 @@ export function useFileContent(props) {
     fileSha,
     commitMessage,
     isNewFile,
-    
+
     // Computed
     filename,
     decodedPath,
     isDraft,
     isMarkdown,
     hasChanges,
-    
+
     // Methods
     loadFileContent,
     saveFile,

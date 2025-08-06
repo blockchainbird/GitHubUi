@@ -46,7 +46,7 @@ export const cacheBustedRequest = async (url, options = {}) => {
       ...options.headers
     }
   }
-  
+
   const cacheBustedUrl = addCacheBusting(url)
   return axios.get(cacheBustedUrl, config)
 }
@@ -67,6 +67,6 @@ export const cacheBustedPutRequest = async (url, data, options = {}) => {
       ...options.headers
     }
   }
-  
+
   return axios.put(url, data, config)
 }

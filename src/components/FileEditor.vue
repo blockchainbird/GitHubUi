@@ -656,14 +656,14 @@ export default {
     // File operations
     const handleCommitFile = async () => {
       if (!hasChanges.value) return
-      
+
       // Check for remote changes before committing
       const hasRemoteChanges = await checkBeforeCommit()
       if (hasRemoteChanges) {
         error.value = 'Remote changes detected! Please resolve them before committing.'
         return
       }
-      
+
       commitMessage.value = `${isNewFile.value ? 'Create' : 'Update'} ${filename.value}`
       const modal = new bootstrap.Modal(document.getElementById('commitModal'))
       modal.show()
@@ -719,10 +719,10 @@ export default {
       if (!content.value || !content.value.trim()) {
         return
       }
-      
+
       const fileName = filename.value || 'Unnamed file'
       addToNotepad(content.value, `File Editor (${fileName})`)
-      
+
       // Optional: Show a brief success message
       success.value = 'Content copied to notepad!'
       setTimeout(() => {
@@ -737,7 +737,7 @@ export default {
       // Add animation class to the editor
       if (editor.value) {
         editor.value.classList.add('content-moving-to-notepad')
-        
+
         // Wait for animation to complete before updating content
         setTimeout(async () => {
           const success = await handleRemoteChange(content.value, (newContent, newSha) => {
@@ -745,7 +745,7 @@ export default {
             originalContent.value = newContent
             fileSha.value = newSha
           })
-          
+
           if (success) {
             success.value = 'Remote changes loaded. Your previous content was moved to the notepad.'
             setTimeout(() => {
@@ -756,7 +756,7 @@ export default {
           } else {
             error.value = 'Failed to load remote changes. Please try again.'
           }
-          
+
           // Remove animation class
           if (editor.value) {
             editor.value.classList.remove('content-moving-to-notepad')
@@ -769,7 +769,7 @@ export default {
           originalContent.value = newContent
           fileSha.value = newSha
         })
-        
+
         if (success) {
           success.value = 'Remote changes loaded. Your previous content was moved to the notepad.'
           setTimeout(() => {
@@ -1137,10 +1137,12 @@ textarea:focus {
     transform: scale(1);
     opacity: 1;
   }
+
   50% {
     transform: scale(0.95) translateX(20px);
     opacity: 0.7;
   }
+
   100% {
     transform: scale(1);
     opacity: 1;
