@@ -15,29 +15,6 @@
         </span>
       </h2>
       <div>
-
-        <!-- Autosave status -->
-        <div v-if="autosaveTimestamp && hasChanges"
-          class="fs-6 d-inline-flex align-items-center gap-0 px-4 pt-1 pb-2 rounded border me-2"
-          :class="hasUnsavedContent ? 'border-warning bg-warning bg-opacity-10' : 'border-info'">
-          <span class="d-flex align-items-center">
-            <i class="bi bi-save me-1"></i>
-            <span v-if="hasUnsavedContent" class="text-warning fw-semibold">Unsaved</span>
-            <span v-else>Saved locally</span>
-          </span>
-          <!-- <span class="text-muted small">at {{ autosaveTimeDisplay }}</span> -->
-          <button @click="clearAutosaveAndReload"
-            class="btn btn-outline-primary bg-primary text-dark btn-sm px-2 py-0 ms-2">Remove</button>
-        </div>
-
-        <!-- Autosave button -->
-        <button @click="localSave" class="btn me-2" :class="hasUnsavedContent ? 'btn-warning' : 'btn-outline-info'"
-          :title="hasUnsavedContent ? 'Autosave - You have unsaved changes! (Ctrl/Cmd+S)' : 'Save locally (Ctrl/Cmd+S)'"
-          :disabled="!hasUnsavedContent">
-          <i class="bi bi-save me-1"></i> Save
-        </button>
-
-        <!-- Publish/Unpublish button -->
         <button @click="handleTogglePublish" class="btn me-2" :class="isDraft ? 'btn-success' : 'btn-warning'"
           :disabled="saving || isNewFile"
           :title="isNewFile ? 'Create the file first before publishing/unpublishing' : ''">
@@ -71,19 +48,6 @@
 
     <div v-if="success" class="alert alert-success" role="alert">
       {{ success }}
-    </div>
-
-    <!-- Warning for unsaved content -->
-    <div v-if="hasUnsavedContentWarning" class="alert alert-warning" role="alert">
-      <div class="d-flex align-items-start">
-        <i class="bi bi-exclamation-triangle-fill me-2 flex-shrink-0 mt-1"></i>
-        <div>
-          <strong>Unsaved changes detected!</strong>
-          You have unsaved changes that haven't been Saved locally yet. Use <kbd>Ctrl/Cmd+S</kbd> to force an autosave,
-          or
-          wait for the automatic save in {{ Math.ceil((60000 - (timeSinceLastChange || 0)) / 1000) }} seconds.
-        </div>
-      </div>
     </div>
 
     <div v-if="isNewFile" class="alert alert-info" role="alert">
@@ -278,7 +242,6 @@ import { useTermsManagement } from '../composables/useTermsManagement.js'
 import { useSimpleEditor } from '../composables/useSimpleEditor.js'
 import { useContentValidation } from '../composables/useContentValidation.js'
 import { usePublishToggle } from '../composables/usePublishToggle.js'
-import { useAutosave } from '../composables/useAutosave.js'
 import {
   insertText,
   insertHeading,
@@ -378,23 +341,6 @@ export default {
     const publishToggle = usePublishToggle(props, checkAuthAndRedirect)
     const { togglePublishStatus } = publishToggle
 
-    // Autosave functionality
-    const autosave = useAutosave(props, content, isNewFile)
-    const {
-      hasAutosavedContent,
-      hasUnsavedContent,
-      hasUnsavedContentWarning,
-      autosaveTimeDisplay,
-      autosaveTimestamp,
-      timeSinceLastChange,
-      saveToLocalStorage,
-      clearAutosave,
-      restoreFromAutosave,
-      checkForAutosavedContent,
-      initializeAutosave,
-      localSave
-    } = autosave
-
     // Editor state
     const editMode = ref('edit')
     const editor = ref(null)
@@ -402,12 +348,6 @@ export default {
 
     // State to track if file was detected as terms file (for stability)
     const wasDetectedAsTermsFile = ref(false)
-
-    // Add new method: clear autosave and reload file content
-    const clearAutosaveAndReload = async () => {
-      clearAutosave()
-      await loadFileContent()
-    }
 
     // Check if file is terms file
     const isTermsFileComputed = computed(() => {
@@ -680,16 +620,6 @@ export default {
     const commitChanges = async () => {
       await saveFile()
 
-      // Clear autosave after successful commit
-      if (success.value && !error.value) {
-        clearAutosave()
-        
-        // Force refresh of file content to see changes immediately
-        setTimeout(async () => {
-          await loadFileContent()
-        }, 500)
-      }
-
       trackFileOperation(isNewFile.value ? 'create_complete' : 'save', getFileExtension(decodedPath.value))
 
       const modal = bootstrap.Modal.getInstance(document.getElementById('commitModal'))
@@ -744,41 +674,15 @@ export default {
       }
     }
 
-    // Keyboard shortcut handler
-    const handleKeyboardShortcuts = (event) => {
-      // Ctrl+S or Cmd+S for force autosave
-      if ((event.ctrlKey || event.metaKey) && event.key === 's') {
-        event.preventDefault()
-        localSave()
-      }
-    }
-
     // Lifecycle
     onMounted(async () => {
       addToVisitedRepos(props.owner, props.repo, props.branch)
 
-      // Check for autosaved content BEFORE loading file content
-      const autosaveCheck = checkForAutosavedContent()
-      let shouldRestoreAutosave = false
-
-      shouldRestoreAutosave = autosaveCheck.hasAutosave;
-
       // Load file content
       await loadFileContent()
 
-      // If user wanted to restore autosave, do it AFTER file content is loaded
-      if (shouldRestoreAutosave) {
-        restoreFromAutosave()
-      }
-
-      // Initialize autosave system AFTER content is loaded
-      initializeAutosave()
-
       // Initialize terms for preview mode
       await initializeTerms()
-
-      // Add keyboard event listener
-      document.addEventListener('keydown', handleKeyboardShortcuts)
 
       // Browser navigation guard
       const handleBeforeUnload = (event) => {
@@ -794,9 +698,6 @@ export default {
     })
 
     onUnmounted(() => {
-      // Remove keyboard event listener
-      document.removeEventListener('keydown', handleKeyboardShortcuts)
-
       if (window.fileEditorBeforeUnload) {
         window.removeEventListener('beforeunload', window.fileEditorBeforeUnload)
         delete window.fileEditorBeforeUnload
@@ -848,8 +749,6 @@ export default {
       editMode,
       editor,
       proxyInfo,
-      clearAutosave,
-      clearAutosaveAndReload,
 
       // Computed
       filename,
@@ -880,15 +779,6 @@ export default {
       // Validation
       validationWarnings,
       showValidationWarnings,
-
-      // Autosave
-      hasAutosavedContent,
-      hasUnsavedContent,
-      hasUnsavedContentWarning,
-      autosaveTimeDisplay,
-      autosaveTimestamp,
-      timeSinceLastChange,
-      localSave,
 
       // Methods
       handleContentChange,
