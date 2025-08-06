@@ -113,10 +113,12 @@ export function useNotepad() {
     if (!newContent || !newContent.trim()) return
     
       const timestamp = getCurrentTimestamp()
-      const separator = '\n------------------------------------------------------\n'
-      const header = `👇 [${timestamp}] From ${source}: 👇`
+      const humanReadable = new Date(timestamp).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+      const separatorStart = '–––––––––––––––––––––––––––––– 👇\n'
+      const separatorEnd = '\n\n============================ 👆\n\n'
+      const header = `${humanReadable}\nFrom ${source}\n`
 
-      content.value = separator + header + separator + '\n\n' + newContent.trim() + '\n\n\n' + content.value
+      content.value = separatorStart + header + separatorStart + '\n\n' + newContent.trim() + separatorEnd + '\n\n\n' + content.value
     // Auto-save
     saveContent()
     
