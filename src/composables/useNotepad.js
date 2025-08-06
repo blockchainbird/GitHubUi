@@ -113,7 +113,9 @@ export function useNotepad() {
     if (!newContent || !newContent.trim()) return
     
       const timestamp = getCurrentTimestamp()
-      const humanReadable = new Date(timestamp).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+      const dateObj = new Date(timestamp)
+      const humanReadable = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) +
+        ', ' + dateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
       const separatorStart = '–––––––––––––––––––––––––––––– 👇\n'
       const separatorEnd = '\n\n============================ 👆\n\n'
       const header = `${humanReadable}\nFrom ${source}\n`
