@@ -115,7 +115,8 @@ export function useFileContent(props) {
         `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${decodedPath.value}?ref=${props.branch}`
       )
       
-      const response = await axios.get(url, config)
+      // Always use cache-busting to ensure fresh content from remote
+      const response = await cacheBustedRequest(url, config)
 
       fileSha.value = response.data.sha
       // Properly decode UTF-8 content from base64

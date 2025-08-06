@@ -6,6 +6,7 @@
     </main>
     <BackToTop />
     <VersionNotification />
+    <Notepad />
   </div>
 </template>
 
@@ -15,13 +16,14 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import MainNav from './components/MainNav.vue'
 import BackToTop from './components/BackToTop.vue'
+import Notepad from './components/Notepad.vue'
 // Choose one of these notification components:
 import VersionNotification from './components/VersionNotification.vue'           // Simple: Auto-reload
 // import EnhancedVersionNotification from './components/EnhancedVersionNotification.vue'  // Enhanced: User choice
 
 export default {
   name: 'App',
-  components: { MainNav, BackToTop, VersionNotification },
+  components: { MainNav, BackToTop, VersionNotification, Notepad },
   // If switching to enhanced, change to: components: { MainNav, BackToTop, EnhancedVersionNotification },
   setup() {
     const router = useRouter()

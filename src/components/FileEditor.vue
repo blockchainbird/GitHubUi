@@ -63,6 +63,27 @@
 
     <ContentValidationAlert :warnings="validationWarnings" :show-warnings="showValidationWarnings" />
 
+    <!-- Remote Change Alert -->
+    <div v-if="remoteChangeDetected" class="alert alert-warning alert-dismissible" role="alert">
+      <div class="d-flex align-items-start">
+        <i class="bi bi-exclamation-triangle-fill me-2 flex-shrink-0 mt-1"></i>
+        <div class="flex-grow-1">
+          <strong>Remote Change Detected!</strong>
+          <p class="mb-2">{{ remoteChangeMessage }}</p>
+          <div class="d-flex gap-2">
+            <button @click="acceptRemoteChanges" class="btn btn-warning btn-sm">
+              <i class="bi bi-download"></i>
+              Load Remote Version
+            </button>
+            <button @click="dismissRemoteChange" class="btn btn-outline-secondary btn-sm">
+              <i class="bi bi-x"></i>
+              Keep Local Version
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border" role="status">
         <span class="visually-hidden">Loading...</span>
@@ -136,6 +157,10 @@
                   <button @click="showTermsModal" class="btn btn-outline-info" title="Insert Term Reference">
                     <i class="bi bi-bookmark"></i>
                     Terms
+                  </button>
+                  <button @click="copyToNotepad" class="btn btn-outline-success" title="Copy content to Notepad">
+                    <i class="bi bi-sticky"></i>
+                    To Notepad
                   </button>
                   <!-- <button @click="showAddTermModal" class="btn btn-outline-success" title="Add New Term">
                     <i class="bi bi-plus-circle"></i>
@@ -242,6 +267,8 @@ import { useTermsManagement } from '../composables/useTermsManagement.js'
 import { useSimpleEditor } from '../composables/useSimpleEditor.js'
 import { useContentValidation } from '../composables/useContentValidation.js'
 import { usePublishToggle } from '../composables/usePublishToggle.js'
+import { useRemoteFileMonitor } from '../composables/useRemoteFileMonitor.js'
+import { useNotepad } from '../composables/useNotepad.js'
 import {
   insertText,
   insertHeading,
@@ -340,6 +367,23 @@ export default {
     // Publish toggle
     const publishToggle = usePublishToggle(props, checkAuthAndRedirect)
     const { togglePublishStatus } = publishToggle
+
+    // Remote file monitoring
+    const remoteMonitor = useRemoteFileMonitor(props)
+    const {
+      remoteChangeDetected,
+      remoteChangeMessage,
+      checkingRemote,
+      initializeRemoteMonitoring,
+      checkForRemoteChanges,
+      checkBeforeCommit,
+      handleRemoteChange,
+      dismissRemoteChange,
+      updateAfterSave
+    } = remoteMonitor
+
+    // Notepad integration
+    const { addContent: addToNotepad } = useNotepad()
 
     // Editor state
     const editMode = ref('edit')
@@ -610,8 +654,16 @@ export default {
     }
 
     // File operations
-    const handleCommitFile = () => {
+    const handleCommitFile = async () => {
       if (!hasChanges.value) return
+      
+      // Check for remote changes before committing
+      const hasRemoteChanges = await checkBeforeCommit()
+      if (hasRemoteChanges) {
+        error.value = 'Remote changes detected! Please resolve them before committing.'
+        return
+      }
+      
       commitMessage.value = `${isNewFile.value ? 'Create' : 'Update'} ${filename.value}`
       const modal = new bootstrap.Modal(document.getElementById('commitModal'))
       modal.show()
@@ -619,6 +671,11 @@ export default {
 
     const commitChanges = async () => {
       await saveFile()
+
+      // Update remote monitoring after successful save
+      if (!error.value) {
+        updateAfterSave(fileSha.value)
+      }
 
       trackFileOperation(isNewFile.value ? 'create_complete' : 'save', getFileExtension(decodedPath.value))
 
@@ -657,6 +714,75 @@ export default {
       modal.show()
     }
 
+    // Notepad integration
+    const copyToNotepad = () => {
+      if (!content.value || !content.value.trim()) {
+        return
+      }
+      
+      const fileName = filename.value || 'Unnamed file'
+      addToNotepad(content.value, `File Editor (${fileName})`)
+      
+      // Optional: Show a brief success message
+      success.value = 'Content copied to notepad!'
+      setTimeout(() => {
+        if (success.value === 'Content copied to notepad!') {
+          success.value = ''
+        }
+      }, 2000)
+    }
+
+    // Remote change handling
+    const acceptRemoteChanges = async () => {
+      // Add animation class to the editor
+      if (editor.value) {
+        editor.value.classList.add('content-moving-to-notepad')
+        
+        // Wait for animation to complete before updating content
+        setTimeout(async () => {
+          const success = await handleRemoteChange(content.value, (newContent, newSha) => {
+            content.value = newContent
+            originalContent.value = newContent
+            fileSha.value = newSha
+          })
+          
+          if (success) {
+            success.value = 'Remote changes loaded. Your previous content was moved to the notepad.'
+            setTimeout(() => {
+              if (success.value.includes('Remote changes loaded')) {
+                success.value = ''
+              }
+            }, 4000)
+          } else {
+            error.value = 'Failed to load remote changes. Please try again.'
+          }
+          
+          // Remove animation class
+          if (editor.value) {
+            editor.value.classList.remove('content-moving-to-notepad')
+          }
+        }, 400) // Half of animation duration
+      } else {
+        // Fallback if no editor ref
+        const success = await handleRemoteChange(content.value, (newContent, newSha) => {
+          content.value = newContent
+          originalContent.value = newContent
+          fileSha.value = newSha
+        })
+        
+        if (success) {
+          success.value = 'Remote changes loaded. Your previous content was moved to the notepad.'
+          setTimeout(() => {
+            if (success.value.includes('Remote changes loaded')) {
+              success.value = ''
+            }
+          }, 4000)
+        } else {
+          error.value = 'Failed to load remote changes. Please try again.'
+        }
+      }
+    }
+
     const goBack = () => {
       if (isNewFile.value && hasChanges.value) {
         const confirmLeave = confirm('You have unsaved changes in this new file. Are you sure you want to leave without creating it?')
@@ -680,6 +806,11 @@ export default {
 
       // Load file content
       await loadFileContent()
+
+      // Initialize remote monitoring for existing files
+      if (!isNewFile.value && fileSha.value) {
+        await initializeRemoteMonitoring(fileSha.value)
+      }
 
       // Initialize terms for preview mode
       await initializeTerms()
@@ -780,6 +911,11 @@ export default {
       validationWarnings,
       showValidationWarnings,
 
+      // Remote monitoring
+      remoteChangeDetected,
+      remoteChangeMessage,
+      checkingRemote,
+
       // Methods
       handleContentChange,
       onSimpleFormChange,
@@ -797,6 +933,9 @@ export default {
       handleTogglePublish,
       showAddTermModal,
       showHelpModal,
+      copyToNotepad,
+      acceptRemoteChanges,
+      dismissRemoteChange,
       goBack,
 
       // Terms methods
@@ -985,5 +1124,26 @@ textarea:focus {
 .technical-editor {
   resize: none;
   width: 100%;
+  transition: all 0.3s ease;
+}
+
+/* Animation for content moving to notepad */
+.content-moving-to-notepad {
+  animation: moveToNotepad 0.8s ease-out;
+}
+
+@keyframes moveToNotepad {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.95) translateX(20px);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 </style>
