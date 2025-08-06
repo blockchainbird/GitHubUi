@@ -52,11 +52,6 @@
             <span class="d-md-none">Preview</span>
             <span class="d-none d-md-inline">Preview</span>
           </button>
-          <button @click="toggleNotepad" class="nav-link btn btn-link" title="Open/Close Notepad">
-            <i class="bi bi-sticky"></i>
-            <span class="d-md-none">Notes</span>
-            <span class="d-none d-md-inline">Notepad</span>
-          </button>
           <button v-if="showRepoRelatedButtons" @click="navigateToHealthCheckAndClose"
             :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/health-check') }]"
             title="Run Health Check">
@@ -163,7 +158,6 @@ import { useRoute, useRouter } from 'vue-router';
 import Modal from './Modal.vue';
 import RateLimitIndicator from './RateLimitIndicator.vue';
 import TermsPreview from './TermsPreview.vue';
-import { useNotepad } from '../composables/useNotepad.js';
 
 export default {
   name: 'MainNav',
@@ -204,18 +198,6 @@ export default {
     // Create reactive computed properties for authentication state
     const isAuthenticated = computed(() => props.isAuthenticated);
     const user = computed(() => props.user);
-
-    // Notepad functionality
-    const { isOpen: notepadIsOpen, openNotepad, closeNotepad } = useNotepad()
-
-    const toggleNotepad = () => {
-      if (notepadIsOpen.value) {
-        closeNotepad()
-      } else {
-        openNotepad()
-      }
-      closeNavbar()
-    }
 
     const toggleNavbar = () => {
       isNavbarOpen.value = !isNavbarOpen.value;
@@ -365,8 +347,7 @@ export default {
       buildInfo,
       isAuthenticated,
       user,
-      isActiveRoute,
-      toggleNotepad
+      isActiveRoute
     };
   },
   data() {
