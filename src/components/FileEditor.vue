@@ -661,6 +661,13 @@ export default {
       const hasRemoteChanges = await checkBeforeCommit()
       if (hasRemoteChanges) {
         error.value = 'Remote changes detected! Please resolve them before committing.'
+        // Watch for remoteChangeDetected and clear error when it disappears
+        const unwatch = watch(remoteChangeDetected, (val) => {
+          if (!val) {
+            error.value = ''
+            unwatch()
+          }
+        })
         return
       }
 
