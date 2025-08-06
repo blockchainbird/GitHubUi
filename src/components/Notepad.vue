@@ -271,7 +271,7 @@ export default {
 <style scoped>
 .notepad-trigger {
     position: fixed;
-    top: 80px;
+    bottom: 10px;
     right: 20px;
     width: 50px;
     height: 50px;
