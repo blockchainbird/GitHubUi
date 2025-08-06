@@ -29,8 +29,8 @@
 
             <!-- Notepad content -->
             <div class="notepad-body">
-                <textarea ref="notepadTextarea" v-model="content" @input="handleContentChange" class="notepad-textarea"
-                    placeholder="Your notes will be auto-saved here..."></textarea>
+                <textarea data-notepad-content ref="notepadTextarea" v-model="content" @input="handleContentChange"
+                    class="notepad-textarea" placeholder="Your notes will be auto-saved here..."></textarea>
                 <div class="notepad-footer">
                     <small class="text-muted">
                         <i class="bi bi-cloud-check"></i>

@@ -128,6 +128,16 @@ export function useNotepad() {
     if (!isOpen.value) {
       openNotepad()
     }
+    
+    // Scroll to top when content is added automatically
+    if (source !== 'Manual') {
+      setTimeout(() => {
+        const notepadElement = document.querySelector('[data-notepad-content]')
+        if (notepadElement) {
+          notepadElement.scrollTop = 0
+        }
+      }, 100)
+    }
   }
 
   // Copy content to clipboard
