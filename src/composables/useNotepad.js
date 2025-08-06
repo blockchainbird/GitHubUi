@@ -129,10 +129,14 @@ export function useNotepad() {
     if (!isOpen.value) {
       openNotepad()
     }
-    // Show message if requested
-    if (showMessage) {
-      notepadMessage.value = 'Content copied to notepad!'
+    
+    // Always show message when content is added via script (non-manual sources)
+    // or when explicitly requested via showMessage parameter
+    const isScriptAdded = source !== 'Manual'
+    if (showMessage || isScriptAdded) {
+      notepadMessage.value = isScriptAdded ? 'Content auto-saved to notepad!' : 'Content copied to notepad!'
     }
+    
     // Scroll to top when content is added automatically
     if (source !== 'Manual') {
       setTimeout(() => {

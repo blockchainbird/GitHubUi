@@ -783,8 +783,15 @@ export default {
     }
 
     const goBack = () => {
+      // Save unsaved changes to notepad before leaving
+      if (hasChanges.value && content.value.trim()) {
+        const fileName = filename.value || 'Unnamed file'
+        const source = `File Editor (${fileName}) - Unsaved Changes`
+        addToNotepad(content.value, source, true)
+      }
+
       if (isNewFile.value && hasChanges.value) {
-        const confirmLeave = confirm('You have unsaved changes in this new file. Are you sure you want to leave without creating it?')
+        const confirmLeave = confirm('You have unsaved changes in this new file. Your content has been saved to the notepad. Are you sure you want to leave without creating it?')
         if (!confirmLeave) {
           return
         }
@@ -816,6 +823,13 @@ export default {
 
       // Browser navigation guard
       const handleBeforeUnload = (event) => {
+        if (hasChanges.value && content.value.trim()) {
+          // Save unsaved changes to notepad before leaving
+          const fileName = filename.value || 'Unnamed file'
+          const source = `File Editor (${fileName}) - Unsaved Changes`
+          addToNotepad(content.value, source) // Message will be shown automatically for script-added content
+        }
+        
         if (isNewFile.value && hasChanges.value) {
           event.preventDefault()
           event.returnValue = ''
@@ -828,6 +842,13 @@ export default {
     })
 
     onUnmounted(() => {
+      // Save unsaved changes to notepad before component unmounts
+      if (hasChanges.value && content.value.trim()) {
+        const fileName = filename.value || 'Unnamed file'
+        const source = `File Editor (${fileName}) - Unsaved Changes`
+        addToNotepad(content.value, source) // Message will be shown automatically for script-added content
+      }
+
       if (window.fileEditorBeforeUnload) {
         window.removeEventListener('beforeunload', window.fileEditorBeforeUnload)
         delete window.fileEditorBeforeUnload
@@ -837,6 +858,13 @@ export default {
     // Watchers
     watch(() => props.path, (newPath, oldPath) => {
       if (newPath && newPath !== oldPath && oldPath !== undefined) {
+        // Save unsaved changes to notepad before switching files
+        if (hasChanges.value && content.value.trim()) {
+          const fileName = filename.value || 'Unnamed file'
+          const source = `File Editor (${fileName}) - Unsaved Changes`
+          addToNotepad(content.value, source) // Message will be shown automatically for script-added content
+        }
+
         // Reset terms file detection state when switching files
         wasDetectedAsTermsFile.value = false
 
