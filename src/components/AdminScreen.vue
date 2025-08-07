@@ -79,6 +79,11 @@
                   <input type="url" class="form-control" :id="`favicon-${index}`" v-model="spec.favicon" required>
                 </div>
 
+                <div class="mb-3">
+                  <label :for="`anchorsymbol-${index}`" class="form-label">Anchor Symbol</label>
+                  <input type="text" class="form-control" :id="`anchorsymbol-${index}`" v-model="spec.anchor_symbol" required>
+                </div>
+
                 <div class="source-section">
                   <label class="form-label">
                     <i class="bi bi-exclamation-triangle text-warning"></i>
@@ -182,6 +187,7 @@ export default {
       logo: "https://raw.githubusercontent.com/trustoverip/spec-up-t/refs/heads/master/src/install-from-boilerplate/boilerplate/static/logo.svg",
       logo_link: "https://github.com/trustoverip/spec-up-t",
       favicon: "https://raw.githubusercontent.com/trustoverip/spec-up-t/refs/heads/master/src/install-from-boilerplate/boilerplate/static/favicon.ico",
+      anchor_symbol: "§",
       source: {
         host: "github",
         account: "trustoverip",
