@@ -366,7 +366,7 @@ export default {
 
     // UI State
     const searchQuery = ref('')
-    const filterType = ref('all')
+    const filterType = ref('local')
     const viewMode = ref('compact')
     const allTerms = ref([])
     const filteredTerms = ref([])
