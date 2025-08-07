@@ -99,6 +99,21 @@
       <h2>About Spec-Up-T Editor</h2>
     </template>
     <template #body>
+      <!-- User Info (if logged in) -->
+      <div v-if="isAuthenticated && user && user.login"
+        class="alert alert-info mb-3 py-2 px-3 d-flex align-items-center" style="font-size: 0.97em;">
+        <i class="bi bi-person-circle me-2" style="font-size: 1.3em;"></i>
+        <div>
+          <div><strong>User:</strong> {{ user.name || user.login }}</div>
+          <div v-if="user.email"><strong>Email:</strong> {{ user.email }}</div>
+          <div v-if="user.login && user.html_url">
+            <a :href="user.html_url" target="_blank" rel="noopener" style="font-size: 0.95em;">
+              <i class="bi bi-github"></i> {{ user.login }}
+            </a>
+          </div>
+        </div>
+      </div>
+
       <!-- API Rate Limit Indicator -->
       <RateLimitIndicator />
 
@@ -150,7 +165,7 @@ import RateLimitIndicator from './RateLimitIndicator.vue';
 
 export default {
   name: 'MainNav',
-  components: { Modal, RateLimitIndicator},
+  components: { Modal, RateLimitIndicator },
   props: {
     isAuthenticated: {
       type: Boolean,
