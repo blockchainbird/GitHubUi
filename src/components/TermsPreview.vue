@@ -1,6 +1,6 @@
 <template>
   <!-- Full Page View -->
-  <div class="terms-preview-standalone min-vh-100 bg-light">
+  <div class="terms-preview-standalone min-vh-100 bg-light rounded p-3 mb-5">
     <div class="container-fluid mt-3">
       <!-- Header Section -->
       <div class="row mb-1">
@@ -171,7 +171,7 @@
                 </h6>
                 <p class="text-muted mb-3">
                   {{ searchQuery ? 'No terms found matching your search criteria.' :
-                    'This repository does not contain any term definitions.' }}
+                  'This repository does not contain any term definitions.' }}
                 </p>
                 <div v-if="!searchQuery && allTerms.length === 0" class="alert alert-light border d-inline-block">
                   <div class="d-flex align-items-start">
