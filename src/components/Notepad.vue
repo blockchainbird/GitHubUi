@@ -95,9 +95,22 @@ export default {
 
             if (savedPosition) {
                 try {
-                    position.value = JSON.parse(savedPosition)
+                    const parsedPosition = JSON.parse(savedPosition)
+                    // Validate that the saved position is within current viewport
+                    const viewportWidth = document.documentElement.clientWidth
+                    const viewportHeight = document.documentElement.clientHeight
+                    
+                    if (parsedPosition.x >= 0 && parsedPosition.y >= 0 && 
+                        parsedPosition.x + size.value.width <= viewportWidth &&
+                        parsedPosition.y + size.value.height <= viewportHeight) {
+                        position.value = parsedPosition
+                    } else {
+                        // Reset to safe default if saved position is outside viewport
+                        position.value = { x: 100, y: 100 }
+                    }
                 } catch (e) {
                     console.warn('Failed to parse saved notepad position')
+                    position.value = { x: 100, y: 100 }
                 }
             }
 
@@ -138,9 +151,11 @@ export default {
             const newX = event.clientX - dragOffset.value.x
             const newY = event.clientY - dragOffset.value.y
 
-            // Keep within viewport bounds
-            const maxX = window.innerWidth - size.value.width
-            const maxY = window.innerHeight - size.value.height
+            // Keep within actual viewport bounds (accounting for dev tools, etc.)
+            const viewportWidth = document.documentElement.clientWidth
+            const viewportHeight = document.documentElement.clientHeight
+            const maxX = Math.max(0, viewportWidth - size.value.width)
+            const maxY = Math.max(0, viewportHeight - size.value.height)
 
             position.value = {
                 x: Math.max(0, Math.min(newX, maxX)),
@@ -179,9 +194,11 @@ export default {
             const newWidth = Math.max(300, resizeStart.value.width + deltaX)
             const newHeight = Math.max(200, resizeStart.value.height + deltaY)
 
-            // Keep within viewport bounds
-            const maxWidth = window.innerWidth - position.value.x
-            const maxHeight = window.innerHeight - position.value.y
+            // Keep within actual viewport bounds (accounting for dev tools, etc.)
+            const viewportWidth = document.documentElement.clientWidth
+            const viewportHeight = document.documentElement.clientHeight
+            const maxWidth = Math.max(300, viewportWidth - position.value.x)
+            const maxHeight = Math.max(200, viewportHeight - position.value.y)
 
             size.value = {
                 width: Math.min(newWidth, maxWidth),
@@ -226,15 +243,31 @@ export default {
 
         // Handle window resize
         const handleWindowResize = () => {
-            // Ensure notepad stays within viewport
-            const maxX = window.innerWidth - size.value.width
-            const maxY = window.innerHeight - size.value.height
+            // Ensure notepad stays within actual viewport (accounting for dev tools, etc.)
+            const viewportWidth = document.documentElement.clientWidth
+            const viewportHeight = document.documentElement.clientHeight
+            const maxX = Math.max(0, viewportWidth - size.value.width)
+            const maxY = Math.max(0, viewportHeight - size.value.height)
+
+            let positionChanged = false
 
             if (position.value.x > maxX) {
                 position.value.x = Math.max(0, maxX)
+                positionChanged = true
             }
             if (position.value.y > maxY) {
                 position.value.y = Math.max(0, maxY)
+                positionChanged = true
+            }
+
+            // If the notepad is completely outside viewport, bring it back to a safe position
+            if (position.value.x + size.value.width < 100 || position.value.y + size.value.height < 100) {
+                position.value = { x: 100, y: 100 }
+                positionChanged = true
+            }
+
+            if (positionChanged) {
+                savePositionAndSize()
             }
         }
 
