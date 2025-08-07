@@ -311,23 +311,7 @@ export default {
       branchFilter.value = ''
     }
 
-    // Check if repo has spec-up-t dependency
-    const hasSpecUpTDependency = async (repoFullName, config) => {
-      try {
-        const packageJsonRes = await axios.get(`https://api.github.com/repos/${repoFullName}/contents/package.json`, config)
-        if (packageJsonRes.data && packageJsonRes.data.content) {
-          const content = atob(packageJsonRes.data.content)
-          const packageJson = JSON.parse(content)
-          return packageJson.dependencies && packageJson.dependencies['spec-up-t']
-        }
-      } catch (e) {
-        // package.json doesn't exist or can't be read
-        return false
-      }
-      return false
-    }
-
-    // Fetch repos for the given owner
+    // Fetch repos for the given owner that have spec-up-t dependency
     const fetchRepos = async () => {
       if (!owner.value.trim()) return
       repoLoading.value = true
@@ -341,25 +325,23 @@ export default {
           }
         } : { headers: { 'Accept': 'application/vnd.github.v3+json' } }
         
-        // Try user repos first, then org repos if user fails
-        let res
-        try {
-          res = await axios.get(`https://api.github.com/users/${owner.value.trim()}/repos?per_page=100`, config)
-        } catch (e) {
-          // fallback to org
-          res = await axios.get(`https://api.github.com/orgs/${owner.value.trim()}/repos?per_page=100`, config)
-        }
+        // Use GitHub search API to find repos with spec-up-t dependency
+        // Search for package.json files containing "spec-up-t" in the owner's repositories
+        const searchQuery = `"spec-up-t" in:file filename:package.json user:${owner.value.trim()}`
+        const searchRes = await axios.get(`https://api.github.com/search/code?q=${encodeURIComponent(searchQuery)}&per_page=100`, config)
         
-        const allRepos = res.data || []
-        
-        // Filter repos that have spec-up-t dependency
-        const specUpRepos = []
-        for (const repo of allRepos) {
-          if (await hasSpecUpTDependency(repo.full_name, config)) {
-            specUpRepos.push(repo)
+        // Extract unique repositories from search results
+        const uniqueRepos = new Map()
+        if (searchRes.data && searchRes.data.items) {
+          for (const item of searchRes.data.items) {
+            const repo = item.repository
+            if (!uniqueRepos.has(repo.id)) {
+              uniqueRepos.set(repo.id, repo)
+            }
           }
         }
         
+        const specUpRepos = Array.from(uniqueRepos.values())
         repoList.value = specUpRepos
         filteredRepoList.value = [...specUpRepos]
       } catch (e) {
