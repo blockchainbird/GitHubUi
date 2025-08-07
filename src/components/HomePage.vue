@@ -311,6 +311,22 @@ export default {
       branchFilter.value = ''
     }
 
+    // Check if repo has spec-up-t dependency
+    const hasSpecUpTDependency = async (repoFullName, config) => {
+      try {
+        const packageJsonRes = await axios.get(`https://api.github.com/repos/${repoFullName}/contents/package.json`, config)
+        if (packageJsonRes.data && packageJsonRes.data.content) {
+          const content = atob(packageJsonRes.data.content)
+          const packageJson = JSON.parse(content)
+          return packageJson.dependencies && packageJson.dependencies['spec-up-t']
+        }
+      } catch (e) {
+        // package.json doesn't exist or can't be read
+        return false
+      }
+      return false
+    }
+
     // Fetch repos for the given owner
     const fetchRepos = async () => {
       if (!owner.value.trim()) return
@@ -324,6 +340,7 @@ export default {
             'Accept': 'application/vnd.github.v3+json'
           }
         } : { headers: { 'Accept': 'application/vnd.github.v3+json' } }
+        
         // Try user repos first, then org repos if user fails
         let res
         try {
@@ -332,8 +349,19 @@ export default {
           // fallback to org
           res = await axios.get(`https://api.github.com/orgs/${owner.value.trim()}/repos?per_page=100`, config)
         }
-        repoList.value = res.data || []
-        filteredRepoList.value = [...repoList.value]
+        
+        const allRepos = res.data || []
+        
+        // Filter repos that have spec-up-t dependency
+        const specUpRepos = []
+        for (const repo of allRepos) {
+          if (await hasSpecUpTDependency(repo.full_name, config)) {
+            specUpRepos.push(repo)
+          }
+        }
+        
+        repoList.value = specUpRepos
+        filteredRepoList.value = [...specUpRepos]
       } catch (e) {
         repoList.value = []
         filteredRepoList.value = []
