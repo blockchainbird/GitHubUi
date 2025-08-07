@@ -1,6 +1,6 @@
 <template>
   <!-- Full Page View (when accessed via route) -->
-  <div v-if="isStandaloneView" class="terms-preview-standalone">
+  <div v-if="isStandaloneView" class="terms-preview-standalone min-vh-100 bg-light">
     <div class="container-fluid mt-3">
       <!-- Header Section -->
       <div class="row mb-4">
@@ -16,15 +16,16 @@
                 <span class="fw-semibold">Terms & Definitions Preview</span>
               </h2>
             </div>
-            <button type="button" class="btn btn-outline-primary d-flex align-items-center gap-1" 
-              @click="refreshPreview" :disabled="loading" 
+            <button type="button" class="btn btn-outline-primary d-flex align-items-center gap-1"
+              @click="refreshPreview" :disabled="loading"
               :title="loading ? 'Refreshing terms...' : 'Clear cache and reload all terms'">
               <i class="bi" :class="loading ? 'bi-arrow-clockwise spin' : 'bi-arrow-clockwise'"></i>
               <span class="d-none d-sm-inline">Refresh</span>
             </button>
           </div>
           <!-- Repository Info -->
-          <div class="repository-info d-flex align-items-center text-muted mb-4">
+          <div
+            class="repository-info d-flex flex-column flex-md-row align-items-start align-items-md-center gap-1 text-muted mb-4">
             <i class="bi bi-github me-2"></i>
             <code class="bg-light px-2 py-1 rounded border">{{ owner }}/{{ repo }}</code>
             <span class="mx-2">•</span>
@@ -34,7 +35,7 @@
       </div>
 
       <!-- Content Section (reuse modal content) -->
-      <div class="terms-preview-content">
+      <div class="terms-preview-content bg-white rounded shadow-sm p-4">
         <template v-if="loading || error || allTerms.length > 0">
           <!-- Search and Filter Controls (reuse from modal) -->
           <div class="search-controls-section mb-4">
@@ -60,13 +61,17 @@
                     </select>
                   </div>
                   <div class="col-md-2">
-                    <div class="view-mode-toggle btn-group w-100" role="group">
-                      <input type="radio" class="btn-check" id="compact-view-standalone" v-model="viewMode" value="compact">
-                      <label class="btn btn-outline-secondary btn-sm" for="compact-view-standalone" title="Compact View">
+                    <div class="view-mode-toggle btn-group w-100 justify-content-center" role="group">
+                      <input type="radio" class="btn-check" id="compact-view-standalone" v-model="viewMode"
+                        value="compact">
+                      <label class="btn btn-outline-secondary btn-sm" for="compact-view-standalone"
+                        title="Compact View">
                         <i class="bi bi-list"></i>
                       </label>
-                      <input type="radio" class="btn-check" id="detailed-view-standalone" v-model="viewMode" value="detailed">
-                      <label class="btn btn-outline-secondary btn-sm" for="detailed-view-standalone" title="Detailed View">
+                      <input type="radio" class="btn-check" id="detailed-view-standalone" v-model="viewMode"
+                        value="detailed">
+                      <label class="btn btn-outline-secondary btn-sm" for="detailed-view-standalone"
+                        title="Detailed View">
                         <i class="bi bi-card-text"></i>
                       </label>
                     </div>
@@ -80,7 +85,8 @@
           <div v-if="loading" class="loading-state-container">
             <!-- Same loading content as modal -->
             <div class="text-center py-5">
-              <div class="loading-spinner spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+              <div class="loading-spinner spinner-border text-primary mb-3" role="status"
+                style="width: 3rem; height: 3rem;">
                 <span class="visually-hidden">{{ loadingMessage }}</span>
               </div>
               <h6 class="fw-medium text-dark mb-2">Loading Terms & Definitions</h6>
@@ -158,7 +164,8 @@
                   <div v-if="refreshSuccess && !loading" class="mt-3">
                     <div class="alert alert-info alert-sm border-0 d-flex align-items-center mb-0 py-2">
                       <i class="bi bi-arrow-clockwise text-info me-2"></i>
-                      <small class="mb-0">Terms refreshed successfully! Cache cleared and reloaded {{ allTerms.length }} terms.</small>
+                      <small class="mb-0">Terms refreshed successfully! Cache cleared and reloaded {{ allTerms.length }}
+                        terms.</small>
                     </div>
                   </div>
                 </div>
@@ -176,7 +183,8 @@
                   {{ searchQuery ? 'No Terms Found' : 'No Terms Available' }}
                 </h6>
                 <p class="text-muted mb-3">
-                  {{ searchQuery ? 'No terms found matching your search criteria.' : 'This repository does not contain any term definitions.' }}
+                  {{ searchQuery ? 'No terms found matching your search criteria.' : 'This repository does not contain
+                  any term definitions.' }}
                 </p>
                 <div v-if="!searchQuery && allTerms.length === 0" class="alert alert-light border d-inline-block">
                   <div class="d-flex align-items-start">
@@ -205,11 +213,11 @@
               <template v-if="viewMode === 'compact'">
                 <div class="compact-terms-container">
                   <div class="list-group list-group-flush">
-                    <div v-for="term in filteredTerms" :key="getTermKey(term)" 
+                    <div v-for="term in filteredTerms" :key="getTermKey(term)"
                       class="list-group-item compact-term-item border-0 border-bottom">
-                      <div class="row align-items-start">
+                      <div class="row align-items-start flex-column flex-sm-row">
                         <div class="col-md-4 col-lg-3 mb-2 mb-md-0">
-                          <div class="term-header">
+                          <div class="term-header mb-3 mb-sm-0">
                             <div class="term-name-container d-flex align-items-center mb-1">
                               <strong class="term-name text-primary me-2">{{ term.id }}</strong>
                               <span v-if="term.external" class="badge bg-success badge-sm">
@@ -219,7 +227,7 @@
                                 <i class="bi bi-folder"></i> Local
                               </span>
                             </div>
-                            
+
                             <div v-if="term.aliases && term.aliases.length > 0" class="aliases-compact">
                               <div class="small text-muted mb-1">
                                 <i class="bi bi-tags me-1"></i>Aliases:
@@ -235,7 +243,7 @@
                             </div>
                           </div>
                         </div>
-                        
+
                         <div class="col-md-8 col-lg-9">
                           <div class="definition-preview">
                             <div v-if="term.definitionText" class="text-secondary small lh-base">
@@ -278,7 +286,7 @@
                             </div>
                           </div>
                         </div>
-                        
+
                         <div class="card-body">
                           <!-- Aliases Section -->
                           <div v-if="term.aliases && term.aliases.length > 0" class="aliases-section mb-3">
@@ -300,7 +308,7 @@
                               Definition:
                             </div>
                             <div class="definition-content-detailed">
-                              <div v-if="term.definition" v-html="term.definition" 
+                              <div v-if="term.definition" v-html="term.definition"
                                 class="terms-and-definitions-list rendered-definition"></div>
                               <div v-else-if="term.definitionText" class="definition-text-plain">
                                 {{ term.definitionText }}
@@ -329,7 +337,7 @@
   <!-- Modal View (when opened as modal) -->
   <div v-else class="modal fade" id="termsPreviewModal" tabindex="-1" aria-labelledby="termsPreviewModalLabel"
     aria-hidden="true">
-    <div class="modal-dialog modal-xl">
+    <div class="modal-dialog modal-xl m-2">
       <div class="modal-content position-relative">
         <!-- Watermark -->
         <div class="terms-preview-watermark">Preview</div>
@@ -342,8 +350,8 @@
                 <span class="fw-semibold">Terms & Definitions Preview</span>
               </h5>
               <div class="d-flex align-items-center gap-2">
-                <button type="button" class="btn btn-outline-primary btn-sm refresh-btn d-flex align-items-center gap-1" 
-                  @click="refreshPreview" :disabled="loading" 
+                <button type="button" class="btn btn-outline-primary btn-sm refresh-btn d-flex align-items-center gap-1"
+                  @click="refreshPreview" :disabled="loading"
                   :title="loading ? 'Refreshing terms...' : 'Clear cache and reload all terms'">
                   <i class="bi" :class="loading ? 'bi-arrow-clockwise spin' : 'bi-arrow-clockwise'"></i>
                   <span class="d-none d-sm-inline">Refresh</span>
@@ -352,7 +360,8 @@
               </div>
             </div>
             <!-- Repository Info Row -->
-            <div class="repository-info d-flex align-items-center text-muted">
+            <div
+              class="repository-info d-flex flex-column flex-md-row align-items-start align-items-md-center gap-1 text-muted">
               <i class="bi bi-github me-2"></i>
               <code class="bg-light px-2 py-1 rounded border">{{ owner }}/{{ repo }}</code>
               <span class="mx-2">•</span>
@@ -386,7 +395,7 @@
                     </select>
                   </div>
                   <div class="col-md-2">
-                    <div class="view-mode-toggle btn-group w-100" role="group">
+                    <div class="view-mode-toggle btn-group w-100 justify-content-center" role="group">
                       <input type="radio" class="btn-check" id="compact-view" v-model="viewMode" value="compact">
                       <label class="btn btn-outline-secondary btn-sm" for="compact-view" title="Compact View">
                         <i class="bi bi-list"></i>
@@ -405,7 +414,8 @@
           <!-- Loading State -->
           <div v-if="loading" class="loading-state-container">
             <div class="text-center py-5">
-              <div class="loading-spinner spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+              <div class="loading-spinner spinner-border text-primary mb-3" role="status"
+                style="width: 3rem; height: 3rem;">
                 <span class="visually-hidden">{{ loadingMessage }}</span>
               </div>
               <h6 class="fw-medium text-dark mb-2">Loading Terms & Definitions</h6>
@@ -483,7 +493,8 @@
                   <div v-if="refreshSuccess && !loading" class="mt-3">
                     <div class="alert alert-info alert-sm border-0 d-flex align-items-center mb-0 py-2">
                       <i class="bi bi-arrow-clockwise text-info me-2"></i>
-                      <small class="mb-0">Terms refreshed successfully! Cache cleared and reloaded {{ allTerms.length }} terms.</small>
+                      <small class="mb-0">Terms refreshed successfully! Cache cleared and reloaded {{ allTerms.length }}
+                        terms.</small>
                     </div>
                   </div>
                 </div>
@@ -500,7 +511,9 @@
                   {{ searchQuery ? 'No Terms Found' : 'No Terms Available' }}
                 </h6>
                 <p class="text-muted mb-3">
-                  {{ searchQuery ? 'No terms found matching your search criteria.' : 'This repository does not contain any term definitions.' }}
+                  {{ searchQuery ? 'No terms found matching your search criteria.' : 'This repository does not contain
+                  any
+                  term definitions.' }}
                 </p>
                 <div v-if="!searchQuery && allTerms.length === 0" class="alert alert-light border d-inline-block">
                   <div class="d-flex align-items-start">
@@ -530,11 +543,11 @@
               <template v-if="viewMode === 'compact'">
                 <div class="compact-terms-container">
                   <div class="list-group list-group-flush">
-                    <div v-for="term in filteredTerms" :key="getTermKey(term)" 
+                    <div v-for="term in filteredTerms" :key="getTermKey(term)"
                       class="list-group-item compact-term-item border-0 border-bottom">
-                      <div class="row align-items-start">
+                      <div class="row align-items-start flex-column flex-sm-row">
                         <div class="col-md-4 col-lg-3 mb-2 mb-md-0">
-                          <div class="term-header">
+                          <div class="term-header mb-3 mb-sm-0">
                             <div class="term-name-container d-flex align-items-center mb-1">
                               <strong class="term-name text-primary me-2">{{ term.id }}</strong>
                               <span v-if="term.external" class="badge bg-success badge-sm">
@@ -544,7 +557,7 @@
                                 <i class="bi bi-folder"></i> Local
                               </span>
                             </div>
-                            
+
                             <div v-if="term.aliases && term.aliases.length > 0" class="aliases-compact">
                               <div class="small text-muted mb-1">
                                 <i class="bi bi-tags me-1"></i>Aliases:
@@ -560,7 +573,7 @@
                             </div>
                           </div>
                         </div>
-                        
+
                         <div class="col-md-8 col-lg-9">
                           <div class="definition-preview">
                             <div v-if="term.definitionText" class="text-secondary small lh-base">
@@ -603,7 +616,7 @@
                             </div>
                           </div>
                         </div>
-                        
+
                         <div class="card-body">
                           <!-- Aliases Section -->
                           <div v-if="term.aliases && term.aliases.length > 0" class="aliases-section mb-3">
@@ -625,7 +638,7 @@
                               Definition:
                             </div>
                             <div class="definition-content-detailed">
-                              <div v-if="term.definition" v-html="term.definition" 
+                              <div v-if="term.definition" v-html="term.definition"
                                 class="terms-and-definitions-list rendered-definition"></div>
                               <div v-else-if="term.definitionText" class="definition-text-plain">
                                 {{ term.definitionText }}
@@ -721,7 +734,7 @@ export default {
     const refreshSuccess = ref(false)
 
     // Use terms management composable
-    const { 
+    const {
       initializeTerms,
       terms: managedTerms,
       loadingTerms,
@@ -752,10 +765,10 @@ export default {
         const query = searchQuery.value.toLowerCase().trim()
         filtered = filtered.filter(term => {
           return term.id.toLowerCase().includes(query) ||
-                 term.aliases.some(alias => alias.toLowerCase().includes(query)) ||
-                 (term.definitionText && term.definitionText.toLowerCase().includes(query)) ||
-                 (term.external && term.externalSpec && term.externalSpec.toLowerCase().includes(query)) ||
-                 (term.source && term.source.toLowerCase().includes(query))
+            term.aliases.some(alias => alias.toLowerCase().includes(query)) ||
+            (term.definitionText && term.definitionText.toLowerCase().includes(query)) ||
+            (term.external && term.externalSpec && term.externalSpec.toLowerCase().includes(query)) ||
+            (term.source && term.source.toLowerCase().includes(query))
         })
       }
 
@@ -807,7 +820,7 @@ export default {
         allTerms.value = [...managedTerms.value]
         filterTerms()
         console.log(`✅ Refresh completed - loaded ${allTerms.value.length} terms`)
-        
+
         // Show success feedback briefly
         refreshSuccess.value = true
         setTimeout(() => {
@@ -832,7 +845,7 @@ export default {
           modalElement.addEventListener('show.bs.modal', () => {
             loadAllTerms()
           })
-          
+
           // Clean up when modal is hidden
           modalElement.addEventListener('hidden.bs.modal', () => {
             // Reset state when modal closes
@@ -877,7 +890,7 @@ export default {
       specsConfig,
       refreshSuccess,
       isStandaloneView,
-      
+
       // Methods
       filterTerms,
       getTermKey,
@@ -890,143 +903,4 @@ export default {
 }
 </script>
 
-<style scoped>
-/* Standalone view styles */
-.terms-preview-standalone {
-  min-height: 100vh;
-  background-color: #f8f9fa;
-}
-
-.terms-preview-standalone .terms-preview-content {
-  background: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05);
-  padding: 2rem;
-}
-
-/* Watermark styles for modal */
-.terms-preview-watermark {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) rotate(-20deg);
-  font-size: 7vw;
-  color: rgba(0, 0, 0, 0.02);
-  font-weight: 900;
-  pointer-events: none;
-  z-index: 1;
-  user-select: none;
-  white-space: nowrap;
-}
-
-/* Component-specific responsive styles */
-@media (max-width: 768px) {
-  .modal-dialog {
-    margin: 0.5rem;
-  }
-  
-  .modal-header .repository-info {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
-  }
-  
-  .repository-info code {
-    font-size: 0.8rem;
-  }
-  
-  .search-controls-section .row > [class*="col-"] {
-    margin-bottom: 0.75rem;
-  }
-  
-  .search-controls-section .row > [class*="col-"]:last-child {
-    margin-bottom: 0;
-  }
-  
-  .stats-section .row {
-    text-align: center;
-  }
-  
-  .stats-section .col-md-8,
-  .stats-section .col-md-4 {
-    margin-bottom: 0.5rem;
-  }
-  
-  .stats-section .col-md-4:last-child {
-    margin-bottom: 0;
-  }
-  
-  .view-mode-toggle {
-    justify-content: center;
-  }
-
-  /* Standalone view responsive adjustments */
-  .terms-preview-standalone .terms-preview-content {
-    padding: 1rem;
-    margin: 0.5rem;
-    border-radius: 0.25rem;
-  }
-}
-
-@media (max-width: 576px) {
-  .modal-title {
-    font-size: 1.1rem;
-  }
-  
-  .refresh-btn span {
-    display: none !important;
-  }
-  
-  .compact-term-item .row {
-    flex-direction: column;
-  }
-  
-  .compact-term-item .term-header {
-    margin-bottom: 0.75rem;
-  }
-  
-  .detailed-terms-container .col-12 {
-    padding: 0;
-  }
-  
-  .detailed-terms-container .term-card {
-    margin-bottom: 1rem;
-  }
-
-  /* Standalone view mobile adjustments */
-  .terms-preview-standalone h2 {
-    font-size: 1.5rem;
-  }
-
-  .terms-preview-standalone .btn {
-    font-size: 0.875rem;
-  }
-}
-
-/* Enhanced focus states for accessibility */
-.btn:focus,
-.form-control:focus,
-.form-select:focus {
-  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-}
-
-/* Improved loading animation */
-.loading-spinner {
-  opacity: 0.8;
-}
-
-/* Better text selection */
-.term-name,
-.definition-content {
-  -webkit-user-select: text;
-  -moz-user-select: text;
-  -ms-user-select: text;
-  user-select: text;
-}
-
-/* Ensure proper scrolling in standalone view */
-.terms-preview-standalone .terms-list {
-  max-height: none !important;
-  overflow-y: visible !important;
-}
-</style>
+<style scoped></style>
