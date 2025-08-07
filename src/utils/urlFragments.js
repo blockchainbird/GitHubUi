@@ -4,43 +4,6 @@
  */
 
 /**
- * Opens the terms preview modal if the URL fragment indicates it should be opened
- * @param {string} hash - The current window.location.hash
- * @param {object} router - Vue router instance (optional, for navigation fallback)
- * @param {object} route - Current route object (optional, for navigation fallback)
- */
-export function handleTermsPreviewFragment(hash, router = null, route = null) {
-  // Check for terms preview fragments
-  const termsFragments = ['#terms-preview', '#terms', '#definitions', '#glossary']
-  
-  if (termsFragments.includes(hash.toLowerCase())) {
-    // Try to open the modal first
-    const modalElement = document.getElementById('termsPreviewModal')
-    if (modalElement && window.bootstrap) {
-      try {
-        const modal = new window.bootstrap.Modal(modalElement)
-        modal.show()
-        
-        // Clean up the hash after opening modal
-        history.replaceState(null, null, window.location.pathname + window.location.search)
-        return true
-      } catch (error) {
-        console.warn('Could not open terms preview modal:', error)
-      }
-    }
-    
-    // Fallback: Navigate to standalone terms preview if modal is not available and we have routing context
-    if (router && route && route.params.owner && route.params.repo && route.params.branch) {
-      const termsUrl = `/terms-preview/${route.params.owner}/${route.params.repo}/${route.params.branch}`
-      router.push(termsUrl)
-      return true
-    }
-  }
-  
-  return false
-}
-
-/**
  * Creates a URL with a terms preview fragment
  * @param {string} baseUrl - The base URL to append the fragment to
  * @param {string} fragmentType - Type of fragment ('terms', 'definitions', etc.) - defaults to 'terms'

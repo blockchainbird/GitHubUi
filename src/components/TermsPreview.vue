@@ -668,7 +668,6 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useTermsManagement } from '../composables/useTermsManagement.js'
 import { getLoadingMessage } from '../utils/loadingMessages.js'
-import { handleTermsPreviewFragment, setupFragmentHandling } from '../utils/urlFragments.js'
 
 import '../styles/terms-preview.css'
 
@@ -701,11 +700,6 @@ export default {
     const navigateBack = () => {
       // Navigate back to the file explorer for this repository
       router.push(`/files/${props.owner}/${props.repo}/${props.branch}`)
-    }
-
-    // Handle URL fragments for modal access
-    const handleUrlFragment = (hash) => {
-      return handleTermsPreviewFragment(hash || window.location.hash, router, route)
     }
 
     // Mock auth function for terms management

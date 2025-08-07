@@ -290,9 +290,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Terms Preview Modal -->
-  <TermsPreview :owner="owner" :repo="repo" :branch="branch" />
 </template>
 
 <script>
@@ -300,7 +297,6 @@ import { ref, onMounted, onUnmounted, nextTick, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import { addToVisitedRepos } from '../utils/visitedRepos.js'
-import { setupFragmentHandling, handleTermsPreviewFragment } from '../utils/urlFragments.js'
 import { getGitHubHeaders, addCacheBusting } from '../utils/apiUtils.js'
 import TermsPreview from './TermsPreview.vue'
 
@@ -1095,13 +1091,6 @@ export default {
       document.addEventListener('click', handleClickOutside)
       document.addEventListener('visibilitychange', handleVisibilityChange)
 
-      // Set up fragment handling for terms preview
-      const cleanupFragmentHandling = setupFragmentHandling((hash) => {
-        handleTermsPreviewFragment(hash, router, route)
-      })
-
-      // Store cleanup function for unmount
-      fragmentCleanup.value = cleanupFragmentHandling
 
       // Check if we have a recently created file in localStorage
       const storedRecentFile = localStorage.getItem('recentlyCreatedFile')
