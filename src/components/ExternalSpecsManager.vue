@@ -121,6 +121,13 @@
                 </div>
               </div>
 
+              <!-- Changes Indicator -->
+              <div v-if="hasChanges" class="alert alert-warning mt-4">
+                <i class="bi bi-exclamation-triangle"></i>
+                You have unsaved changes. Don't forget to save!
+              </div>
+
+
               <!-- Add New Spec Form -->
               <div class="card mb-4">
                 <div class="card-header">
