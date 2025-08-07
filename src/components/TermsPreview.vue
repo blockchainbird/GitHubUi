@@ -16,15 +16,16 @@
                 <span class="fw-semibold">Terms & Definitions Preview</span>
               </h2>
             </div>
-            <button type="button" class="btn btn-outline-primary d-flex align-items-center gap-1" 
-              @click="refreshPreview" :disabled="loading" 
+            <button type="button" class="btn btn-outline-primary d-flex align-items-center gap-1"
+              @click="refreshPreview" :disabled="loading"
               :title="loading ? 'Refreshing terms...' : 'Clear cache and reload all terms'">
               <i class="bi" :class="loading ? 'bi-arrow-clockwise spin' : 'bi-arrow-clockwise'"></i>
               <span class="d-none d-sm-inline">Refresh</span>
             </button>
           </div>
           <!-- Repository Info -->
-          <div class="repository-info d-flex flex-column flex-md-row align-items-start align-items-md-center gap-1 text-muted mb-4">
+          <div
+            class="repository-info d-flex flex-column flex-md-row align-items-start align-items-md-center gap-1 text-muted mb-4">
             <i class="bi bi-github me-2"></i>
             <code class="bg-light px-2 py-1 rounded border">{{ owner }}/{{ repo }}</code>
             <span class="mx-2">•</span>
@@ -61,12 +62,16 @@
                   </div>
                   <div class="col-md-2">
                     <div class="view-mode-toggle btn-group w-100 justify-content-center" role="group">
-                      <input type="radio" class="btn-check" id="compact-view-standalone" v-model="viewMode" value="compact">
-                      <label class="btn btn-outline-secondary btn-sm" for="compact-view-standalone" title="Compact View">
+                      <input type="radio" class="btn-check" id="compact-view-standalone" v-model="viewMode"
+                        value="compact">
+                      <label class="btn btn-outline-secondary btn-sm" for="compact-view-standalone"
+                        title="Compact View">
                         <i class="bi bi-list"></i>
                       </label>
-                      <input type="radio" class="btn-check" id="detailed-view-standalone" v-model="viewMode" value="detailed">
-                      <label class="btn btn-outline-secondary btn-sm" for="detailed-view-standalone" title="Detailed View">
+                      <input type="radio" class="btn-check" id="detailed-view-standalone" v-model="viewMode"
+                        value="detailed">
+                      <label class="btn btn-outline-secondary btn-sm" for="detailed-view-standalone"
+                        title="Detailed View">
                         <i class="bi bi-card-text"></i>
                       </label>
                     </div>
@@ -80,7 +85,8 @@
           <div v-if="loading" class="loading-state-container">
             <!-- Same loading content as modal -->
             <div class="text-center py-5">
-              <div class="loading-spinner spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+              <div class="loading-spinner spinner-border text-primary mb-3" role="status"
+                style="width: 3rem; height: 3rem;">
                 <span class="visually-hidden">{{ loadingMessage }}</span>
               </div>
               <h6 class="fw-medium text-dark mb-2">Loading Terms & Definitions</h6>
@@ -158,7 +164,8 @@
                   <div v-if="refreshSuccess && !loading" class="mt-3">
                     <div class="alert alert-info alert-sm border-0 d-flex align-items-center mb-0 py-2">
                       <i class="bi bi-arrow-clockwise text-info me-2"></i>
-                      <small class="mb-0">Terms refreshed successfully! Cache cleared and reloaded {{ allTerms.length }} terms.</small>
+                      <small class="mb-0">Terms refreshed successfully! Cache cleared and reloaded {{ allTerms.length }}
+                        terms.</small>
                     </div>
                   </div>
                 </div>
@@ -176,7 +183,8 @@
                   {{ searchQuery ? 'No Terms Found' : 'No Terms Available' }}
                 </h6>
                 <p class="text-muted mb-3">
-                  {{ searchQuery ? 'No terms found matching your search criteria.' : 'This repository does not contain any term definitions.' }}
+                  {{ searchQuery ? 'No terms found matching your search criteria.' :
+                    'This repository does not contain any term definitions.' }}
                 </p>
                 <div v-if="!searchQuery && allTerms.length === 0" class="alert alert-light border d-inline-block">
                   <div class="d-flex align-items-start">
@@ -205,48 +213,49 @@
               <template v-if="viewMode === 'compact'">
                 <div class="compact-terms-container">
                   <div class="list-group list-group-flush">
-                    <div v-for="term in filteredTerms" :key="getTermKey(term)" class="list-group-item compact-term-item border-0 border-bottom">
-                        <div class="row align-items-start flex-column flex-sm-row">
-                          <div class="col-md-4 col-lg-3 mb-2 mb-md-0">
-                            <div class="term-header mb-3 mb-sm-0">
-                              <div class="term-name-container d-flex align-items-center mb-1">
-                                <strong class="term-name text-primary me-2">{{ term.id }}</strong>
-                                <span v-if="term.external" class="badge bg-success badge-sm">
-                                  <i class="bi bi-link-45deg"></i> {{ term.externalSpec }}
-                                </span>
-                                <span v-else class="badge bg-primary badge-sm">
-                                  <i class="bi bi-folder"></i> Local
-                                </span>
-                              </div>
-                              
-                              <div v-if="term.aliases && term.aliases.length > 0" class="aliases-compact">
-                                <div class="small text-muted mb-1">
-                                  <i class="bi bi-tags me-1"></i>Aliases:
-                                </div>
-                                <div class="alias-tags">
-                                  <span v-for="alias in term.aliases.slice(0, 3)" :key="alias" class="alias-tag">
-                                    {{ alias }}
-                                  </span>
-                                  <span v-if="term.aliases.length > 3" class="text-muted small">
-                                    +{{ term.aliases.length - 3 }} more
-                                  </span>
-                                </div>
-                              </div>
+                    <div v-for="term in filteredTerms" :key="getTermKey(term)"
+                      class="list-group-item compact-term-item border-0 border-bottom">
+                      <div class="row align-items-start flex-column flex-sm-row">
+                        <div class="col-md-4 col-lg-3 mb-2 mb-md-0">
+                          <div class="term-header mb-3 mb-sm-0">
+                            <div class="term-name-container d-flex align-items-center mb-1">
+                              <strong class="term-name text-primary me-2">{{ term.id }}</strong>
+                              <span v-if="term.external" class="badge bg-success badge-sm">
+                                <i class="bi bi-link-45deg"></i> {{ term.externalSpec }}
+                              </span>
+                              <span v-else class="badge bg-primary badge-sm">
+                                <i class="bi bi-folder"></i> Local
+                              </span>
                             </div>
-                          </div>
-                          
-                          <div class="col-md-8 col-lg-9">
-                            <div class="definition-preview">
-                              <div v-if="term.definitionText" class="text-secondary small lh-base">
-                                {{ truncateText(term.definitionText, 150) }}
+
+                            <div v-if="term.aliases && term.aliases.length > 0" class="aliases-compact">
+                              <div class="small text-muted mb-1">
+                                <i class="bi bi-tags me-1"></i>Aliases:
                               </div>
-                              <div v-else class="text-muted fst-italic small">
-                                <i class="bi bi-exclamation-circle me-1"></i>
-                                No definition available
+                              <div class="alias-tags">
+                                <span v-for="alias in term.aliases.slice(0, 3)" :key="alias" class="alias-tag">
+                                  {{ alias }}
+                                </span>
+                                <span v-if="term.aliases.length > 3" class="text-muted small">
+                                  +{{ term.aliases.length - 3 }} more
+                                </span>
                               </div>
                             </div>
                           </div>
                         </div>
+
+                        <div class="col-md-8 col-lg-9">
+                          <div class="definition-preview">
+                            <div v-if="term.definitionText" class="text-secondary small lh-base">
+                              {{ truncateText(term.definitionText, 150) }}
+                            </div>
+                            <div v-else class="text-muted fst-italic small">
+                              <i class="bi bi-exclamation-circle me-1"></i>
+                              No definition available
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -277,7 +286,7 @@
                             </div>
                           </div>
                         </div>
-                        
+
                         <div class="card-body">
                           <!-- Aliases Section -->
                           <div v-if="term.aliases && term.aliases.length > 0" class="aliases-section mb-3">
@@ -299,7 +308,7 @@
                               Definition:
                             </div>
                             <div class="definition-content-detailed">
-                              <div v-if="term.definition" v-html="term.definition" 
+                              <div v-if="term.definition" v-html="term.definition"
                                 class="terms-and-definitions-list rendered-definition"></div>
                               <div v-else-if="term.definitionText" class="definition-text-plain">
                                 {{ term.definitionText }}
@@ -341,8 +350,8 @@
                 <span class="fw-semibold">Terms & Definitions Preview</span>
               </h5>
               <div class="d-flex align-items-center gap-2">
-                <button type="button" class="btn btn-outline-primary btn-sm refresh-btn d-flex align-items-center gap-1" 
-                  @click="refreshPreview" :disabled="loading" 
+                <button type="button" class="btn btn-outline-primary btn-sm refresh-btn d-flex align-items-center gap-1"
+                  @click="refreshPreview" :disabled="loading"
                   :title="loading ? 'Refreshing terms...' : 'Clear cache and reload all terms'">
                   <i class="bi" :class="loading ? 'bi-arrow-clockwise spin' : 'bi-arrow-clockwise'"></i>
                   <span class="d-none d-sm-inline">Refresh</span>
@@ -351,7 +360,8 @@
               </div>
             </div>
             <!-- Repository Info Row -->
-            <div class="repository-info d-flex flex-column flex-md-row align-items-start align-items-md-center gap-1 text-muted">
+            <div
+              class="repository-info d-flex flex-column flex-md-row align-items-start align-items-md-center gap-1 text-muted">
               <i class="bi bi-github me-2"></i>
               <code class="bg-light px-2 py-1 rounded border">{{ owner }}/{{ repo }}</code>
               <span class="mx-2">•</span>
@@ -404,7 +414,8 @@
           <!-- Loading State -->
           <div v-if="loading" class="loading-state-container">
             <div class="text-center py-5">
-              <div class="loading-spinner spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+              <div class="loading-spinner spinner-border text-primary mb-3" role="status"
+                style="width: 3rem; height: 3rem;">
                 <span class="visually-hidden">{{ loadingMessage }}</span>
               </div>
               <h6 class="fw-medium text-dark mb-2">Loading Terms & Definitions</h6>
@@ -482,7 +493,8 @@
                   <div v-if="refreshSuccess && !loading" class="mt-3">
                     <div class="alert alert-info alert-sm border-0 d-flex align-items-center mb-0 py-2">
                       <i class="bi bi-arrow-clockwise text-info me-2"></i>
-                      <small class="mb-0">Terms refreshed successfully! Cache cleared and reloaded {{ allTerms.length }} terms.</small>
+                      <small class="mb-0">Terms refreshed successfully! Cache cleared and reloaded {{ allTerms.length }}
+                        terms.</small>
                     </div>
                   </div>
                 </div>
@@ -499,7 +511,8 @@
                   {{ searchQuery ? 'No Terms Found' : 'No Terms Available' }}
                 </h6>
                 <p class="text-muted mb-3">
-                  {{ searchQuery ? 'No terms found matching your search criteria.' : 'This repository does not contain any term definitions.' }}
+                  {{ searchQuery ? 'No terms found matching your search criteria.' :
+                    'This repository does not contain any term definitions.' }}
                 </p>
                 <div v-if="!searchQuery && allTerms.length === 0" class="alert alert-light border d-inline-block">
                   <div class="d-flex align-items-start">
@@ -529,48 +542,49 @@
               <template v-if="viewMode === 'compact'">
                 <div class="compact-terms-container">
                   <div class="list-group list-group-flush">
-                    <div v-for="term in filteredTerms" :key="getTermKey(term)" class="list-group-item compact-term-item border-0 border-bottom">
-                        <div class="row align-items-start flex-column flex-sm-row">
-                          <div class="col-md-4 col-lg-3 mb-2 mb-md-0">
-                            <div class="term-header mb-3 mb-sm-0">
-                              <div class="term-name-container d-flex align-items-center mb-1">
-                                <strong class="term-name text-primary me-2">{{ term.id }}</strong>
-                                <span v-if="term.external" class="badge bg-success badge-sm">
-                                  <i class="bi bi-link-45deg"></i> {{ term.externalSpec }}
-                                </span>
-                                <span v-else class="badge bg-primary badge-sm">
-                                  <i class="bi bi-folder"></i> Local
-                                </span>
-                              </div>
-                              
-                              <div v-if="term.aliases && term.aliases.length > 0" class="aliases-compact">
-                                <div class="small text-muted mb-1">
-                                  <i class="bi bi-tags me-1"></i>Aliases:
-                                </div>
-                                <div class="alias-tags">
-                                  <span v-for="alias in term.aliases.slice(0, 3)" :key="alias" class="alias-tag">
-                                    {{ alias }}
-                                  </span>
-                                  <span v-if="term.aliases.length > 3" class="text-muted small">
-                                    +{{ term.aliases.length - 3 }} more
-                                  </span>
-                                </div>
-                              </div>
+                    <div v-for="term in filteredTerms" :key="getTermKey(term)"
+                      class="list-group-item compact-term-item border-0 border-bottom">
+                      <div class="row align-items-start flex-column flex-sm-row">
+                        <div class="col-md-4 col-lg-3 mb-2 mb-md-0">
+                          <div class="term-header mb-3 mb-sm-0">
+                            <div class="term-name-container d-flex align-items-center mb-1">
+                              <strong class="term-name text-primary me-2">{{ term.id }}</strong>
+                              <span v-if="term.external" class="badge bg-success badge-sm">
+                                <i class="bi bi-link-45deg"></i> {{ term.externalSpec }}
+                              </span>
+                              <span v-else class="badge bg-primary badge-sm">
+                                <i class="bi bi-folder"></i> Local
+                              </span>
                             </div>
-                          </div>
-                          
-                          <div class="col-md-8 col-lg-9">
-                            <div class="definition-preview">
-                              <div v-if="term.definitionText" class="text-secondary small lh-base">
-                                {{ truncateText(term.definitionText, 150) }}
+
+                            <div v-if="term.aliases && term.aliases.length > 0" class="aliases-compact">
+                              <div class="small text-muted mb-1">
+                                <i class="bi bi-tags me-1"></i>Aliases:
                               </div>
-                              <div v-else class="text-muted fst-italic small">
-                                <i class="bi bi-exclamation-circle me-1"></i>
-                                No definition available
+                              <div class="alias-tags">
+                                <span v-for="alias in term.aliases.slice(0, 3)" :key="alias" class="alias-tag">
+                                  {{ alias }}
+                                </span>
+                                <span v-if="term.aliases.length > 3" class="text-muted small">
+                                  +{{ term.aliases.length - 3 }} more
+                                </span>
                               </div>
                             </div>
                           </div>
                         </div>
+
+                        <div class="col-md-8 col-lg-9">
+                          <div class="definition-preview">
+                            <div v-if="term.definitionText" class="text-secondary small lh-base">
+                              {{ truncateText(term.definitionText, 150) }}
+                            </div>
+                            <div v-else class="text-muted fst-italic small">
+                              <i class="bi bi-exclamation-circle me-1"></i>
+                              No definition available
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -601,7 +615,7 @@
                             </div>
                           </div>
                         </div>
-                        
+
                         <div class="card-body">
                           <!-- Aliases Section -->
                           <div v-if="term.aliases && term.aliases.length > 0" class="aliases-section mb-3">
@@ -623,7 +637,7 @@
                               Definition:
                             </div>
                             <div class="definition-content-detailed">
-                              <div v-if="term.definition" v-html="term.definition" 
+                              <div v-if="term.definition" v-html="term.definition"
                                 class="terms-and-definitions-list rendered-definition"></div>
                               <div v-else-if="term.definitionText" class="definition-text-plain">
                                 {{ term.definitionText }}
@@ -719,7 +733,7 @@ export default {
     const refreshSuccess = ref(false)
 
     // Use terms management composable
-    const { 
+    const {
       initializeTerms,
       terms: managedTerms,
       loadingTerms,
@@ -750,10 +764,10 @@ export default {
         const query = searchQuery.value.toLowerCase().trim()
         filtered = filtered.filter(term => {
           return term.id.toLowerCase().includes(query) ||
-                 term.aliases.some(alias => alias.toLowerCase().includes(query)) ||
-                 (term.definitionText && term.definitionText.toLowerCase().includes(query)) ||
-                 (term.external && term.externalSpec && term.externalSpec.toLowerCase().includes(query)) ||
-                 (term.source && term.source.toLowerCase().includes(query))
+            term.aliases.some(alias => alias.toLowerCase().includes(query)) ||
+            (term.definitionText && term.definitionText.toLowerCase().includes(query)) ||
+            (term.external && term.externalSpec && term.externalSpec.toLowerCase().includes(query)) ||
+            (term.source && term.source.toLowerCase().includes(query))
         })
       }
 
@@ -805,7 +819,7 @@ export default {
         allTerms.value = [...managedTerms.value]
         filterTerms()
         console.log(`✅ Refresh completed - loaded ${allTerms.value.length} terms`)
-        
+
         // Show success feedback briefly
         refreshSuccess.value = true
         setTimeout(() => {
@@ -830,7 +844,7 @@ export default {
           modalElement.addEventListener('show.bs.modal', () => {
             loadAllTerms()
           })
-          
+
           // Clean up when modal is hidden
           modalElement.addEventListener('hidden.bs.modal', () => {
             // Reset state when modal closes
@@ -875,7 +889,7 @@ export default {
       specsConfig,
       refreshSuccess,
       isStandaloneView,
-      
+
       // Methods
       filterTerms,
       getTermKey,
@@ -888,5 +902,4 @@ export default {
 }
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>
