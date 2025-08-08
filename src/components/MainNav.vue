@@ -46,6 +46,13 @@
             <span class="d-md-none">Preview</span>
             <span class="d-none d-md-inline">Preview</span>
           </button>
+          <button v-if="showRepoRelatedButtons"
+            @click="navigateAndClose(`/spec/${route.params.owner}/${route.params.repo}/${route.params.branch}`)"
+            :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/spec') }]"
+            title="View Published Specification">
+            <i class="bi bi-journal-text"></i>
+            The Spec
+          </button>
           <button v-if="showRepoRelatedButtons" @click="navigateToHealthCheckAndClose"
             :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/health-check') }]"
             title="Run Health Check">

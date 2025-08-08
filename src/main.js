@@ -36,6 +36,7 @@ const routes = [
   { path: '/external-specs/:owner/:repo/:branch', component: ExternalSpecsManager, props: true },
   { path: '/health-check/:owner/:repo/:branch', component: HealthCheck, props: true },
   { path: '/actions/:owner/:repo/:branch', component: GitHubActions, props: true },
+  { path: '/spec/:owner/:repo/:branch', component: () => import('./components/SpecViewer.vue'), props: true },
   { 
     path: '/terms-preview/:owner/:repo/:branch', 
     name: 'terms-preview',
