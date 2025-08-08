@@ -598,6 +598,151 @@ jobs:
       return await response.json()
     }
 
+    // Read specs.json from the created repository and return specs[0].output_path or a sensible default
+    const getSpecsOutputPath = async (token, username, repoName) => {
+      try {
+        const resp = await fetch(`https://api.github.com/repos/${username}/${repoName}/contents/specs.json`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        })
+
+        if (!resp.ok) {
+          // If not found or forbidden, default to 'docs'
+          return '/docs'
+        }
+
+        const data = await resp.json()
+        if (!data.content) return '/docs'
+
+        const b64 = (data.content || '').replace(/\n/g, '')
+        let jsonStr = ''
+        try {
+          jsonStr = atob(b64)
+        } catch (e) {
+          // Fallback decode for UTF-8
+          const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0))
+          jsonStr = new TextDecoder().decode(bytes)
+        }
+
+        const config = JSON.parse(jsonStr)
+        const outputPath = config?.specs?.[0]?.output_path
+        if (typeof outputPath === 'string' && outputPath.trim()) {
+          const path = outputPath.trim()
+          return path.startsWith('/') ? path : `/${path}`
+        }
+        return '/docs'
+      } catch (e) {
+        console.warn('Could not read specs.json output_path, defaulting to /docs:', e)
+        return '/docs'
+      }
+    }
+
+    // Enable or update GitHub Pages to deploy from a branch and path
+    const configureGitHubPages = async (token, username, repoName, branch, path) => {
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json'
+      }
+
+      // Normalize candidate paths. GitHub Pages branch sources only support '/' or '/docs'.
+      const norm = (p) => {
+        if (!p) return '/docs'
+        const t = p.trim()
+        const withSlash = t.startsWith('/') ? t : `/${t}`
+        return withSlash === '/' || withSlash === '/docs' ? withSlash : withSlash
+      }
+      const requestedPath = norm(path)
+      const candidates = Array.from(new Set([requestedPath, '/docs', '/']))
+
+      // Determine whether a Pages site already exists
+      const existsResp = await fetch(`https://api.github.com/repos/${username}/${repoName}/pages`, {
+        method: 'GET',
+        headers
+      })
+
+      const siteExists = existsResp.ok
+
+      const tryConfigure = async (candidatePath, method) => {
+        const body = JSON.stringify({
+          build_type: 'legacy',
+          source: { branch, path: candidatePath }
+        })
+        const resp = await fetch(`https://api.github.com/repos/${username}/${repoName}/pages`, {
+          method,
+          headers,
+          body
+        })
+        return resp
+      }
+
+      // Try to create or update using candidate paths
+      let lastErr = null
+      for (const candidate of candidates) {
+        try {
+          let resp
+          if (!siteExists) {
+            resp = await tryConfigure(candidate, 'POST')
+            if (resp.status === 422) {
+              // Possibly invalid path or conflicting mode; try next candidate
+              lastErr = await resp.text()
+              continue
+            }
+            if (!resp.ok) {
+              lastErr = await resp.text()
+              // If creation fails with conflict, attempt update path
+              if (resp.status === 409 || resp.status === 403) {
+                const upd = await tryConfigure(candidate, 'PUT')
+                if (upd.ok) return true
+                lastErr = await upd.text()
+                continue
+              }
+              continue
+            }
+            return true
+          } else {
+            resp = await tryConfigure(candidate, 'PUT')
+            if (resp.status === 422) {
+              lastErr = await resp.text()
+              continue
+            }
+            if (!resp.ok) {
+              lastErr = await resp.text()
+              continue
+            }
+            return true
+          }
+        } catch (e) {
+          lastErr = e?.message || String(e)
+          continue
+        }
+      }
+
+      throw new Error(`Failed to configure GitHub Pages: ${lastErr || 'unknown error'}`)
+    }
+
+    // Set the repository homepage to the GitHub Pages URL (Website field)
+    const setRepositoryHomepage = async (token, username, repoName) => {
+      const pagesUrl = `https://${username}.github.io/${repoName}/`
+      const resp = await fetch(`https://api.github.com/repos/${username}/${repoName}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ homepage: pagesUrl })
+      })
+
+      if (!resp.ok) {
+        const err = await resp.text()
+        throw new Error(`Failed to set repository Website: ${err}`)
+      }
+      return pagesUrl
+    }
+
     const fetchMenuYmlFromBoilerplate = async () => {
       const boilerplateUrl = 'https://raw.githubusercontent.com/blockchainbird/spec-up-t/master/src/install-from-boilerplate/boilerplate/.github/workflows/menu.yml'
       
@@ -684,6 +829,31 @@ jobs:
         */
 
         await addWorkflowFilesFromTemplate(token, user.login, projectForm.value.name)
+
+        updateProgress(85, 'Configuring GitHub Pages (Deploy from a branch)...')
+
+        // Determine branch and output path
+        const branch = repo?.default_branch || 'main'
+        const outputPath = await getSpecsOutputPath(token, user.login, projectForm.value.name)
+
+        // Try using PAT if available and token fails
+        const effectiveToken = import.meta.env.VITE_GITHUB_PAT || token
+
+        try {
+          await configureGitHubPages(effectiveToken, user.login, projectForm.value.name, branch, outputPath)
+        } catch (pagesErr) {
+          console.warn('Could not auto-configure GitHub Pages. You may set it manually in Settings > Pages.', pagesErr)
+          // Non-fatal: continue setup; user can configure Pages manually
+        }
+
+        updateProgress(90, 'Linking repository Website to GitHub Pages URL...')
+
+        try {
+          await setRepositoryHomepage(effectiveToken, user.login, projectForm.value.name)
+        } catch (homeErr) {
+          console.warn('Could not set repository Website field:', homeErr)
+          // Non-fatal; continue
+        }
 
         updateProgress(95, 'Finalizing project setup...')
 
