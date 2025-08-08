@@ -50,9 +50,15 @@
               </template>
               <template #body>
                 <div style="max-height: 60vh; overflow-y: auto; min-width: 300px;">
-                  <div class="mb-3">
-                    <input type="text" v-model="repoFilter" class="form-control" placeholder="Filter repositories..."
-                      @input="filterRepos">
+                  <div class="mb-3 d-flex align-items-center justify-content-between">
+                    <input type="text" v-model="repoFilter" class="form-control me-2" placeholder="Filter repositories..."
+                      @input="filterRepos" style="flex:1;">
+                    <div class="form-check form-switch ms-2">
+                      <input class="form-check-input" type="checkbox" id="showAllReposSwitch" v-model="showAllRepos" @change="fetchRepos">
+                      <label class="form-check-label small" for="showAllReposSwitch">
+                        Show all repos
+                      </label>
+                    </div>
                   </div>
                   <div v-if="repoLoading" class="text-center my-3">
                     <span class="spinner-border spinner-border-sm me-2"></span> Loading repositories...
@@ -205,12 +211,13 @@ export default {
     const branch = ref('main')
     const loading = ref(false)
     const error = ref('')
-    // Modal and repo/branch list state
-    const showRepoModal = ref(false)
-    const repoList = ref([])
-    const repoLoading = ref(false)
-    const repoFilter = ref('')
-    const filteredRepoList = ref([])
+  // Modal and repo/branch list state
+  const showRepoModal = ref(false)
+  const repoList = ref([])
+  const repoLoading = ref(false)
+  const repoFilter = ref('')
+  const filteredRepoList = ref([])
+  const showAllRepos = ref(false) // Toggle for showing all repos
     const showBranchModal = ref(false)
     const branchList = ref([])
     const branchLoading = ref(false)
@@ -311,7 +318,7 @@ export default {
       branchFilter.value = ''
     }
 
-    // Fetch repos for the given owner that have spec-up-t dependency
+    // Fetch repos for the given owner
     const fetchRepos = async () => {
       if (!owner.value.trim()) return
       repoLoading.value = true
@@ -324,26 +331,40 @@ export default {
             'Accept': 'application/vnd.github.v3+json'
           }
         } : { headers: { 'Accept': 'application/vnd.github.v3+json' } }
-        
-        // Use GitHub search API to find repos with spec-up-t dependency
-        // Search for package.json files containing "spec-up-t" in the owner's repositories
-        const searchQuery = `"spec-up-t" in:file filename:package.json user:${owner.value.trim()}`
-        const searchRes = await axios.get(`https://api.github.com/search/code?q=${encodeURIComponent(searchQuery)}&per_page=100`, config)
-        
-        // Extract unique repositories from search results
-        const uniqueRepos = new Map()
-        if (searchRes.data && searchRes.data.items) {
-          for (const item of searchRes.data.items) {
-            const repo = item.repository
-            if (!uniqueRepos.has(repo.id)) {
-              uniqueRepos.set(repo.id, repo)
+
+        if (!showAllRepos.value) {
+          // Only spec-up-t repos
+          const searchQuery = `"spec-up-t" in:file filename:package.json user:${owner.value.trim()}`
+          const searchRes = await axios.get(`https://api.github.com/search/code?q=${encodeURIComponent(searchQuery)}&per_page=100`, config)
+          const uniqueRepos = new Map()
+          if (searchRes.data && searchRes.data.items) {
+            for (const item of searchRes.data.items) {
+              const repo = item.repository
+              if (!uniqueRepos.has(repo.id)) {
+                uniqueRepos.set(repo.id, repo)
+              }
             }
           }
+          const specUpRepos = Array.from(uniqueRepos.values())
+          repoList.value = specUpRepos
+          filteredRepoList.value = [...specUpRepos]
+        } else {
+          // All repos for the owner
+          let allRepos = []
+          let page = 1
+          let hasMore = true
+          while (hasMore && page <= 5) { // Limit to 500 repos for performance
+            const res = await axios.get(`https://api.github.com/users/${owner.value.trim()}/repos?per_page=100&page=${page}`, config)
+            if (res.data && res.data.length > 0) {
+              allRepos = allRepos.concat(res.data)
+              page++
+            } else {
+              hasMore = false
+            }
+          }
+          repoList.value = allRepos
+          filteredRepoList.value = [...allRepos]
         }
-        
-        const specUpRepos = Array.from(uniqueRepos.values())
-        repoList.value = specUpRepos
-        filteredRepoList.value = [...specUpRepos]
       } catch (e) {
         repoList.value = []
         filteredRepoList.value = []
@@ -359,6 +380,11 @@ export default {
       showRepoModal.value = true
       await fetchRepos()
     }
+
+    // Make filter reactive to showAllRepos toggle
+    watch(showAllRepos, () => {
+      filterRepos()
+    })
 
     // Select repo from modal
     const selectRepo = (repoName) => {
@@ -463,7 +489,9 @@ export default {
       removeRepo,
       clearAllRepos,
       navigateToRepo,
-      formatDate
+      formatDate,
+      showAllRepos,
+      fetchRepos
     }
   },
   components: {
