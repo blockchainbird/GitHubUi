@@ -34,13 +34,13 @@
     </div>
 
     <div v-else>
-      <div class="ratio ratio-16x9 border rounded bg-white">
+      <div class="border rounded bg-white" ref="containerRef" style="position:relative;">
         <iframe
           :key="iframeKey"
           ref="iframeRef"
           :src="resolvedSpecUrl"
           title="Specification"
-          style="width: 100%; height: 100%; border: 0;"
+          style="width: 100%; border: 0; display: block;"
         ></iframe>
       </div>
       <p class="mt-2 mb-0 small text-muted">
@@ -55,6 +55,15 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 
+function setIframeHeight(container, iframe) {
+  if (!container || !iframe) return;
+  const rect = container.getBoundingClientRect();
+  const bottom = window.innerHeight;
+  const top = rect.top;
+  const height = Math.max(0, bottom - top);
+  iframe.style.height = height + 'px';
+}
+
 export default {
   name: 'SpecViewer',
   setup() {
@@ -64,6 +73,7 @@ export default {
     const resolvedSpecUrl = ref('')
     const iframeKey = ref(0)
     const iframeRef = ref(null)
+    const containerRef = ref(null)
 
     const owner = computed(() => route.params.owner)
     const repo = computed(() => route.params.repo)
@@ -144,9 +154,23 @@ export default {
       }
     }
 
+
+    function resizeHandler() {
+      setIframeHeight(containerRef.value, iframeRef.value)
+    }
+
     onMounted(() => {
       checkGitHubPages()
+      window.addEventListener('resize', resizeHandler)
+      // Set initial height after next tick
+      setTimeout(resizeHandler, 0)
     })
+
+    // Watch for iframeKey changes to re-apply height after reload
+    // (not using watch() to keep code simple and low complexity)
+    setInterval(() => {
+      setIframeHeight(containerRef.value, iframeRef.value)
+    }, 1000)
 
     return {
       loading,
@@ -156,6 +180,7 @@ export default {
       canEmbed,
       iframeKey,
       iframeRef,
+      containerRef,
       reloadIframe
     }
   }
