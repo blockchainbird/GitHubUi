@@ -34,7 +34,7 @@
     </div>
 
     <div v-else>
-      <div class="border rounded bg-white" ref="containerRef" style="position:relative;">
+      <div class="border rounded bg-white border-dance" ref="containerRef" style="position:relative;">
         <iframe
           :key="iframeKey"
           ref="iframeRef"
@@ -190,5 +190,56 @@ export default {
 <style scoped>
 .ratio {
   background-color: #fff;
+}
+
+.border-dance {
+  position: relative;
+  padding: 10px;
+}
+
+.border-dance::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 1;
+  padding: 0;
+  background:
+    linear-gradient(90deg, rgb(189, 189, 249) 50%, transparent 50%) repeat-x,
+    linear-gradient(90deg, rgb(189, 189, 249) 50%, transparent 50%) repeat-x,
+    linear-gradient(0deg, rgb(189, 189, 249) 50%, transparent 50%) repeat-y,
+    linear-gradient(0deg, rgb(189, 189, 249) 50%, transparent 50%) repeat-y;
+  background-size:
+    15px 4px,
+    15px 4px,
+    4px 15px,
+    4px 15px;
+  background-position:
+    0 0,
+    100% 100%,
+    0 100%,
+    100% 0;
+  animation: border-dance 80s linear infinite;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+@keyframes border-dance {
+  0% {
+    background-position:
+      0 0,
+      100% 100%,
+      0 100%,
+      100% 0;
+  }
+  100% {
+    background-position:
+      100% 0,
+      0 100%,
+      0 0,
+      100% 100%;
+  }
 }
 </style>
