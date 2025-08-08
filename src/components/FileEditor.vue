@@ -268,7 +268,7 @@ import { useSimpleEditor } from '../composables/useSimpleEditor.js'
 import { useContentValidation } from '../composables/useContentValidation.js'
 import { usePublishToggle } from '../composables/usePublishToggle.js'
 import { useRemoteFileMonitor } from '../composables/useRemoteFileMonitor.js'
-import { useNotepad } from '../composables/useNotepad.js'
+import { getNotepadInstance } from '../composables/useNotepad.js'
 import {
   insertText,
   insertHeading,
@@ -383,7 +383,7 @@ export default {
     } = remoteMonitor
 
     // Notepad integration
-    const { addContent: addToNotepad } = useNotepad()
+  const { addContent: addToNotepad } = getNotepadInstance()
 
     // Editor state
     const editMode = ref('edit')
@@ -783,28 +783,23 @@ export default {
     }
 
     const goBack = () => {
-      // Save unsaved changes to notepad before leaving
-      if (hasChanges.value && content.value.trim()) {
-        const fileName = filename.value || 'Unnamed file'
-        const source = `File Editor (${fileName}) - Unsaved Changes`
-        addToNotepad(content.value, source, true)
-      }
-
       if (isNewFile.value && hasChanges.value) {
-        const confirmLeave = confirm('You have unsaved changes in this new file. Your content has been saved to the notepad. Are you sure you want to leave without creating it?')
+        const confirmLeave = confirm(
+          'You have unsaved changes in this new file. If you leave, your changes will be saved to the notepad. Are you sure you want to leave without creating it?'
+        );
         if (!confirmLeave) {
-          return
+          return;
         }
       }
-
-      const sourceDir = route.query.dir
+      // Navigate away
+      const sourceDir = route.query.dir;
       if (sourceDir) {
-        const encodedDir = encodeURIComponent(sourceDir)
-        router.push(`/files/${props.owner}/${props.repo}/${props.branch}?dir=${encodedDir}`)
+        const encodedDir = encodeURIComponent(sourceDir);
+        router.push(`/files/${props.owner}/${props.repo}/${props.branch}?dir=${encodedDir}`);
       } else {
-        router.push(`/files/${props.owner}/${props.repo}/${props.branch}`)
+        router.push(`/files/${props.owner}/${props.repo}/${props.branch}`);
       }
-    }
+    };
 
     // Lifecycle
     onMounted(async () => {

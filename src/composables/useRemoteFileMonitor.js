@@ -6,7 +6,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 import { getGitHubHeaders, addCacheBusting } from '../utils/apiUtils.js'
-import { useNotepad } from './useNotepad.js'
+import { getNotepadInstance } from './useNotepad.js'
 
 export function useRemoteFileMonitor(props) {
     // State
@@ -25,7 +25,7 @@ export function useRemoteFileMonitor(props) {
         return props.path ? decodeURIComponent(props.path) : ''
     })
 
-    const { addContent: addToNotepad } = useNotepad()
+    const { addContent: addToNotepad } = getNotepadInstance()
 
     // Check for authentication and redirect if needed
     const checkAuthAndRedirect = (error, router) => {

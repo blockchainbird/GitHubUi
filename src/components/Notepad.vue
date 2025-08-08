@@ -52,7 +52,7 @@
 
 <script>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
-import { useNotepad } from '../composables/useNotepad.js'
+import { getNotepadInstance } from '../composables/useNotepad.js'
 
 export default {
     name: 'Notepad',
@@ -74,7 +74,7 @@ export default {
             formatSize,
             notepadMessage,
             setNotepadMessage
-        } = useNotepad()
+    } = getNotepadInstance()
 
         // Position and size state
         const position = ref({ x: 100, y: 100 })
@@ -99,8 +99,8 @@ export default {
                     // Validate that the saved position is within current viewport
                     const viewportWidth = document.documentElement.clientWidth
                     const viewportHeight = document.documentElement.clientHeight
-                    
-                    if (parsedPosition.x >= 0 && parsedPosition.y >= 0 && 
+
+                    if (parsedPosition.x >= 0 && parsedPosition.y >= 0 &&
                         parsedPosition.x + size.value.width <= viewportWidth &&
                         parsedPosition.y + size.value.height <= viewportHeight) {
                         position.value = parsedPosition
@@ -285,9 +285,6 @@ export default {
             document.removeEventListener('mouseup', stopResize)
         })
 
-        // Expose addContent method for external use
-        const { addContent: addContentInternal } = useNotepad()
-
         return {
             // Refs
             notepadContainer,
@@ -306,7 +303,7 @@ export default {
             // Methods
             openNotepad,
             closeNotepad,
-            addContent: addContentInternal,
+            addContent,
             copyContent,
             clearContent,
             formatSize,

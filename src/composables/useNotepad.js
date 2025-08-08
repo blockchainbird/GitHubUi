@@ -4,6 +4,7 @@
  */
 
 import { ref, computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
 
 const STORAGE_KEY = 'notepad_content'
 const MAX_SIZE_KB = 500 // 500KB maximum size
@@ -14,7 +15,55 @@ const isOpen = ref(false)
 const content = ref('')
 const notepadMessage = ref('')
 
-export function useNotepad() {
+// Global watcher - only set up once at module level
+let watcherInitialized = false
+const initializeWatcher = () => {
+  if (watcherInitialized) return
+  watcherInitialized = true
+  
+  watch(content, () => {
+    try {
+      localStorage.setItem(STORAGE_KEY, content.value)
+      console.log('🚀 saveContent (single watcher)')
+    } catch (error) {
+      console.warn('Failed to save notepad content:', error)
+    }
+  })
+}
+
+function useNotepad() {
+  // Initialize the global watcher on first use
+  initializeWatcher()
+  
+  // Trims content if it exceeds the max size, returns true if trimmed
+  const trimContentIfNeeded = () => {
+    let contentToSave = content.value
+    const currentSizeKB = new Blob([contentToSave]).size / 1024
+    if (currentSizeKB > MAX_SIZE_KB) {
+      const lines = contentToSave.split('\n')
+      const targetSizeBytes = (MAX_SIZE_KB - CHUNK_SIZE_KB) * 1024
+      let currentSize = 0
+      let cutIndex = lines.length
+      for (let i = lines.length - 1; i >= 0; i--) {
+        const lineSize = new Blob([lines[i] + '\n']).size
+        if (currentSize + lineSize > targetSizeBytes) {
+          cutIndex = i + 1
+          break
+        }
+        currentSize += lineSize
+      }
+      if (cutIndex < lines.length) {
+        const trimmedLines = lines.slice(cutIndex)
+        content.value = `[... earlier content trimmed ...]\n\n${trimmedLines.join('\n')}`
+        return true
+      }
+    }
+    return false
+  }
+  // Unique watcher id for debugging
+  const watcherId = Math.random().toString(36).slice(2, 10)
+  const route = useRoute()
+
   // Load content from localStorage
   const loadContent = () => {
     try {
@@ -30,39 +79,7 @@ export function useNotepad() {
   // Save content to localStorage
   const saveContent = () => {
     try {
-      let contentToSave = content.value
-      
-      // Check size and trim if necessary
-      const currentSizeKB = new Blob([contentToSave]).size / 1024
-      
-      if (currentSizeKB > MAX_SIZE_KB) {
-        // Remove oldest content in chunks
-        const lines = contentToSave.split('\n')
-        const targetSizeBytes = (MAX_SIZE_KB - CHUNK_SIZE_KB) * 1024
-        
-        // Find the cut point by working backwards from the end
-        let currentSize = 0
-        let cutIndex = lines.length
-        
-        for (let i = lines.length - 1; i >= 0; i--) {
-          const lineSize = new Blob([lines[i] + '\n']).size
-          if (currentSize + lineSize > targetSizeBytes) {
-            cutIndex = i + 1
-            break
-          }
-          currentSize += lineSize
-        }
-        
-        // Keep only the most recent content
-        if (cutIndex < lines.length) {
-          const trimmedLines = lines.slice(cutIndex)
-          contentToSave = `[... earlier content trimmed ...]\n\n${trimmedLines.join('\n')}`
-        }
-      }
-      
-      localStorage.setItem(STORAGE_KEY, contentToSave)
-      content.value = contentToSave
-      
+      localStorage.setItem(STORAGE_KEY, content.value)
     } catch (error) {
       console.warn('Failed to save notepad content:', error)
     }
@@ -106,37 +123,45 @@ export function useNotepad() {
   // Close notepad
   const closeNotepad = () => {
     isOpen.value = false
-    saveContent()
   }
 
   // Add new content with timestamp and separator
   const addContent = (newContent, source = 'Manual', showMessage = false) => {
     if (!newContent || !newContent.trim()) return
-    
+
     const timestamp = getCurrentTimestamp()
     const dateObj = new Date(timestamp)
     const humanReadable = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) +
       ', ' + dateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
     const separatorStart = '–––––––––––––––––––––––––––––– 👇\n'
     const separatorEnd = '\n\n============================ 👆\n\n'
-    const header = `${humanReadable}\nFrom ${source}\n`
+
+    // Add repo context to source if it contains a filename
+    let enhancedSource = source
+    if (source.includes('.') || source.includes('/')) {
+      // If source appears to contain a filename, add repo context
+      const owner = route.params?.owner || 'unknown'
+      const repo = route.params?.repo || 'unknown'
+      const branch = route.params?.branch || 'unknown'
+      enhancedSource = `${owner}/${repo} ${branch} - ${source}`
+    }
+
+    const header = `${humanReadable}\nFrom ${enhancedSource}\n`
 
     content.value = separatorStart + header + separatorStart + '\n\n' + newContent.trim() + separatorEnd + '\n\n\n' + content.value
-    // Auto-save
-    saveContent()
-    
+
     // Auto-open notepad when content is added
     if (!isOpen.value) {
       openNotepad()
     }
-    
+
     // Always show message when content is added via script (non-manual sources)
     // or when explicitly requested via showMessage parameter
     const isScriptAdded = source !== 'Manual'
     if (showMessage || isScriptAdded) {
       notepadMessage.value = isScriptAdded ? 'Content auto-saved to notepad!' : 'Content copied to notepad!'
     }
-    
+
     // Scroll to top when content is added automatically
     if (source !== 'Manual') {
       setTimeout(() => {
@@ -153,7 +178,7 @@ export function useNotepad() {
     if (!content.value.trim()) {
       return
     }
-    
+
     try {
       await navigator.clipboard.writeText(content.value)
       // Could add a toast notification here
@@ -178,7 +203,7 @@ export function useNotepad() {
     if (content.value.trim() && !confirm('Are you sure you want to clear all notepad content? This cannot be undone.')) {
       return
     }
-    
+
     content.value = ''
     saveContent()
   }
@@ -187,11 +212,6 @@ export function useNotepad() {
   const setNotepadMessage = (msg) => {
     notepadMessage.value = msg
   }
-
-  // Watch for content changes and auto-save
-  watch(content, () => {
-    saveContent()
-  })
 
   // Initialize content on first use
   if (!content.value) {
@@ -204,7 +224,7 @@ export function useNotepad() {
     content,
     currentSize,
     notepadMessage,
-    
+
     // Methods
     openNotepad,
     closeNotepad,
