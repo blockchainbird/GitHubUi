@@ -556,6 +556,23 @@ jobs:
       throw new Error('Workflow did not complete within the expected time')
     }
 
+    // Helper function to safely encode UTF-8 strings to Base64
+    const encodeToBase64 = (str) => {
+      try {
+        // First try btoa for simple ASCII content
+        return btoa(str)
+      } catch (e) {
+        // If btoa fails, use TextEncoder to handle UTF-8
+        const encoder = new TextEncoder()
+        const bytes = encoder.encode(str)
+        let binary = ''
+        bytes.forEach(byte => {
+          binary += String.fromCharCode(byte)
+        })
+        return btoa(binary)
+      }
+    }
+
     const uploadFile = async (token, username, repoName, filePath, content, message) => {
       const response = await fetch(
         `https://api.github.com/repos/${username}/${repoName}/contents/${filePath}`,
@@ -568,7 +585,7 @@ jobs:
           },
           body: JSON.stringify({
             message: message,
-            content: btoa(typeof content === 'string' ? content : JSON.stringify(content, null, 2))
+            content: encodeToBase64(typeof content === 'string' ? content : JSON.stringify(content, null, 2))
           })
         }
       )
@@ -581,97 +598,45 @@ jobs:
       return await response.json()
     }
 
-    const addWorkflowFilesFromTemplate = async (token, username, repoName) => {
-      // Define the standard Spec-Up-T workflow files that should be added
-      const workflowFiles = {
-        'menu.yml': `name: Menu
-
-on:
-  workflow_call:
-
-jobs:
-  menu:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    const fetchMenuYmlFromBoilerplate = async () => {
+      const boilerplateUrl = 'https://raw.githubusercontent.com/blockchainbird/spec-up-t/master/src/install-from-boilerplate/boilerplate/.github/workflows/menu.yml'
       
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          
-      - name: Install dependencies
-        run: npm install
-        
-      - name: Generate menu
-        run: npm run menu`,
-
-        'render-specs.yml': `name: Render Specs
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        
-    - name: Install dependencies
-      run: npm install
-      
-    - name: Build specs
-      run: npm run render
-      
-    - name: Deploy to GitHub Pages
-      if: github.ref == 'refs/heads/main'
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: \${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./docs`,
-
-        'set-gh-pages.yml': `name: Setup GitHub Pages
-
-on:
-  workflow_dispatch:
-
-jobs:
-  setup-pages:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Setup Pages
-        uses: actions/configure-pages@v3
-        with:
-          token: \${{ secrets.GITHUB_TOKEN }}`
-      }
-
-      // Upload each workflow file
-      for (const [filename, content] of Object.entries(workflowFiles)) {
-        try {
-          await uploadFile(
-            token,
-            username,
-            repoName,
-            `.github/workflows/${filename}`,
-            content,
-            `Add ${filename} workflow`
-          )
-        } catch (error) {
-          console.warn(`Failed to add workflow ${filename}:`, error.message)
-          // Continue with other files even if one fails
+      try {
+        const response = await fetch(boilerplateUrl)
+        if (!response.ok) {
+          throw new Error(`Failed to fetch menu.yml: ${response.statusText}`)
         }
+        
+        return await response.text()
+      } catch (error) {
+        console.error('Error fetching menu.yml from boilerplate:', error)
+        throw new Error(`Could not retrieve menu.yml from boilerplate: ${error.message}`)
+      }
+    }
+
+    const addWorkflowFilesFromTemplate = async (token, username, repoName) => {
+      try {
+        // Fetch menu.yml content from the boilerplate repository
+        const menuYmlContent = await fetchMenuYmlFromBoilerplate()
+        
+        // Use PAT token for uploading workflow file
+        const patToken = import.meta.env.VITE_GITHUB_PAT || token
+        
+        // Upload the menu.yml workflow file
+        await uploadFile(
+          patToken,
+          username,
+          repoName,
+          '.github/workflows/menu.yml',
+          menuYmlContent,
+          'Add menu.yml workflow from boilerplate'
+        )
+        
+        console.log('Successfully uploaded menu.yml workflow file')
+        
+      } catch (error) {
+        console.error('Failed to add workflow files:', error.message)
+        throw new Error(`Failed to add workflow files: ${error.message}`)
       }
     }
 
@@ -704,18 +669,18 @@ jobs:
         // Wait for the workflow to complete
         await waitForWorkflowCompletion(token, user.login, projectForm.value.name)
 
-        updateProgress(80, 'Adding workflow files from template...')
+        updateProgress(80, 'Fetching and adding menu.yml workflow from template...')
         /*
-          Add the workflow files from the template via API after the main commit
-          Note: We cannot commit workflow files from within a workflow, which GitHub prevents for security reasons(workflows cannot modify other workflows using the default GITHUB_TOKEN).
+          Fetch and add the menu.yml workflow file from the boilerplate repository.
+          The web app uses a PAT to fetch the file content directly and upload it to the repository.
 
           How it now works:
-          Repository Creation: Creates empty GitHub repository with proper permissions
-          Project Initialization: Runs npx create-spec-up-t but excludes workflow files
-          Content Customization: Updates specs.json, package.json, README.md with user details
-          Main Content Commit: Commits all project files except workflows
-            Workflow Files Addition: Separately adds workflow files via GitHub API
-          Cleanup: Removes the initialization workflow
+          1. Repository Creation: Creates empty GitHub repository with proper permissions
+          2. Project Initialization: Runs npx create-spec-up-t but excludes workflow files
+          3. Content Customization: Updates specs.json, package.json, README.md with user details
+          4. Main Content Commit: Commits all project files except workflows
+          5. Workflow File Addition: Fetches menu.yml from boilerplate and uploads via GitHub API using PAT
+          6. Cleanup: Removes the initialization workflow
         */
 
         await addWorkflowFilesFromTemplate(token, user.login, projectForm.value.name)
