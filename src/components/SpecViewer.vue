@@ -57,7 +57,7 @@ function setIframeHeight(container, iframe) {
   const rect = container.getBoundingClientRect();
   const bottom = window.innerHeight;
   const top = rect.top;
-  const height = Math.max(0, bottom - top);
+  const height = Math.max(0, bottom - top) - 25;
   iframe.style.height = height + 'px';
 }
 
