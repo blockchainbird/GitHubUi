@@ -6,7 +6,8 @@
         The Spec
       </h2>
       <div class="d-flex gap-2">
-        <a :href="resolvedSpecUrl" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm" :disabled="!resolvedSpecUrl">
+        <a :href="resolvedSpecUrl" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm"
+          :disabled="!resolvedSpecUrl">
           <i class="bi bi-box-arrow-up-right"></i>
           Open in new tab
         </a>
@@ -34,18 +35,14 @@
     </div>
 
     <div v-else>
-      <div class="border rounded bg-white border-dance" ref="containerRef" style="position:relative;">
-        <iframe
-          :key="iframeKey"
-          ref="iframeRef"
-          :src="resolvedSpecUrl"
-          title="Specification"
-          style="width: 100%; border: 0; display: block;"
-        ></iframe>
-      </div>
       <p class="mt-2 mb-0 small text-muted">
         If the page fails to display due to browser restrictions, use “Open in new tab”.
       </p>
+
+      <div class="border rounded bg-white border-dance" ref="containerRef" style="position:relative;">
+        <iframe :key="iframeKey" ref="iframeRef" :src="resolvedSpecUrl" title="Specification"
+          style="width: 100%; border: 0; display: block;"></iframe>
+      </div>
     </div>
   </div>
 </template>
