@@ -116,7 +116,7 @@
                 </span>
                 <span v-else>
                   <i class="bi bi-folder2-open"></i>
-                  Access Existing Repository
+                  Access Repository
                 </span>
               </button>
             </div>
