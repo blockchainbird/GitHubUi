@@ -728,7 +728,7 @@ export default {
       }
 
       const fileName = filename.value || 'Unnamed file'
-      addToNotepad(content.value, `File Editor (${fileName})`, true)
+      addToNotepad(content.value, ` (${fileName}) File Editor`, true)
     }
 
     // Remote change handling
@@ -840,7 +840,7 @@ export default {
       // Save unsaved changes to notepad before component unmounts
       if (hasChanges.value && content.value.trim()) {
         const fileName = filename.value || 'Unnamed file'
-        const source = `File Editor (${fileName}) - Unsaved Changes`
+        const source = ` (${fileName}) - Unsaved Changes from File Editor`
         addToNotepad(content.value, source) // Message will be shown automatically for script-added content
       }
 
@@ -856,7 +856,7 @@ export default {
         // Save unsaved changes to notepad before switching files
         if (hasChanges.value && content.value.trim()) {
           const fileName = filename.value || 'Unnamed file'
-          const source = `File Editor (${fileName}) - Unsaved Changes`
+          const source = ` (${fileName}) - Unsaved Changes from File Editor`
           addToNotepad(content.value, source) // Message will be shown automatically for script-added content
         }
 
