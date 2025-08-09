@@ -35,6 +35,12 @@
     </div>
 
     <div v-else>
+      <div class="alert alert-secondary py-1 mb-2 small" style="max-width: 420px;">
+        <i class="bi bi-clock-history me-1"></i>
+        <strong>Page modified:</strong>
+        <span v-if="indexHtmlCreated">{{ indexHtmlCreated }}</span>
+        <span v-else class="text-muted">Loading...</span>
+      </div>
       <p class="mt-2 mb-0 small text-muted">
         If the page fails to display due to browser restrictions, use “Open in new tab”.
       </p>
@@ -71,6 +77,69 @@ export default {
     const iframeKey = ref(0)
     const iframeRef = ref(null)
     const containerRef = ref(null)
+    const indexHtmlCreated = ref("")
+    // Fetch timestamp of the index.html file being served at resolvedSpecUrl
+    const fetchIndexHtmlCreated = async () => {
+      if (!resolvedSpecUrl.value) return;
+      console.log('Fetching timestamp for URL:', resolvedSpecUrl.value)
+      try {
+        const proxy = getProxyBase()
+        const target = encodeURIComponent(resolvedSpecUrl.value)
+        console.log('Using proxy URL:', `${proxy}${target}`)
+
+        // Try GET request first to get headers including Last-Modified
+        const resp = await axios.get(`${proxy}${target}`, {
+          validateStatus: () => true,
+          timeout: 8000
+        })
+        console.log('Response status:', resp.status)
+        console.log('Response headers:', resp.headers)
+
+        // Check multiple possible header names
+        const lastModified = resp.headers['last-modified'] ||
+          resp.headers['Last-Modified'] ||
+          resp.headers['lastmodified']
+        console.log('Last-Modified header:', lastModified)
+
+        if (lastModified) {
+          const d = new Date(lastModified)
+          if (!isNaN(d.getTime())) {
+            const pad = n => n.toString().padStart(2, '0')
+            indexHtmlCreated.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+            console.log('Set indexHtmlCreated to:', indexHtmlCreated.value)
+          } else {
+            console.log('Invalid date format:', lastModified)
+            indexHtmlCreated.value = `Raw: ${lastModified}`
+          }
+        } else {
+          console.log('No Last-Modified header found, trying direct request')
+          // Try direct request without proxy
+          try {
+            const directResp = await axios.head(resolvedSpecUrl.value, {
+              validateStatus: () => true,
+              timeout: 8000
+            })
+            console.log('Direct response headers:', directResp.headers)
+            const directLastModified = directResp.headers['last-modified']
+            if (directLastModified) {
+              const d = new Date(directLastModified)
+              const pad = n => n.toString().padStart(2, '0')
+              indexHtmlCreated.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+              console.log('Set indexHtmlCreated from direct request to:', indexHtmlCreated.value)
+            } else {
+              indexHtmlCreated.value = 'No timestamp in headers'
+            }
+          } catch (directError) {
+            console.log('Direct request failed:', directError)
+            indexHtmlCreated.value = 'No timestamp available'
+          }
+        }
+
+      } catch (e) {
+        console.error('Failed to fetch index.html timestamp:', e)
+        indexHtmlCreated.value = 'Error loading timestamp'
+      }
+    }
 
     const owner = computed(() => route.params.owner)
     const repo = computed(() => route.params.repo)
@@ -157,7 +226,12 @@ export default {
     }
 
     onMounted(() => {
-      checkGitHubPages()
+      checkGitHubPages().then(() => {
+        // Fetch timestamp after we have the resolvedSpecUrl
+        if (resolvedSpecUrl.value) {
+          fetchIndexHtmlCreated()
+        }
+      })
       window.addEventListener('resize', resizeHandler)
       // Set initial height after next tick
       setTimeout(resizeHandler, 0)
@@ -178,7 +252,8 @@ export default {
       iframeKey,
       iframeRef,
       containerRef,
-      reloadIframe
+      reloadIframe,
+      indexHtmlCreated
     }
   }
 }
@@ -231,6 +306,7 @@ export default {
       0 100%,
       100% 0;
   }
+
   100% {
     background-position:
       100% 0,
