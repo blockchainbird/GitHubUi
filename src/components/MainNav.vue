@@ -51,7 +51,7 @@
             :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/spec') }]"
             title="View Published Specification">
             <i class="bi bi-journal-text"></i>
-            The Spec
+            Spec
           </button>
           <button v-if="showRepoRelatedButtons" @click="navigateToHealthCheckAndClose"
             :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/health-check') }]"
