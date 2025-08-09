@@ -36,7 +36,7 @@
                 <input type="password" id="token" v-model="token" class="form-control"
                   placeholder="Enter your GitHub token" required autocomplete="new-password">
                 <div class="form-text">
-                  <small>F
+                  <small>
                     <a href="https://github.com/settings/tokens" target="_blank" class="text-decoration-none">
                       <i class="bi bi-box-arrow-up-right"></i>
                       Generate a new token
