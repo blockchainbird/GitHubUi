@@ -66,7 +66,7 @@
           </button>
           <a v-if="showRepoRelatedButtons" :href="githubRepoUrl" target="_blank" rel="noopener" class="nav-link"
             title="View Repository on GitHub" @click="closeNavbar">
-            <i class="bi bi-github"></i>
+            <i class="bi bi-box-arrow-up-right"></i>
             Repo
           </a>
           <button v-if="showRepoRelatedButtons" @click="navigateToAdminAndClose"
