@@ -105,7 +105,7 @@ export default {
           const d = new Date(lastModified)
           if (!isNaN(d.getTime())) {
             const pad = n => n.toString().padStart(2, '0')
-            indexHtmlCreated.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+            indexHtmlCreated.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}, ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
             console.log('Set indexHtmlCreated to:', indexHtmlCreated.value)
           } else {
             console.log('Invalid date format:', lastModified)
@@ -124,7 +124,7 @@ export default {
             if (directLastModified) {
               const d = new Date(directLastModified)
               const pad = n => n.toString().padStart(2, '0')
-              indexHtmlCreated.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+              indexHtmlCreated.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}, ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
               console.log('Set indexHtmlCreated from direct request to:', indexHtmlCreated.value)
             } else {
               indexHtmlCreated.value = 'No timestamp in headers'
