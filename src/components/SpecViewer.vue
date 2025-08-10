@@ -35,7 +35,7 @@
     </div>
 
     <div v-else>
-      <div class="alert alert-secondary py-1 mb-2 small" style="max-width: 420px;">
+      <div class="alert alert-secondary py-1 mb-2 small">
         <i class="bi bi-clock-history me-1"></i>
         <strong>Page modified:</strong>
         <span v-if="indexHtmlCreated">{{ indexHtmlCreated }}</span>
