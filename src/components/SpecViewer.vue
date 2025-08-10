@@ -5,6 +5,14 @@
         <i class="bi bi-file-earmark-text me-2"></i>
         The Spec
       </h2>
+      <!-- Repository Info -->
+      <div
+        class="repository-info d-flex flex-column flex-md-row align-items-start align-items-md-center gap-1 text-muted mb-0">
+        <i class="bi bi-github me-2"></i>
+        <code class="bg-light px-2 py-1 rounded border">{{ owner }}/{{ repo }}</code>
+        <span class="mx-2">•</span>
+        <span class="badge bg-secondary">{{ branch }}</span>
+      </div>
       <div class="d-flex gap-2">
         <a :href="resolvedSpecUrl" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm"
           :disabled="!resolvedSpecUrl">
@@ -69,6 +77,20 @@ function setIframeHeight(container, iframe) {
 
 export default {
   name: 'SpecViewer',
+  props: {
+    owner: {
+      type: String,
+      required: true
+    },
+    repo: {
+      type: String,
+      required: true
+    },
+    branch: {
+      type: String,
+      default: 'main'
+    }
+  },
   setup() {
     const route = useRoute()
     const loading = ref(true)
