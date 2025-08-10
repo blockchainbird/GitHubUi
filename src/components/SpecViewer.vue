@@ -73,18 +73,19 @@ export default {
     const route = useRoute()
     const loading = ref(true)
     const pagesEnabled = ref(false)
-    const resolvedSpecUrl = ref('')
+    const baseSpecUrl = ref('')
+    const cacheBuster = ref(Date.now())
     const iframeKey = ref(0)
     const iframeRef = ref(null)
     const containerRef = ref(null)
     const indexHtmlCreated = ref("")
-    // Fetch timestamp of the index.html file being served at resolvedSpecUrl
+    // Fetch timestamp of the index.html file being served at baseSpecUrl
     const fetchIndexHtmlCreated = async () => {
-      if (!resolvedSpecUrl.value) return;
-      console.log('Fetching timestamp for URL:', resolvedSpecUrl.value)
+      if (!baseSpecUrl.value) return;
+      console.log('Fetching timestamp for URL:', baseSpecUrl.value)
       try {
         const proxy = getProxyBase()
-        const target = encodeURIComponent(resolvedSpecUrl.value)
+        const target = encodeURIComponent(baseSpecUrl.value)
         console.log('Using proxy URL:', `${proxy}${target}`)
 
         // Try GET request first to get headers including Last-Modified
@@ -115,7 +116,7 @@ export default {
           console.log('No Last-Modified header found, trying direct request')
           // Try direct request without proxy
           try {
-            const directResp = await axios.head(resolvedSpecUrl.value, {
+            const directResp = await axios.head(baseSpecUrl.value, {
               validateStatus: () => true,
               timeout: 8000
             })
@@ -143,6 +144,18 @@ export default {
 
     const owner = computed(() => route.params.owner)
     const repo = computed(() => route.params.repo)
+
+    const resolvedSpecUrl = computed(() => {
+      if (!baseSpecUrl.value) return ''
+      try {
+        const url = new URL(baseSpecUrl.value)
+        url.searchParams.set('_cb', cacheBuster.value.toString())
+        return url.toString()
+      } catch (_) {
+        // If URL constructor fails, fallback to original URL
+        return baseSpecUrl.value
+      }
+    })
 
     const suggestedUrl = computed(() => {
       if (owner.value && repo.value) {
@@ -173,7 +186,7 @@ export default {
     const checkGitHubPages = async () => {
       loading.value = true
       pagesEnabled.value = false
-      resolvedSpecUrl.value = ''
+      baseSpecUrl.value = ''
       try {
         // Requires repo read access; use token if present
         const token = localStorage.getItem('github_token')
@@ -182,15 +195,15 @@ export default {
         // data.html_url typically ends with a trailing slash
         if (data && data.html_url) {
           pagesEnabled.value = true
-          resolvedSpecUrl.value = data.html_url
+          baseSpecUrl.value = data.html_url
         } else {
           // Fallback to the conventional URL if html_url missing
           pagesEnabled.value = true
-          resolvedSpecUrl.value = suggestedUrl.value
+          baseSpecUrl.value = suggestedUrl.value
         }
         // Double-check the resolved URL actually returns 200, otherwise treat as not ready yet
-        if (resolvedSpecUrl.value) {
-          const status = await checkUrlViaProxy(resolvedSpecUrl.value)
+        if (baseSpecUrl.value) {
+          const status = await checkUrlViaProxy(baseSpecUrl.value)
           if (status && status >= 400) {
             pagesEnabled.value = false
           }
@@ -198,7 +211,7 @@ export default {
       } catch (err) {
         // 404 means Pages not enabled; treat as not generated yet
         pagesEnabled.value = false
-        resolvedSpecUrl.value = ''
+        baseSpecUrl.value = ''
         console.debug('SpecViewer: GitHub Pages check failed', err?.response?.status)
       } finally {
         loading.value = false
@@ -206,18 +219,10 @@ export default {
     }
 
     const reloadIframe = () => {
-      // Bump key to force reload without touching src string
+      // Update cache buster to force URL change and reload
+      cacheBuster.value = Date.now()
+      // Also bump key to force iframe recreation
       iframeKey.value += 1
-      // Also try to reset the src with a cache-buster in case of aggressive caching
-      if (iframeRef.value && resolvedSpecUrl.value) {
-        try {
-          const url = new URL(resolvedSpecUrl.value)
-          url.searchParams.set('_', Date.now().toString())
-          iframeRef.value.src = url.toString()
-        } catch (_) {
-          // If URL constructor fails, fallback to key mechanism only
-        }
-      }
     }
 
 
@@ -227,8 +232,8 @@ export default {
 
     onMounted(() => {
       checkGitHubPages().then(() => {
-        // Fetch timestamp after we have the resolvedSpecUrl
-        if (resolvedSpecUrl.value) {
+        // Fetch timestamp after we have the baseSpecUrl
+        if (baseSpecUrl.value) {
           fetchIndexHtmlCreated()
         }
       })
