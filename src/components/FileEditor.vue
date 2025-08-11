@@ -178,8 +178,7 @@
 
               <!-- Editor Textarea -->
               <textarea ref="editor" v-model="content" @input="handleContentChange"
-                class="p-3 border-0 rounded-0 technical-editor flex-grow-1"
-                style="font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 14px; resize: none;"></textarea>
+                class="p-3 border-0 rounded-0 technical-editor flex-grow-1"></textarea>
             </div>
 
             <!-- Preview Mode -->
@@ -1006,7 +1005,15 @@ export default {
 textarea:focus {
   box-shadow: none !important;
   border-color: transparent !important;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 14px;
+  resize: none;
 }
+textarea.error {
+  background: red;
+  color: white;
+}
+
 
 .help-content h6 {
   margin-top: 1.5rem;
