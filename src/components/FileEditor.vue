@@ -123,7 +123,7 @@
               </label>
             </div>
           </div>
-          <div class="card-body p-0" style="height: calc(100vh - 300px);">
+          <div class="card-body p-0">
             <!-- Simple Editor (Terms Files Only) -->
             <div v-if="editMode === 'simple'" class="p-3">
               <SimpleTermsEditor v-model:termType="simpleEditor.termType"
