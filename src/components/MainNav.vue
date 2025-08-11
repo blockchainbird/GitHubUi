@@ -111,9 +111,40 @@
   </nav>
   <Modal v-if="showModal" @close="showModal = false">
     <template #header>
-      <h2>About Spec-Up-T Editor</h2>
+      <div class="w-100">
+        <h2 class="text-center">Spec-Up-T Editor</h2>
+        <h3 class="mt-2 text-center">Consensus Building Tool</h3>
+      </div>
     </template>
     <template #body>
+
+      <p>
+        <strong>Spec-Up-T Editor</strong> is a web-based consensus building tool running on Git.
+      </p>
+      <p>
+
+        It provides an intuitive interface for editing, validating, and visualizing
+        specifications, making it easier for teams to collaborate and maintain their documentation.
+      </p>
+      <ul>
+        <li>
+          <a href="https://github.com/blockchainbird/GitHubUi" target="_blank" rel="noopener">Repository for this
+            web-app</a>
+        </li>
+        <li>
+          <a href="https://github.com/blockchainbird/spec-up-t" target="_blank" rel="noopener">Repository for
+            Spec-Up-T</a>
+        </li>
+        <li>
+          <a href="https://blockchainbird.github.io/spec-up-t-website/" target="_blank" rel="noopener">Spec-Up-T
+            documentation website</a>
+        </li>
+      </ul>
+      <p>
+        <a href="https://blockchainbird.github.io/spec-up-t-website/docs/introduction/how-it-came-to-be/"
+          target="_blank" rel="noopener">Read more</a>
+      </p>
+
       <!-- User Info (if logged in) -->
       <div v-if="isAuthenticated && user && user.login"
         class="alert alert-info mb-3 py-2 px-3 d-flex align-items-center" style="font-size: 0.97em;">
@@ -138,31 +169,6 @@
         <i class="bi bi-box-arrow-up-right"></i> Go To Documentation
       </a>
 
-
-      <p>
-        <strong>Spec-Up-T Editor</strong> is a web-based tool designed to gith users create and manage specifications
-        in a
-        user-friendly manner. It provides an intuitive interface for editing, validating, and visualizing
-        specifications, making it easier for teams to collaborate and maintain their documentation.
-      </p>
-      <ul style="font-size: 0.95em; margin-bottom: 0.5em;">
-        <li>
-          <a href="https://github.com/blockchainbird/GitHubUi" target="_blank" rel="noopener">Repository for this
-            web-app</a>
-        </li>
-        <li>
-          <a href="https://github.com/blockchainbird/spec-up-t" target="_blank" rel="noopener">Repository for
-            Spec-Up-T</a>
-        </li>
-        <li>
-          <a href="https://blockchainbird.github.io/spec-up-t-website/" target="_blank" rel="noopener">Spec-Up-T
-            documentation website</a>
-        </li>
-      </ul>
-      <p style="font-size: 0.9em; color: #888;">
-        <a href="https://blockchainbird.github.io/spec-up-t-website/docs/introduction/how-it-came-to-be/"
-          target="_blank" rel="noopener">Read more</a>
-      </p>
       <div class="build-info mt-3 pt-3 border-top">
         <small class="text-muted">
           <strong>Build Date:</strong> {{ buildInfo.buildDate }}
