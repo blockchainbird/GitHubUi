@@ -272,11 +272,11 @@ import {
   insertText,
   insertHeading,
   insertList,
-  isTermsFile,
   processTermReferences,
   getFileExtension,
   debounce
 } from '../utils/editorUtils.js'
+import { isInTermsDirectory } from '../utils/termsFileDetection.js'
 
 // Components
 import SimpleTermsEditor from './SimpleTermsEditor.vue'
@@ -389,80 +389,9 @@ export default {
     const editor = ref(null)
     const proxyInfo = ref('')
 
-    // State to track if file was detected as terms file (for stability)
-    const wasDetectedAsTermsFile = ref(false)
-
-    // Check if file is terms file
+    // Check if file is terms file - SINGLE CONDITION: is file in terms directory?
     const isTermsFileComputed = computed(() => {
-      // For new files, check if we're in a terms directory or if filename suggests terms
-      const isCreatingNewFile = isNewFile.value || route.query.new === 'true'
-
-      if (isCreatingNewFile) {
-        // Handle both string and array cases for path
-        let path = ''
-        if (typeof props.path === 'string') {
-          path = props.path
-        } else if (Array.isArray(props.path) && props.path.length > 0) {
-          path = props.path[0]
-        }
-
-        const name = filename.value || ''
-
-        // Check if path contains terms directory patterns
-        const isInTermsDirectory = path.toLowerCase().includes('term') ||
-          path.toLowerCase().includes('/terms/') ||
-          path.toLowerCase().includes('/terms-definitions/') ||
-          path.toLowerCase().includes('definitions')
-
-        // Check if filename suggests it's a terms file
-        const isTermsFileName = name.toLowerCase().includes('term') ||
-          name.toLowerCase().includes('definition') ||
-          name.toLowerCase().includes('def-')
-
-        // Check if we're creating a markdown file (new files typically don't have extension in path initially)
-        const isMarkdownFile = name.toLowerCase().endsWith('.md') ||
-          path.toLowerCase().endsWith('.md') ||
-          (!name.includes('.') && !path.includes('.')) // Assume .md for files without extension
-
-        // For new files in terms context, enable terms mode
-        const result = (isInTermsDirectory || isTermsFileName) && isMarkdownFile
-        if (result) {
-          wasDetectedAsTermsFile.value = true
-        }
-        return result
-      }
-
-      // For existing files, check multiple conditions for stability
-      const hasTermsContent = isTermsFile(filename.value, content.value)
-      const isCurrentlyInSimpleMode = editMode.value === 'simple'
-      const hasSimpleEditorContent = simpleEditor.value.mainTerm.trim() !== '' ||
-        simpleEditor.value.definition.trim() !== ''
-
-      // Once detected as terms file, remain stable unless clearly not a terms file
-      if (hasTermsContent) {
-        wasDetectedAsTermsFile.value = true
-        return true
-      }
-
-      // If we're in simple mode or have simple editor content, it's a terms file
-      if (isCurrentlyInSimpleMode || hasSimpleEditorContent) {
-        wasDetectedAsTermsFile.value = true
-        return true
-      }
-
-      // If previously detected as terms file and we're still loading or syncing, remain stable
-      if (wasDetectedAsTermsFile.value && (loading.value || isSyncing.value)) {
-        return true
-      }
-
-      // Default check for filename patterns (fallback)
-      if (filename.value && filename.value.toLowerCase().includes('term') &&
-        filename.value.toLowerCase().endsWith('.md')) {
-        wasDetectedAsTermsFile.value = true
-        return true
-      }
-
-      return wasDetectedAsTermsFile.value
+      return isInTermsDirectory(props.path, specsConfig.value)
     })
 
     // Rendered content for preview
@@ -803,6 +732,9 @@ export default {
     onMounted(async () => {
       addToVisitedRepos(props.owner, props.repo, props.branch)
 
+      // Initialize terms FIRST to ensure specsConfig is available for validation
+      await initializeTerms()
+
       // Load file content
       await loadFileContent()
 
@@ -810,9 +742,6 @@ export default {
       if (!isNewFile.value && fileSha.value) {
         await initializeRemoteMonitoring(fileSha.value)
       }
-
-      // Initialize terms for preview mode
-      await initializeTerms()
 
       // Browser navigation guard
       const handleBeforeUnload = (event) => {
@@ -857,9 +786,6 @@ export default {
           const source = ` (${fileName}) - Unsaved Changes from File Editor`
           addToNotepad(content.value, source) // Message will be shown automatically for script-added content
         }
-
-        // Reset terms file detection state when switching files
-        wasDetectedAsTermsFile.value = false
 
         if (route.query.new !== 'true') {
           loading.value = true

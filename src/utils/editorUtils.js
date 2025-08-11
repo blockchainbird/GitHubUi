@@ -72,21 +72,6 @@ export const getFileExtension = (filePath) => {
   return ext || 'unknown'
 }
 
-/**
- * Check if file is a terms file based on path or content
- * @param {string} filename - Filename
- * @param {string} content - File content
- * @returns {boolean} True if file appears to be a terms file
- */
-export const isTermsFile = (filename, content) => {
-  if (!filename) return false
-  
-  const isLikelyTermsFile = filename.toLowerCase().includes('term') || 
-                           content.includes('[[def:') || 
-                           content.includes('[[tref:')
-  
-  return isLikelyTermsFile && filename.toLowerCase().endsWith('.md')
-}
 
 /**
  * Process term references in markdown content for rendering

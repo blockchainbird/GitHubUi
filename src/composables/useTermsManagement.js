@@ -480,6 +480,15 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
 
   // Load terms on initialization (for preview mode)
   const initializeTerms = async () => {
+    // Always load specs config first
+    if (!specsConfig.value) {
+      try {
+        specsConfig.value = await loadSpecsConfig()
+      } catch (error) {
+        console.error('Failed to load specs config in initializeTerms:', error)
+      }
+    }
+    
     // Try to load from storage first, then from repository if needed
     if (!loadTermsFromStorage()) {
       loadingTerms.value = true

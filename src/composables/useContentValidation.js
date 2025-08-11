@@ -4,34 +4,12 @@
  */
 
 import { ref } from 'vue'
+import { isInTermsDirectory } from '../utils/termsFileDetection.js'
 
 export function useContentValidation(props) {
   // Validation state
   const validationWarnings = ref([])
   const showValidationWarnings = ref(false)
-
-  // Check if file is in terms directory
-  const checkIfInTermsDirectory = async (specsConfig) => {
-    try {
-      if (!specsConfig || !specsConfig.specs || specsConfig.specs.length === 0) {
-        return false
-      }
-
-      const config = specsConfig.specs[0]
-      const specDir = config.spec_directory?.replace('./', '') || 'spec'
-      const termsDir = config.spec_terms_directory || 'terms-definitions'
-      const fullTermsPath = `${specDir}/${termsDir}`
-
-      const normalizedTermsPath = fullTermsPath.replace(/^\/+|\/+$/g, '')
-      const normalizedFilePath = (props.path ? decodeURIComponent(props.path) : '').replace(/^\/+|\/+$/g, '')
-
-      return normalizedFilePath.startsWith(normalizedTermsPath + '/') ||
-        normalizedFilePath === normalizedTermsPath
-    } catch (err) {
-      console.error('Error checking if file is in terms directory:', err)
-      return false
-    }
-  }
 
   // Validate content according to rules
   const validateContent = async (content, filename, specsConfig) => {
@@ -43,13 +21,12 @@ export function useContentValidation(props) {
       return
     }
 
-    const isInTermsDirectory = await checkIfInTermsDirectory(specsConfig)
+    // Single check: is file in terms directory?
+    const isTermsFile = specsConfig 
+      ? isInTermsDirectory(props.path, specsConfig)
+      : false
 
-    const isLikelyTermsFile = filename.toLowerCase().includes('term') ||
-      content.includes('[[def:') ||
-      content.includes('[[tref:')
-
-    if (!isInTermsDirectory && !isLikelyTermsFile) {
+    if (!isTermsFile) {
       showValidationWarnings.value = false
       validationWarnings.value = []
       return
