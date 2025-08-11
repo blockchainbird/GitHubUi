@@ -81,6 +81,14 @@
             <i class="bi bi-gear"></i>
             Settings
           </button>
+          <!-- Sound Toggle Button -->
+          <div class="nav-item d-flex align-items-center me-2">
+            <button :title="isSoundEnabled ? 'Turn sound off' : 'Turn sound on'" @click="toggleSound"
+              class="btn btn-outline-secondary btn-sm">
+              <i :class="isSoundEnabled ? 'bi bi-volume-up' : 'bi bi-volume-mute'"></i>
+            </button>
+          </div>
+
           <!-- Authentication UI -->
           <div class="nav-item d-flex align-items-center ms-2">
             <div v-if="isAuthenticated" class="d-flex align-items-center">
@@ -169,6 +177,7 @@ import { computed, ref, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Modal from './Modal.vue';
 import RateLimitIndicator from './RateLimitIndicator.vue';
+import { useSoundSystem } from '../composables/useSoundSystem.js';
 
 export default {
   name: 'MainNav',
@@ -188,6 +197,9 @@ export default {
     const route = useRoute();
     const router = useRouter();
     const isNavbarOpen = ref(false);
+
+    // Sound system
+    const { isSoundEnabled, toggleSound } = useSoundSystem();
 
     const showRepoRelatedButtons = computed(() => {
       // Show repository-specific buttons only when we have repository context
@@ -358,7 +370,9 @@ export default {
       buildInfo,
       isAuthenticated,
       user,
-      isActiveRoute
+      isActiveRoute,
+      isSoundEnabled,
+      toggleSound
     };
   },
   data() {

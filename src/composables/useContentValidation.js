@@ -5,11 +5,15 @@
 
 import { ref } from 'vue'
 import { isInTermsDirectory } from '../utils/termsFileDetection.js'
+import { useSoundSystem } from './useSoundSystem.js'
 
 export function useContentValidation(props) {
   // Validation state
   const validationWarnings = ref([])
   const showValidationWarnings = ref(false)
+
+  // Sound system
+  const { playErrorSound } = useSoundSystem()
 
   // Validate content according to rules
   const validateContent = async (content, filename, specsConfig) => {
@@ -22,7 +26,7 @@ export function useContentValidation(props) {
     }
 
     // Single check: is file in terms directory?
-    const isTermsFile = specsConfig 
+    const isTermsFile = specsConfig
       ? isInTermsDirectory(props.path, specsConfig)
       : false
 
@@ -67,6 +71,11 @@ export function useContentValidation(props) {
 
     validationWarnings.value = warnings
     showValidationWarnings.value = warnings.length > 0
+
+    // Play error sound if there are validation warnings
+    if (warnings.length > 0) {
+      playErrorSound()
+    }
   }
 
   return {
