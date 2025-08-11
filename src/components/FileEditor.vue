@@ -180,7 +180,8 @@
               <div class="editor-container flex-grow-1 d-flex">
                 <!-- Line Numbers -->
                 <div ref="lineNumbers" class="line-numbers" :style="{ height: editorHeight }">
-                  <div v-for="lineNum in lineCount" :key="lineNum" class="line-number">
+                  <div v-for="lineNum in lineCount" :key="lineNum" 
+                       :class="['line-number', { 'line-number-error': isErrorLine(lineNum) }]">
                     {{ lineNum }}
                   </div>
                 </div>
@@ -412,6 +413,26 @@ export default {
       if (editor.value && lineNumbers.value) {
         lineNumbers.value.scrollTop = editor.value.scrollTop
       }
+    }
+
+    // Extract error line numbers from validation warnings
+    const errorLines = computed(() => {
+      const errorLineNumbers = new Set()
+      if (validationWarnings.value) {
+        validationWarnings.value.forEach(warning => {
+          // Match "Line X must start with ~" pattern
+          const lineMatch = warning.match(/^Line (\d+) must start with/)
+          if (lineMatch) {
+            errorLineNumbers.add(parseInt(lineMatch[1]))
+          }
+        })
+      }
+      return errorLineNumbers
+    })
+
+    // Check if a specific line number has an error
+    const isErrorLine = (lineNumber) => {
+      return errorLines.value.has(lineNumber)
     }
 
     // Check if file is terms file - SINGLE CONDITION: is file in terms directory?
@@ -857,6 +878,8 @@ export default {
       lineCount,
       editorHeight,
       handleEditorScroll,
+      errorLines,
+      isErrorLine,
 
       // Computed
       filename,
@@ -1141,6 +1164,22 @@ textarea.error {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+}
+
+.line-number-error {
+  background-color: #dc3545 !important;
+  color: white !important;
+  font-weight: bold;
+  animation: errorPulse 2s ease-in-out infinite;
+}
+
+@keyframes errorPulse {
+  0%, 100% {
+    background-color: #dc3545;
+  }
+  50% {
+    background-color: #bb2d3b;
+  }
 }
 
 .technical-editor-with-lines {
