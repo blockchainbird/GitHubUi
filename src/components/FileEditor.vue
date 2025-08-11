@@ -523,7 +523,6 @@ export default {
 
     // Event handlers
     const handleContentChange = async () => {
-      if (isSyncing.value) return
       error.value = ''
       success.value = ''
       await validateContent(content.value, filename.value, specsConfig.value)
@@ -872,7 +871,7 @@ export default {
     })
 
     watch(content, async () => {
-      if (!loading.value && !isSyncing.value) {
+      if (!loading.value) {
         await validateContent(content.value, filename.value, specsConfig.value)
       }
     }, { flush: 'post' })
