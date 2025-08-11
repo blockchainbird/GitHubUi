@@ -383,7 +383,7 @@ export default {
     } = remoteMonitor
 
     // Notepad integration
-  const { addContent: addToNotepad } = getNotepadInstance()
+    const { addContent: addToNotepad } = getNotepadInstance()
 
     // Editor state
     const editMode = ref('edit')
@@ -824,7 +824,7 @@ export default {
           const source = `File Editor (${fileName}) - Unsaved Changes`
           addToNotepad(content.value, source) // Message will be shown automatically for script-added content
         }
-        
+
         if (isNewFile.value && hasChanges.value) {
           event.preventDefault()
           event.returnValue = ''
