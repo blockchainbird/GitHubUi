@@ -179,6 +179,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { useGoogleAnalytics } from '../composables/useGoogleAnalytics.js'
+import { useSoundSystem } from '../composables/useSoundSystem.js'
 
 export default {
   name: 'LoginPage',
@@ -189,7 +190,8 @@ export default {
     const token = ref('')
     const loading = ref(false)
     const error = ref('')
-
+    const { playSuccessSound } = useSoundSystem()
+    
     const handleLogin = async () => {
       if (!token.value.trim()) {
         error.value = 'Please enter your GitHub token'
@@ -217,6 +219,9 @@ export default {
         }
 
         emit('login', userData)
+
+        // Play success sound
+        playSuccessSound()
 
         // Track successful login
         trackLogin('github')

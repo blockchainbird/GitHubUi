@@ -1,3 +1,4 @@
+let successSound = null;
 import { Howl } from 'howler';
 import { ref, computed } from 'vue';
 
@@ -16,6 +17,14 @@ function initializeSounds() {
             preload: true,
             onloaderror: (id, error) => {
                 console.warn('Error loading sound:', error);
+            }
+        });
+        successSound = new Howl({
+            src: ['assets/sounds/625174__gabfitzgerald__ui-sound-approval-high-pitched-bell-synth.mp3'],
+            volume: 0.1,
+            preload: true,
+            onloaderror: (id, error) => {
+                console.warn('Error loading success sound:', error);
             }
         });
     } catch (error) {
@@ -43,10 +52,26 @@ export function useSoundSystem() {
             }
         }
     };
+    const playSuccessSound = () => {
+        if (soundEnabled.value && successSound) {
+            console.log("KORKOR")
+            // Debug: log Howler state and sound properties
+            console.log('Howler state:', successSound.state());
+            console.log('successSound loaded:', successSound._loaded);
+            console.log('successSound src:', successSound._src);
+            const id = successSound.play();
+            if (typeof id !== 'number') {
+                console.log('Howler play() did not return a sound id:', id);
+            } else {
+                console.log('Howler play() returned id:', id);
+            }
+        }
+    };
 
     return {
         isSoundEnabled,
         toggleSound,
-        playErrorSound
+        playErrorSound,
+        playSuccessSound
     };
 }
