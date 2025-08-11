@@ -178,7 +178,7 @@
 
               <!-- Editor Textarea -->
               <textarea ref="editor" v-model="content" @input="handleContentChange"
-                class="p-3 border-0 rounded-0 technical-editor flex-grow-1"></textarea>
+                :class="['p-3 border-0 rounded-0 technical-editor flex-grow-1', validationWarnings.length > 0 ? 'error' : '']"></textarea>
             </div>
 
             <!-- Preview Mode -->
@@ -1010,8 +1010,7 @@ textarea:focus {
   resize: none;
 }
 textarea.error {
-  background: red;
-  color: white;
+  background: rgb(247, 217, 44);
 }
 
 
