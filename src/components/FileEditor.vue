@@ -176,9 +176,19 @@
                 </div>
               </div>
 
-              <!-- Editor Textarea -->
-              <textarea ref="editor" v-model="content" @input="handleContentChange"
-                :class="['p-3 border-0 rounded-0 technical-editor flex-grow-1', validationWarnings.length > 0 ? 'error' : '']"></textarea>
+              <!-- Editor with Line Numbers -->
+              <div class="editor-container flex-grow-1 d-flex">
+                <!-- Line Numbers -->
+                <div ref="lineNumbers" class="line-numbers" :style="{ height: editorHeight }">
+                  <div v-for="lineNum in lineCount" :key="lineNum" class="line-number">
+                    {{ lineNum }}
+                  </div>
+                </div>
+                
+                <!-- Editor Textarea -->
+                <textarea ref="editor" v-model="content" @input="handleContentChange" @scroll="handleEditorScroll"
+                  :class="['technical-editor-with-lines flex-grow-1', validationWarnings.length > 0 ? 'error' : '']"></textarea>
+              </div>
             </div>
 
             <!-- Preview Mode -->
@@ -387,7 +397,22 @@ export default {
     // Editor state
     const editMode = ref('edit')
     const editor = ref(null)
+    const lineNumbers = ref(null)
     const proxyInfo = ref('')
+
+    // Line numbers functionality
+    const lineCount = computed(() => {
+      if (!content.value) return 1
+      return Math.max(1, content.value.split('\n').length)
+    })
+
+    const editorHeight = ref('calc(100vh - 300px)')
+
+    const handleEditorScroll = () => {
+      if (editor.value && lineNumbers.value) {
+        lineNumbers.value.scrollTop = editor.value.scrollTop
+      }
+    }
 
     // Check if file is terms file - SINGLE CONDITION: is file in terms directory?
     const isTermsFileComputed = computed(() => {
@@ -825,7 +850,13 @@ export default {
       isNewFile,
       editMode,
       editor,
+      lineNumbers,
       proxyInfo,
+
+      // Line numbers
+      lineCount,
+      editorHeight,
+      handleEditorScroll,
 
       // Computed
       filename,
@@ -1078,6 +1109,58 @@ textarea.error {
   resize: none;
   width: 100%;
   transition: all 0.3s ease;
+}
+
+/* Line numbers and editor container styles */
+.editor-container {
+  position: relative;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  overflow: hidden;
+}
+
+.line-numbers {
+  background: #f8f9fa;
+  border-right: 1px solid #dee2e6;
+  color: #6c757d;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 12px 8px 12px 12px;
+  text-align: right;
+  user-select: none;
+  min-width: 50px;
+  max-width: 80px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.line-number {
+  height: 21px; /* Match textarea line height */
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.technical-editor-with-lines {
+  border: none;
+  border-radius: 0;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 12px;
+  resize: none;
+  outline: none;
+  background: white;
+  overflow-y: auto;
+  white-space: pre;
+  word-wrap: break-word;
+}
+
+.technical-editor-with-lines:focus {
+  box-shadow: none;
+  border: none;
 }
 
 /* Animation for content moving to notepad */
