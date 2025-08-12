@@ -175,7 +175,7 @@
                 <div class="small">
                   <strong>Workflow Information:</strong><br>
                   The action will run on branch: <strong>{{ branch }}</strong><br>
-                  Using workflow: <strong>spec-actions.yml</strong>
+                  Using workflow: <strong>menu.yml</strong>
                 </div>
               </div>
             </div>
@@ -243,12 +243,12 @@ export default {
       return false
     }
 
-    // Set the workflow to always use spec-actions.yml
+    // Set the workflow to always use menu.yml
     const loadWorkflows = async () => {
-      selectedWorkflow.value = 'spec-actions.yml'
+      selectedWorkflow.value = 'menu.yml'
     }
 
-    // Trigger workflow function - always uses spec-actions.yml
+    // Trigger workflow function - always uses menu.yml
     const triggerWorkflow = async () => {
       try {
         triggeringWorkflow.value = true
@@ -269,9 +269,9 @@ export default {
           }
         }
 
-        console.log(`🚀 Triggering spec-actions.yml workflow with action: ${selectedAction.value}`)
+        console.log(`� Triggering menu.yml workflow with action: ${selectedAction.value}`)
 
-        // Build inputs for the spec-actions.yml workflow
+        // Build inputs for the menu.yml workflow
         const inputs = {
           action_type: selectedAction.value || 'render',
           repository: `${props.owner}/${props.repo}`,
@@ -284,16 +284,16 @@ export default {
           inputs
         }
 
-        // Trigger the spec-actions.yml workflow using workflow_dispatch
+        // Trigger the menu.yml workflow using workflow_dispatch
         await axios.post(
-          `https://api.github.com/repos/${props.owner}/${props.repo}/actions/workflows/spec-actions.yml/dispatches`,
+          `https://api.github.com/repos/${props.owner}/${props.repo}/actions/workflows/menu.yml/dispatches`,
           dispatchData,
           config
         )
 
         // Show success message
-        successMessage.value = `Successfully triggered "${selectedAction.value}" action using spec-actions.yml workflow`
-        console.log(`✅ Successfully triggered spec-actions.yml workflow with action "${selectedAction.value}" on branch ${props.branch}`)
+        successMessage.value = `Successfully triggered "${selectedAction.value}" action using menu.yml workflow`
+        console.log(`✅ Successfully triggered menu.yml workflow with action "${selectedAction.value}" on branch ${props.branch}`)
 
       } catch (err) {
         console.error('❌ Error triggering workflow:', err)
@@ -301,20 +301,20 @@ export default {
         if (checkAuthAndRedirect(err)) return
 
         if (err.response?.status === 404) {
-          actionError.value = 'spec-actions.yml workflow not found. Please ensure the spec-actions.yml workflow file exists in .github/workflows/'
+          actionError.value = 'menu.yml workflow not found. Please ensure the menu.yml workflow file exists in .github/workflows/'
         } else if (err.response?.status === 422) {
           const errorData = err.response?.data
           const errorMsg = errorData?.message || ''
-          
+
           console.log('422 Error details:', errorData)
-          
+
           // Check for specific workflow_dispatch error
-          if (errorMsg.toLowerCase().includes('workflow_dispatch') || 
-              errorMsg.toLowerCase().includes('does not support') ||
-              errorData?.errors?.some(e => e.message?.includes('workflow_dispatch'))) {
-            actionError.value = `The spec-actions.yml workflow does not support manual triggering. 
+          if (errorMsg.toLowerCase().includes('workflow_dispatch') ||
+            errorMsg.toLowerCase().includes('does not support') ||
+            errorData?.errors?.some(e => e.message?.includes('workflow_dispatch'))) {
+            actionError.value = `The menu.yml workflow does not support manual triggering. 
             
-To fix this, add the following to the top of your .github/workflows/spec-actions.yml file:
+To fix this, add the following to the top of your .github/workflows/menu.yml file:
 
 on:
   workflow_dispatch:
@@ -341,10 +341,10 @@ on:
         description: 'Triggered by'
         required: false`
           } else {
-            actionError.value = `Cannot trigger spec-actions.yml workflow: ${errorMsg}`
+            actionError.value = `Cannot trigger menu.yml workflow: ${errorMsg}`
           }
         } else {
-          actionError.value = 'Failed to trigger spec-actions.yml workflow: ' + (err.response?.data?.message || err.message)
+          actionError.value = 'Failed to trigger menu.yml workflow: ' + (err.response?.data?.message || err.message)
         }
       } finally {
         triggeringWorkflow.value = false
