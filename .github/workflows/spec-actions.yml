@@ -127,12 +127,27 @@ jobs:
         with:
           node-version: '18'
           
+      - name: Install PDF dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            chromium-browser \
+            fonts-liberation \
+            fonts-dejavu-core \
+            fonts-noto \
+            fonts-noto-cjk \
+            fonts-noto-color-emoji
+          
       - name: Install Spec-Up-T
         run: npm install -g spec-up-t
         
       - name: Generate PDF
+        env:
+          CHROME_PATH: /usr/bin/chromium-browser
+          PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium-browser
         run: |
           echo "📄 Generating PDF..."
+          echo "Chrome path: $CHROME_PATH"
           spec-up topdf
           
       - name: Upload PDF
