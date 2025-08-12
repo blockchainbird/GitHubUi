@@ -128,7 +128,7 @@
                   </div>
                 </div>
 
-                <div class="col-md-6">
+                <!-- <div class="col-md-6">
                   <div class="form-check card h-100">
                     <div class="card-body">
                       <input v-model="selectedAction" class="form-check-input" type="radio" value="custom-update"
@@ -145,7 +145,7 @@
                     </div>
                   </div>
                 </div>
-
+ -->
                 <div class="col-md-6">
                   <div class="form-check card h-100">
                     <div class="card-body">
