@@ -127,11 +127,16 @@ jobs:
         with:
           node-version: '18'
           
-      - name: Install PDF dependencies
+      - name: Setup Google Chrome
+        id: setup-chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+      
+      - name: Install fonts (optional but improves rendering)
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            chromium-browser \
             fonts-liberation \
             fonts-dejavu-core \
             fonts-noto \
@@ -143,18 +148,17 @@ jobs:
         
       - name: Generate PDF
         env:
-          CHROME_PATH: /usr/bin/chromium-browser
-          PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium-browser
+          PUPPETEER_EXECUTABLE_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
         run: |
           echo "📄 Generating PDF..."
-          echo "Chrome path: $CHROME_PATH"
+          echo "Chrome path: $PUPPETEER_EXECUTABLE_PATH"
           spec-up topdf
           
       - name: Upload PDF
         uses: actions/upload-artifact@v4
         with:
           name: specification-pdf
-          path: "*.pdf"
+          path: "**/*.pdf"
           retention-days: 30
 
   todocx:

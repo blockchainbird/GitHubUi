@@ -56,7 +56,7 @@
               <p class="text-muted small mb-3">Choose the action you want to run on the specification:</p>
 
               <div class="row g-3">
-                <div class="col-md-6">
+                <!-- <div class="col-md-6">
                   <div class="form-check card h-100">
                     <div class="card-body">
                       <input v-model="selectedAction" class="form-check-input" type="radio" value="render"
@@ -65,44 +65,26 @@
                         <div class="d-flex align-items-start">
                           <i class="bi bi-file-earmark-text me-2 text-primary"></i>
                           <div>
+                            <strong>Render Specification (no external references)</strong>
+                            <div class="small text-muted">Create specification without external references</div>
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                </div> -->
+
+                <div class="col-md-6">
+                  <div class="form-check card h-100">
+                    <div class="card-body">
+                      <input v-model="selectedAction" class="form-check-input" type="radio"
+                        value="collectExternalReferences" id="action-external">
+                      <label class="form-check-label w-100" for="action-external">
+                        <div class="d-flex align-items-start">
+                          <i class="bi bi-link-45deg me-2 text-success"></i>
+                          <div>
                             <strong>Render Specification</strong>
-                            <div class="small text-muted">Generate HTML output from markdown files</div>
-                          </div>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <div class="form-check card h-100">
-                    <div class="card-body">
-                      <input v-model="selectedAction" class="form-check-input" type="radio" value="topdf"
-                        id="action-topdf">
-                      <label class="form-check-label w-100" for="action-topdf">
-                        <div class="d-flex align-items-start">
-                          <i class="bi bi-file-earmark-pdf me-2 text-danger"></i>
-                          <div>
-                            <strong>Generate PDF</strong>
-                            <div class="small text-muted">Create a PDF version of the specification</div>
-                          </div>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <div class="form-check card h-100">
-                    <div class="card-body">
-                      <input v-model="selectedAction" class="form-check-input" type="radio" value="todocx"
-                        id="action-todocx">
-                      <label class="form-check-label w-100" for="action-todocx">
-                        <div class="d-flex align-items-start">
-                          <i class="bi bi-file-earmark-word me-2 text-info"></i>
-                          <div>
-                            <strong>Generate DOCX</strong>
-                            <div class="small text-muted">Create a Word document version</div>
+                            <div class="small text-muted">Create specification from all files</div>
                           </div>
                         </div>
                       </label>
@@ -128,7 +110,43 @@
                   </div>
                 </div>
 
+                <!-- <div class="col-md-6">
+                  <div class="form-check card h-100">
+                    <div class="card-body">
+                      <input v-model="selectedAction" class="form-check-input" type="radio" value="topdf"
+                        id="action-topdf">
+                      <label class="form-check-label w-100" for="action-topdf">
+                        <div class="d-flex align-items-start">
+                          <i class="bi bi-file-earmark-pdf me-2 text-danger"></i>
+                          <div>
+                            <strong>Generate PDF</strong>
+                            <div class="small text-muted">Create a PDF version of the specification</div>
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                </div> -->
+
                 <div class="col-md-6">
+                  <div class="form-check card h-100">
+                    <div class="card-body">
+                      <input v-model="selectedAction" class="form-check-input" type="radio" value="todocx"
+                        id="action-todocx">
+                      <label class="form-check-label w-100" for="action-todocx">
+                        <div class="d-flex align-items-start">
+                          <i class="bi bi-file-earmark-word me-2 text-info"></i>
+                          <div>
+                            <strong>Generate DOCX</strong>
+                            <div class="small text-muted">Create a Word document version</div>
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- <div class="col-md-6">
                   <div class="form-check card h-100">
                     <div class="card-body">
                       <input v-model="selectedAction" class="form-check-input" type="radio" value="custom-update"
@@ -145,24 +163,8 @@
                     </div>
                   </div>
                 </div>
+ -->
 
-                <div class="col-md-6">
-                  <div class="form-check card h-100">
-                    <div class="card-body">
-                      <input v-model="selectedAction" class="form-check-input" type="radio"
-                        value="collectExternalReferences" id="action-external">
-                      <label class="form-check-label w-100" for="action-external">
-                        <div class="d-flex align-items-start">
-                          <i class="bi bi-link-45deg me-2 text-success"></i>
-                          <div>
-                            <strong>Collect External References</strong>
-                            <div class="small text-muted">Gather and process external term references</div>
-                          </div>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
 
