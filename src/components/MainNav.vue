@@ -1,5 +1,5 @@
 <template>
-  <nav class="navbar navbar-expand-lg main-nav sticky-top bg-light">
+  <nav class="navbar navbar-expand-lg main-nav sticky-top bg-light" role="navigation" aria-label="Main">
     <div class="container-fluid">
       <!-- Brand/Logo -->
       <span class="navbar-brand mb-0 h1 d-flex align-items-center">
@@ -15,97 +15,138 @@
 
       <!-- Collapsible content -->
       <div class="collapse navbar-collapse" :class="{ show: isNavbarOpen }" id="navbarNav">
-        <div class="navbar-nav ms-auto">
-          <button @click="navigateAndClose('/home')"
-            :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/home') }]">
-            <i class="bi bi-house"></i>
-            Home
-          </button>
-          <!-- <button @click="navigateAndClose('/create-project')" class="nav-link btn btn-link">
-            <i class="bi bi-plus-circle"></i>
-            Create Project
-          </button> -->
-          <button v-if="showRepoRelatedButtons" @click="navigateToFilesAndClose"
-            :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/files') }]"
-            title="Browse Repository Files">
-            <i class="bi bi-folder"></i>
-            Files
-          </button>
-          <button v-if="showRepoRelatedButtons"
-            @click="navigateAndClose(`/external-specs/${route.params.owner}/${route.params.repo}/${route.params.branch}`)"
-            :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/external-specs') }]"
-            title="Manage External Specifications">
-            <i class="bi bi-link-45deg"></i>
-            External
-          </button>
-          <button v-if="showRepoRelatedButtons"
-            @click="navigateAndClose(`/terms-preview/${route.params.owner}/${route.params.repo}/${route.params.branch}`)"
-            :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/terms-preview') }]"
-            title="View Terms & Definitions (Full Page)">
-            <i class="bi bi-book-half"></i>
-            <span class="d-md-none">Preview</span>
-            <span class="d-none d-md-inline">Preview</span>
-          </button>
-          <button v-if="showRepoRelatedButtons"
-            @click="navigateAndClose(`/spec/${route.params.owner}/${route.params.repo}/${route.params.branch}`)"
-            :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/spec') }]"
-            title="View Published Specification">
-            <i class="bi bi-journal-text"></i>
-            Spec
-          </button>
-          <button v-if="showRepoRelatedButtons" @click="navigateToHealthCheckAndClose"
-            :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/health-check') }]"
-            title="Run Health Check">
-            <i class="bi bi-heart-pulse"></i>
-            Health
-          </button>
-          <button v-if="showRepoRelatedButtons" @click="navigateToActionsAndClose"
-            :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/actions') }]" title="Run GitHub Actions">
-            <i class="bi bi-play-circle"></i>
-            Actions
-          </button>
-          <a v-if="showRepoRelatedButtons" :href="githubRepoUrl" target="_blank" rel="noopener" class="nav-link"
-            title="View Repository on GitHub" @click="closeNavbar">
-            <i class="bi bi-box-arrow-up-right"></i>
-            Repo
-          </a>
-          <button v-if="showRepoRelatedButtons" @click="navigateToAdminAndClose"
-            :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/admin') }]">
-            <i class="bi bi-shield-lock"></i>
-            Admin
-          </button>
-          <button v-if="showRepoRelatedButtons"
-            @click="navigateAndClose(`/settings/${route.params.owner}/${route.params.repo}/${route.params.branch}`)"
-            :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/settings') }]"
-            title="Application Settings">
-            <i class="bi bi-gear"></i>
-            Settings
-          </button>
+        <ul class="navbar-nav ms-auto">
+          <!-- Home -->
+          <li class="nav-item">
+            <button @click="navigateAndClose('/home')"
+              :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/home') }]">
+              <i class="bi bi-house"></i>
+              Home
+            </button>
+          </li>
+
+          <!-- File menu -->
+          <li v-if="showRepoRelatedButtons" class="nav-item dropdown" data-menu="file"
+              @mouseenter="onHoverMenu('file', true)" @mouseleave="onHoverMenu('file', false)">
+            <button
+              :class="['nav-link', 'btn', 'btn-link', 'dropdown-toggle', { active: isFileSectionActive }]"
+              id="fileMenuButton" aria-haspopup="true" :aria-expanded="isFileOpen.toString()"
+        aria-controls="fileMenuDropdown" @click="toggleMenu('file')" @keydown="handleMenuKeydown('file', $event)" ref="fileToggle">
+              File
+            </button>
+            <ul id="fileMenuDropdown" class="dropdown-menu" :class="{ show: isFileOpen }"
+              aria-labelledby="fileMenuButton" ref="fileMenuEl" @keydown="handleMenuListKeydown('file', $event)">
+              <li>
+                <button class="dropdown-item" @click="navigateToFilesAndClose">
+                  <i class="bi bi-folder"></i> Files
+                </button>
+              </li>
+            </ul>
+          </li>
+
+          <!-- Render (single item) -->
+      <li v-if="showRepoRelatedButtons" class="nav-item">
+            <button @click="navigateToActionsAndClose"
+        :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/actions') }]"
+              title="Run GitHub Actions">
+              <i class="bi bi-play-circle"></i>
+              Render
+            </button>
+          </li>
+
+          <!-- View menu -->
+          <li v-if="showRepoRelatedButtons" class="nav-item dropdown" data-menu="view"
+              @mouseenter="onHoverMenu('view', true)" @mouseleave="onHoverMenu('view', false)">
+            <button
+              :class="['nav-link', 'btn', 'btn-link', 'dropdown-toggle', { active: isViewSectionActive }]"
+              id="viewMenuButton" aria-haspopup="true" :aria-expanded="isViewOpen.toString()"
+        aria-controls="viewMenuDropdown" @click="toggleMenu('view')" @keydown="handleMenuKeydown('view', $event)" ref="viewToggle">
+              View
+            </button>
+            <ul id="viewMenuDropdown" class="dropdown-menu" :class="{ show: isViewOpen }"
+              aria-labelledby="viewMenuButton" ref="viewMenuEl" @keydown="handleMenuListKeydown('view', $event)">
+              <li>
+                <button class="dropdown-item"
+                  @click="navigateAndClose(`/terms-preview/${route.params.owner}/${route.params.repo}/${route.params.branch}`)">
+                  <i class="bi bi-book-half"></i> Preview
+                </button>
+              </li>
+              <li>
+                <button class="dropdown-item"
+                  @click="navigateAndClose(`/spec/${route.params.owner}/${route.params.repo}/${route.params.branch}`)">
+                  <i class="bi bi-journal-text"></i> Final view
+                </button>
+              </li>
+              <li>
+                <button class="dropdown-item" @click="navigateToHealthCheckAndClose">
+                  <i class="bi bi-heart-pulse"></i> Health
+                </button>
+              </li>
+              <li>
+                <a class="dropdown-item" v-if="githubRepoUrl" :href="githubRepoUrl" target="_blank"
+                  rel="noopener" @click="closeNavbar">
+                  <i class="bi bi-box-arrow-up-right"></i> Repo
+                </a>
+              </li>
+            </ul>
+          </li>
+
+          <!-- Config menu -->
+          <li v-if="showRepoRelatedButtons" class="nav-item dropdown" data-menu="config"
+              @mouseenter="onHoverMenu('config', true)" @mouseleave="onHoverMenu('config', false)">
+            <button
+              :class="['nav-link', 'btn', 'btn-link', 'dropdown-toggle', { active: isConfigSectionActive }]"
+              id="configMenuButton" aria-haspopup="true" :aria-expanded="isConfigOpen.toString()"
+        aria-controls="configMenuDropdown" @click="toggleMenu('config')" @keydown="handleMenuKeydown('config', $event)" ref="configToggle">
+              Config
+            </button>
+            <ul id="configMenuDropdown" class="dropdown-menu" :class="{ show: isConfigOpen }"
+              aria-labelledby="configMenuButton" ref="configMenuEl" @keydown="handleMenuListKeydown('config', $event)">
+              <li>
+                <button class="dropdown-item" @click="navigateToAdminAndClose">
+                  <i class="bi bi-shield-lock"></i> Local config
+                </button>
+              </li>
+              <li>
+                <button class="dropdown-item"
+                  @click="navigateAndClose(`/external-specs/${route.params.owner}/${route.params.repo}/${route.params.branch}`)">
+                  <i class="bi bi-link-45deg"></i> External config
+                </button>
+              </li>
+              <li>
+                <button class="dropdown-item"
+                  @click="navigateAndClose(`/settings/${route.params.owner}/${route.params.repo}/${route.params.branch}`)"
+                  title="Application Settings">
+                  <i class="bi bi-gear"></i> Settings
+                </button>
+              </li>
+            </ul>
+          </li>
+
           <!-- Sound Toggle Button -->
-          <div class="nav-item d-flex align-items-center me-2">
+      <li class="nav-item d-flex align-items-center me-2">
             <button :title="isSoundEnabled ? 'Turn sound off' : 'Turn sound on'" @click="toggleSound"
-              class="btn btn-outline-secondary btn-sm">
+        class="btn btn-outline-secondary btn-sm">
               <i :class="isSoundEnabled ? 'bi bi-volume-up' : 'bi bi-volume-mute'"></i>
             </button>
-          </div>
+          </li>
 
           <!-- Authentication UI -->
-          <div class="nav-item d-flex align-items-center ms-2">
+      <li class="nav-item d-flex align-items-center ms-2">
             <div v-if="isAuthenticated" class="d-flex align-items-center">
               <span class="visually-hidden">{{ user.login }}</span>
-              <button :title="user.login" @click="handleLogout" class="btn btn-outline-primary btn-sm">
+        <button :title="user.login" @click="handleLogout" class="btn btn-outline-primary btn-sm">
                 <i class="bi bi-box-arrow-right"></i> Logout
               </button>
             </div>
             <div v-else class="d-flex align-items-center">
               <span class="visually-hidden">Not logged in</span>
-              <button title="Not logged in" @click="navigateAndClose('/login')"
-                class="btn btn-outline-secondary btn-sm">
+        <button title="Not logged in" @click="navigateAndClose('/login')" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-box-arrow-in-right"></i> Login
               </button>
             </div>
-          </div>
-        </div>
+          </li>
+        </ul>
       </div>
     </div>
   </nav>
@@ -201,6 +242,17 @@ export default {
     const route = useRoute();
     const router = useRouter();
     const isNavbarOpen = ref(false);
+  // Dropdown open states and refs
+  const isFileOpen = ref(false);
+  const isViewOpen = ref(false);
+  const isConfigOpen = ref(false);
+  // Element refs for focus management
+  const fileToggle = ref(null);
+  const viewToggle = ref(null);
+  const configToggle = ref(null);
+  const fileMenuEl = ref(null);
+  const viewMenuEl = ref(null);
+  const configMenuEl = ref(null);
 
     // Sound system
     const { isSoundEnabled, toggleSound } = useSoundSystem();
@@ -228,10 +280,13 @@ export default {
 
     const toggleNavbar = () => {
       isNavbarOpen.value = !isNavbarOpen.value;
+  // Close dropdowns when toggling navbar
+  if (!isNavbarOpen.value) closeAllMenus();
     };
 
     const closeNavbar = () => {
       isNavbarOpen.value = false;
+  closeAllMenus();
     };
 
     const navigateAndClose = (path) => {
@@ -299,9 +354,19 @@ export default {
 
     // Close navbar when clicking outside on mobile
     const handleClickOutside = (event) => {
-      if (isNavbarOpen.value && !event.target.closest('.navbar')) {
+      const clickedInsideNavbar = !!event.target.closest('.navbar');
+      if (!clickedInsideNavbar) {
+        // Clicked outside navbar: close navbar and dropdowns
         closeNavbar();
+        return;
       }
+      // Inside navbar: close any open dropdown if click is outside it
+      const insideFile = !!event.target.closest('[data-menu="file"]');
+      const insideView = !!event.target.closest('[data-menu="view"]');
+      const insideConfig = !!event.target.closest('[data-menu="config"]');
+      if (!insideFile) isFileOpen.value = false;
+      if (!insideView) isViewOpen.value = false;
+      if (!insideConfig) isConfigOpen.value = false;
     };
 
     // Close navbar on window resize to larger screen
@@ -309,12 +374,136 @@ export default {
       if (window.innerWidth >= 992 && isNavbarOpen.value) { // lg breakpoint
         closeNavbar();
       }
+      // Always close dropdowns on resize to avoid misplacement
+      closeAllMenus();
+    };
+
+  const closeAllMenus = () => {
+      isFileOpen.value = false;
+      isViewOpen.value = false;
+      isConfigOpen.value = false;
+    };
+
+    const toggleMenu = (menu) => {
+      if (menu === 'file') {
+        isFileOpen.value = !isFileOpen.value;
+        isViewOpen.value = false;
+        isConfigOpen.value = false;
+      } else if (menu === 'view') {
+        isViewOpen.value = !isViewOpen.value;
+        isFileOpen.value = false;
+        isConfigOpen.value = false;
+      } else if (menu === 'config') {
+        isConfigOpen.value = !isConfigOpen.value;
+        isFileOpen.value = false;
+        isViewOpen.value = false;
+      }
+    };
+
+    // Keyboard support for toggles: Enter/Space to open, Escape to close
+    const handleMenuKeydown = (menu, e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toggleMenu(menu);
+        // Focus first item when opening
+        nextTickFocusFirst(menu);
+      } else if (e.key === 'Escape') {
+        closeWithFocusReturn(menu);
+      }
+    };
+
+    const nextTickFocusFirst = (menu) => {
+      requestAnimationFrame(() => {
+        const list = getMenuEl(menu);
+        if (!list) return;
+        const firstBtn = list.querySelector('.dropdown-item, a.dropdown-item, button.dropdown-item');
+        if (firstBtn) firstBtn.focus();
+      });
+    };
+
+    const getMenuEl = (menu) => {
+      if (menu === 'file') return fileMenuEl.value;
+      if (menu === 'view') return viewMenuEl.value;
+      if (menu === 'config') return configMenuEl.value;
+      return null;
+    };
+
+    const getToggleEl = (menu) => {
+      if (menu === 'file') return fileToggle.value;
+      if (menu === 'view') return viewToggle.value;
+      if (menu === 'config') return configToggle.value;
+      return null;
+    };
+
+    const closeWithFocusReturn = (menu) => {
+      closeAllMenus();
+      const toggle = getToggleEl(menu);
+      if (toggle) toggle.focus();
+    };
+
+    // Keyboard support inside open menus: ArrowDown/ArrowUp cycle, Home/End jump, Esc closes
+    const handleMenuListKeydown = (menu, e) => {
+      const items = Array.from(getMenuEl(menu)?.querySelectorAll('.dropdown-item')) || [];
+      if (!items.length) return;
+      const currentIndex = items.findIndex(el => el === document.activeElement);
+      const moveFocus = (idx) => items[Math.max(0, Math.min(items.length - 1, idx))]?.focus();
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          moveFocus(currentIndex < 0 ? 0 : (currentIndex + 1) % items.length);
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          moveFocus(currentIndex < 0 ? items.length - 1 : (currentIndex - 1 + items.length) % items.length);
+          break;
+        case 'Home':
+          e.preventDefault();
+          moveFocus(0);
+          break;
+        case 'End':
+          e.preventDefault();
+          moveFocus(items.length - 1);
+          break;
+        case 'Escape':
+          e.preventDefault();
+          closeWithFocusReturn(menu);
+          break;
+        default:
+          break;
+      }
+    };
+
+    // Hover to open for desktop (pointer: fine)
+    const isDesktopLike = () => window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    const onHoverMenu = (menu, entering) => {
+      if (!isDesktopLike()) return;
+      if (!showRepoRelatedButtons.value) return;
+      if (entering) {
+        if (menu === 'file') { isFileOpen.value = true; isViewOpen.value = false; isConfigOpen.value = false; }
+        if (menu === 'view') { isViewOpen.value = true; isFileOpen.value = false; isConfigOpen.value = false; }
+        if (menu === 'config') { isConfigOpen.value = true; isFileOpen.value = false; isViewOpen.value = false; }
+      } else {
+        // delay close slightly to allow into menu area
+        setTimeout(() => {
+          // If pointer left both toggle and menu, close
+          const el = getMenuEl(menu);
+          const toggle = getToggleEl(menu);
+          const active = document.activeElement;
+          const overNavbar = !!document.querySelector('.navbar:hover');
+          if (!overNavbar && active !== toggle && !el?.matches(':hover')) {
+            if (menu === 'file') isFileOpen.value = false;
+            if (menu === 'view') isViewOpen.value = false;
+            if (menu === 'config') isConfigOpen.value = false;
+          }
+        }, 100);
+      }
     };
 
     onMounted(() => {
       logAuthState();
       document.addEventListener('click', handleClickOutside);
       window.addEventListener('resize', handleResize);
+  window.addEventListener('keydown', onGlobalKeydown);
     });
 
     // Watch for changes in authentication state
@@ -327,9 +516,16 @@ export default {
       console.log('MainNav: User changed from', oldVal, 'to', newVal);
     }, { deep: true });
 
+    // Close menus when route changes
+    watch(() => route.fullPath, () => {
+      closeAllMenus();
+      // Don't force-close navbar on mobile to avoid jarring UX; user can see route highlight
+    });
+
     onUnmounted(() => {
       document.removeEventListener('click', handleClickOutside);
       window.removeEventListener('resize', handleResize);
+  window.removeEventListener('keydown', onGlobalKeydown);
     });
 
     // Get build info from Vite's define
@@ -353,15 +549,44 @@ export default {
       return false;
     };
 
+    // Section active states for dropdown toggles
+    const isFileSectionActive = computed(() => isActiveRoute('/files'));
+    const isViewSectionActive = computed(() => (
+      isActiveRoute('/terms-preview') || isActiveRoute('/spec') || isActiveRoute('/health-check')
+    ));
+    const isConfigSectionActive = computed(() => (
+      isActiveRoute('/admin') || isActiveRoute('/external-specs') || isActiveRoute('/settings')
+    ));
+
+    // Accessibility: ESC closes any open menu
+    const onGlobalKeydown = (e) => {
+      if (e.key === 'Escape') {
+        closeAllMenus();
+      }
+    };
+
     return {
       route,
       showRepoRelatedButtons,
-      // showAlwaysVisibleButtons,
+  isFileOpen,
+  isViewOpen,
+  isConfigOpen,
+  // showAlwaysVisibleButtons,
+  fileToggle,
+  viewToggle,
+  configToggle,
+  fileMenuEl,
+  viewMenuEl,
+  configMenuEl,
       githubRepoUrl,
       isNavbarOpen,
       toggleNavbar,
       closeNavbar,
       navigateAndClose,
+  handleMenuKeydown,
+  handleMenuListKeydown,
+  onHoverMenu,
+  toggleMenu,
       navigateToHealthCheck,
       navigateToHealthCheckAndClose,
       navigateToAdmin,
@@ -375,6 +600,9 @@ export default {
       isAuthenticated,
       user,
       isActiveRoute,
+  isFileSectionActive,
+  isViewSectionActive,
+  isConfigSectionActive,
       isSoundEnabled,
       toggleSound
     };
@@ -565,6 +793,17 @@ export default {
 
   .nav-item .btn {
     white-space: nowrap;
+  }
+}
+
+/* Mobile-friendly dropdown behavior: stack items instead of overlay */
+@media (max-width: 991.98px) {
+  .nav-item.dropdown .dropdown-menu {
+    position: static;
+    float: none;
+    box-shadow: none;
+    width: 100%;
+    margin: 0.25rem 0 0.5rem;
   }
 }
 </style>
