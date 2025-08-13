@@ -6,7 +6,7 @@
           <div>
             <h2 class="mb-0">
               <i class="bi bi-link-45deg"></i>
-              External Specifications Manager
+              External Config
             </h2>
           </div>
         </div>
