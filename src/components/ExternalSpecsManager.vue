@@ -8,13 +8,7 @@
               <i class="bi bi-link-45deg"></i>
               External Specifications Manager
             </h4>
-            <!-- Repository Info Row -->
-            <div class="repository-info d-flex align-items-center text-muted">
-              <i class="bi bi-github me-2"></i>
-              <code class="bg-light px-2 py-1 rounded border">{{ owner }}/{{ repo }}</code>
-              <span class="mx-2">•</span>
-              <span class="badge bg-secondary">{{ branch }}</span>
-            </div>
+            <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
             <div>
               <!-- <button @click="goBack" class="btn btn-outline-secondary me-2">
                 <i class="bi bi-arrow-left"></i> Back
@@ -474,9 +468,11 @@ import { useSpecsValidation } from '../composables/useSpecsValidation.js'
 import { useBulkImport } from '../composables/useBulkImport.js'
 import { useReferenceSets } from '../composables/useReferenceSets.js'
 import { useNotifications } from '../composables/useNotifications.js'
+import RepoInfo from './RepoInfo.vue'
 
 export default {
   name: 'ExternalSpecsManager',
+  components: { RepoInfo },
   setup() {
     const router = useRouter()
     const route = useRoute()
