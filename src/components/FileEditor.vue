@@ -179,16 +179,21 @@
               <!-- Editor with Line Numbers -->
               <div class="editor-container flex-grow-1 d-flex">
                 <!-- Line Numbers -->
-                <div ref="lineNumbers" class="line-numbers" :style="{ height: editorHeight }">
-                  <div v-for="lineNum in lineCount" :key="lineNum" 
-                       :class="['line-number', { 'line-number-error': isErrorLine(lineNum) }]">
+                <div ref="lineNumbers" class="line-numbers" :style="{ height: editorHeight }" @scroll="handleLineNumbersScroll">
+                  <div v-for="lineNum in lineCount" :key="lineNum"
+                       :class="['line-number', { 'line-number-error': isErrorLine(lineNum) }]"
+                       :style="{ height: getLineNumberHeight(lineNum) }">
                     {{ lineNum }}
                   </div>
                 </div>
                 
                 <!-- Editor Textarea -->
-                <textarea ref="editor" v-model="content" @input="handleContentChange" @scroll="handleEditorScroll"
+                <textarea ref="editor" v-model="content" @input="handleContentChange" @scroll="handleEditorScroll" wrap="soft"
+                  :style="{ height: editorHeight }"
                   :class="['technical-editor-with-lines flex-grow-1', validationWarnings.length > 0 ? 'error' : '']"></textarea>
+
+                <!-- Hidden mirror used to measure wrapped line heights -->
+                <div ref="mirror" class="editor-mirror" aria-hidden="true"></div>
               </div>
             </div>
 
@@ -397,7 +402,8 @@ export default {
 
     // Editor state
     const editMode = ref('edit')
-    const editor = ref(null)
+  const editor = ref(null)
+  const mirror = ref(null)
     const lineNumbers = ref(null)
     const proxyInfo = ref('')
 
@@ -407,12 +413,70 @@ export default {
       return Math.max(1, content.value.split('\n').length)
     })
 
+    // Per-visual-line heights (strings with 'px'), aligned with source logical lines
+    const visualLineHeights = ref([])
+
+  const updateMirror = () => {
+      if (!mirror.value || !editor.value) return
+      const ta = editor.value
+      const m = mirror.value
+      // Mirror relevant styles that affect wrapping and line height/width
+      const styles = window.getComputedStyle(ta)
+      const propsToCopy = [
+        'fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'letterSpacing', 'textTransform', 'wordSpacing',
+        'textIndent', 'lineHeight', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
+        'borderLeftWidth', 'borderRightWidth', 'boxSizing', 'whiteSpace'
+      ]
+      propsToCopy.forEach(p => { m.style[p] = styles[p] })
+      m.style.width = ta.clientWidth + 'px'
+      // Render content with line-break markers so we can measure per logical line
+      const esc = (s) => s
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\t/g, '    ') // approximate tabs as 4 spaces
+        .replace(/\n/g, '\n')
+      // Wrap each logical line in a span to measure resulting height (including wraps)
+      const lines = (content.value || '').split('\n')
+      m.innerHTML = lines.map(l => `<span class="mirror-line">${esc(l)}\n</span>`).join('')
+    }
+
+    const recalcLineHeights = () => {
+      if (!mirror.value) return
+      const spans = mirror.value.querySelectorAll('.mirror-line')
+      const heights = []
+      spans.forEach(el => {
+        const h = el.getBoundingClientRect().height
+        heights.push(Math.max(h, 1))
+      })
+      visualLineHeights.value = heights.map(h => `${Math.round(h)}px`)
+      // Keep lineNumbers scroll in sync, because height changes can affect total scroll
+      handleEditorScroll()
+    }
+
+    const refreshLayout = debounce(() => {
+      updateMirror()
+      recalcLineHeights()
+    }, 50)
+
     const editorHeight = ref('calc(100vh - 300px)')
 
+    const syncingScroll = ref(false)
+
     const handleEditorScroll = () => {
-      if (editor.value && lineNumbers.value) {
-        lineNumbers.value.scrollTop = editor.value.scrollTop
-      }
+      if (!editor.value || !lineNumbers.value) return
+      if (syncingScroll.value) return
+      syncingScroll.value = true
+      lineNumbers.value.scrollTop = editor.value.scrollTop
+      syncingScroll.value = false
+    }
+
+    const handleLineNumbersScroll = () => {
+      if (!editor.value || !lineNumbers.value) return
+      if (syncingScroll.value) return
+      syncingScroll.value = true
+      editor.value.scrollTop = lineNumbers.value.scrollTop
+      syncingScroll.value = false
     }
 
     // Extract error line numbers from validation warnings
@@ -434,6 +498,18 @@ export default {
     const isErrorLine = (lineNumber) => {
       return errorLines.value.has(lineNumber)
     }
+
+    // Get dynamic height for each displayed line number
+    const getLineNumberHeight = (lineNumber) => {
+      const idx = lineNumber - 1
+      return visualLineHeights.value[idx] || defaultLineHeightPx.value
+    }
+
+    const defaultLineHeightPx = computed(() => {
+      // Derive from computed style if available
+      const lh = editor.value ? window.getComputedStyle(editor.value).lineHeight : '21px'
+      return typeof lh === 'string' && lh.endsWith('px') ? lh : '21px'
+    })
 
     // Check if file is terms file - SINGLE CONDITION: is file in terms directory?
     const isTermsFileComputed = computed(() => {
@@ -807,6 +883,18 @@ export default {
 
       window.addEventListener('beforeunload', handleBeforeUnload)
       window.fileEditorBeforeUnload = handleBeforeUnload
+
+      // Initialize mirror and heights after initial render
+      await nextTick()
+      refreshLayout()
+
+      // Recalc on resize
+      window.addEventListener('resize', refreshLayout)
+      // Recalc when fonts load (affects metrics)
+      if (document && 'fonts' in document) {
+        document.fonts.addEventListener?.('loadingdone', refreshLayout)
+        document.fonts.ready.then(refreshLayout).catch(() => {})
+      }
     })
 
     onUnmounted(() => {
@@ -820,6 +908,10 @@ export default {
       if (window.fileEditorBeforeUnload) {
         window.removeEventListener('beforeunload', window.fileEditorBeforeUnload)
         delete window.fileEditorBeforeUnload
+      }
+      window.removeEventListener('resize', refreshLayout)
+      if (document && 'fonts' in document) {
+        document.fonts.removeEventListener?.('loadingdone', refreshLayout)
       }
     })
 
@@ -846,6 +938,8 @@ export default {
       if (!loading.value) {
         await validateContent(content.value, filename.value, specsConfig.value)
       }
+      // Update layout when content changes
+      refreshLayout()
     }, { flush: 'post' })
 
     watch(editMode, (newMode, oldMode) => {
@@ -860,7 +954,7 @@ export default {
       }
     })
 
-    return {
+  return {
       // State
       loading,
       saving,
@@ -871,6 +965,7 @@ export default {
       isNewFile,
       editMode,
       editor,
+  mirror,
       lineNumbers,
       proxyInfo,
 
@@ -878,8 +973,10 @@ export default {
       lineCount,
       editorHeight,
       handleEditorScroll,
+  handleLineNumbersScroll,
       errorLines,
       isErrorLine,
+  getLineNumberHeight,
 
       // Computed
       filename,
@@ -1155,14 +1252,14 @@ textarea.error {
   user-select: none;
   min-width: 50px;
   max-width: 80px;
-  overflow: hidden;
+  overflow-y: auto; /* allow vertical scroll to sync with textarea */
+  overflow-x: hidden;
   white-space: nowrap;
 }
 
 .line-number {
-  height: 21px; /* Match textarea line height */
   display: flex;
-  align-items: center;
+  align-items: flex-start; /* align number to top of wrapped block */
   justify-content: flex-end;
 }
 
@@ -1193,7 +1290,7 @@ textarea.error {
   outline: none;
   background: white;
   overflow-y: auto;
-  white-space: pre;
+  white-space: pre-wrap; /* allow wrapping */
   word-wrap: break-word;
 }
 
@@ -1223,4 +1320,20 @@ textarea.error {
     opacity: 1;
   }
 }
+
+/* Hidden mirror element to measure wrapped line heights */
+.editor-mirror {
+  position: absolute;
+  visibility: hidden;
+  white-space: pre-wrap; /* mirror textarea wrapping */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  top: 0;
+  left: -9999px; /* keep off-screen */
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.editor-mirror .mirror-line { display: block; }
 </style>
