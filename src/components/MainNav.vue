@@ -85,7 +85,7 @@
               <li>
                 <a class="dropdown-item" v-if="githubRepoUrl" :href="githubRepoUrl" target="_blank"
                   rel="noopener" @click="closeNavbar">
-                  <i class="bi bi-box-arrow-up-right"></i> Repo
+                  <i class="bi bi-box-arrow-up-right"></i> Repo (new tab)
                 </a>
               </li>
             </ul>
