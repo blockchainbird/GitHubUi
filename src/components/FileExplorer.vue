@@ -2,13 +2,7 @@
   <div>
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h2>
-        <!-- Repository Info Row -->
-        <div class="repository-info d-flex align-items-center text-muted">
-          <i class="bi bi-github me-2"></i>
-          <code class="bg-light px-2 py-1 rounded border">{{ owner }}/{{ repo }}</code>
-          <span class="mx-2">•</span>
-          <span class="fs-6 badge bg-secondary">{{ branch }}</span>
-        </div>
+        <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
       </h2>
       <div>
         <!-- <button @click="$router.push('/home')" class="btn btn-outline-secondary">
@@ -299,10 +293,11 @@ import axios from 'axios'
 import { addToVisitedRepos } from '../utils/visitedRepos.js'
 import { getGitHubHeaders, addCacheBusting } from '../utils/apiUtils.js'
 import TermsPreview from './TermsPreview.vue'
+import RepoInfo from './RepoInfo.vue'
 
 export default {
   name: 'FileExplorer',
-  components: { TermsPreview },
+  components: { TermsPreview, RepoInfo },
   props: ['owner', 'repo', 'branch'],
   setup(props) {
     const router = useRouter()

@@ -5,13 +5,7 @@
         <i class="bi bi-heart-pulse"></i>
         Health Check
       </h2>
-      <!-- Repository Info Row -->
-      <div class="repository-info d-flex align-items-center text-muted">
-        <i class="bi bi-github me-2"></i>
-        <code class="bg-light px-2 py-1 rounded border">{{ owner }}/{{ repo }}</code>
-        <span class="mx-2">•</span>
-        <span class="badge bg-secondary">{{ branch }}</span>
-      </div>
+  <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
       <div>
         <button @click="runHealthCheck" class="btn btn-primary me-2" :disabled="isRunning">
           <span v-if="isRunning" class="spinner-border spinner-border-sm me-2" role="status">
@@ -106,9 +100,11 @@
 import { onMounted } from 'vue'
 import { useHealthCheck } from '../composables/useHealthCheck.js'
 import { addToVisitedRepos } from '../utils/visitedRepos.js'
+import RepoInfo from './RepoInfo.vue'
 
 export default {
   name: 'HealthCheck',
+  components: { RepoInfo },
   props: ['owner', 'repo', 'branch'],
   setup(props) {
     const {

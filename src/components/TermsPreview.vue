@@ -23,14 +23,7 @@
               <span class="d-none d-sm-inline">Refresh</span>
             </button>
           </div>
-          <!-- Repository Info -->
-          <div
-            class="repository-info d-flex flex-column flex-md-row align-items-start align-items-md-center gap-1 text-muted mb-4">
-            <i class="bi bi-github me-2"></i>
-            <code class="bg-light px-2 py-1 rounded border">{{ owner }}/{{ repo }}</code>
-            <span class="mx-2">•</span>
-            <span class="badge bg-secondary">{{ branch }}</span>
-          </div>
+          <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
         </div>
       </div>
 
@@ -327,9 +320,11 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useTermsManagement } from '../composables/useTermsManagement.js'
 import { getLoadingMessage } from '../utils/loadingMessages.js'
+import RepoInfo from './RepoInfo.vue'
 
 export default {
   name: 'TermsPreview',
+  components: { RepoInfo },
   props: {
     owner: {
       type: String,

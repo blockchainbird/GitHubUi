@@ -96,13 +96,7 @@
         <div class="card">
           <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">
-              <!-- Repository Info Row -->
-              <div class="repository-info d-flex align-items-center text-muted">
-                <i class="bi bi-github me-2"></i>
-                <code class="bg-light px-2 py-1 rounded border">{{ owner }}/{{ repo }}</code>
-                <span class="mx-2">•</span>
-                <span class="badge bg-secondary">{{ branch }}</span>
-              </div>
+              <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
             </h5>
             <div class="btn-group" role="group">
               <input type="radio" class="btn-check" id="simple-mode" v-model="editMode" value="simple"
@@ -298,13 +292,15 @@ import { isInTermsDirectory } from '../utils/termsFileDetection.js'
 import SimpleTermsEditor from './SimpleTermsEditor.vue'
 import TermsModal from './TermsModal.vue'
 import ContentValidationAlert from './ContentValidationAlert.vue'
+import RepoInfo from './RepoInfo.vue'
 
 export default {
   name: 'FileEditor',
   components: {
     SimpleTermsEditor,
     TermsModal,
-    ContentValidationAlert
+  ContentValidationAlert,
+  RepoInfo
   },
   props: ['owner', 'repo', 'branch', 'path'],
   setup(props) {

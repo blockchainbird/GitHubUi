@@ -8,12 +8,7 @@
             <i class="bi bi-play-circle me-2"></i>
             GitHub Actions
           </h2>
-          <div class="repository-info d-flex align-items-center text-muted">
-            <i class="bi bi-github me-2"></i>
-            <code class="bg-light px-2 py-1 rounded border">{{ owner }}/{{ repo }}</code>
-            <span class="mx-2">•</span>
-            <span class="fs-6 badge bg-secondary">{{ branch }}</span>
-          </div>
+          <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
         </div>
 
         <!-- Main Card -->
@@ -222,9 +217,11 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
+import RepoInfo from './RepoInfo.vue'
 
 export default {
   name: 'GitHubActions',
+  components: { RepoInfo },
   props: ['owner', 'repo', 'branch'],
   setup(props) {
     const route = useRoute()
