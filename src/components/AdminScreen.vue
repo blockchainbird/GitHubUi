@@ -4,14 +4,7 @@
       <div class="col-12 col-lg-10">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
-            <h2>Admin Configuration</h2>
-            <!-- Repository Info Row -->
-            <div class="repository-info d-flex align-items-center text-muted">
-              <i class="bi bi-github me-2"></i>
-              <code class="bg-light px-2 py-1 rounded border">{{ owner }}/{{ repo }}</code>
-              <span class="mx-2">•</span>
-              <span class="badge bg-secondary">{{ branch }}</span>
-            </div>
+            <h2><i class="bi bi-shield-lock"></i> Local Config</h2>
           </div>
           <!-- <button @click="$router.go(-1)" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left"></i>
@@ -33,7 +26,7 @@
 
         <div v-if="!loading" class="card">
           <div class="card-header">
-            <h5>Specs Configuration</h5>
+            <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
           </div>
           <div class="card-body">
             <form @submit.prevent="saveConfiguration">
@@ -155,11 +148,13 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
+import RepoInfo from './RepoInfo.vue'
 import axios from 'axios'
 
 export default {
   name: 'AdminScreen',
+  components: { RepoInfo },
   props: {
     owner: {
       type: String,
@@ -321,7 +316,10 @@ export default {
       loadConfiguration,
       saveConfiguration,
       addSpec,
-      removeSpec
+      removeSpec,
+      owner: props.owner,
+      repo: props.repo,
+      branch: props.branch
     }
   }
 }
