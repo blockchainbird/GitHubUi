@@ -1,9 +1,6 @@
 <template>
   <div>
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2>
-        <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
-      </h2>
       <div>
         <!-- <button @click="$router.push('/home')" class="btn btn-outline-secondary">
           <i class="bi bi-arrow-left"></i>
@@ -31,6 +28,7 @@
               <i class="bi bi-folder-fill"></i>
               Spec Directory: {{ currentDirectory }}
             </h5>
+            <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
             <div class="d-flex gap-2">
               <button @click="showCreateModal" class="btn btn-success btn-sm" title="Create New File">
                 <i class="bi bi-plus-circle"></i>
