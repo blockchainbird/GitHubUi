@@ -194,7 +194,11 @@
                 </span>
                 <span v-else>
                   <i class="bi bi-play-circle me-1"></i>
-                  Run {{ selectedAction ? selectedAction.charAt(0).toUpperCase() + selectedAction.slice(1) : 'Action' }}
+                  <template v-if="selectedAction === 'collectExternalReferences'">Render
+                      Specification</template>
+                  <template v-else-if="selectedAction === 'freeze'">Freeze Specification</template>
+                  <template v-else-if="selectedAction === 'todocx'">Generate DOCX</template>
+                  <template v-else>Action</template>
                 </span>
               </button>
             </div>
