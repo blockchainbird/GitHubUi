@@ -122,9 +122,7 @@
         <strong>Spec-Up-T Editor</strong> is a web-based consensus building tool running on Git.
       </p>
       <p>
-
-        It provides an intuitive interface for editing, validating, and visualizing
-        specifications, making it easier for teams to collaborate and maintain their documentation.
+        It provides an intuitive interface for editing specifications with a versioned glossary engine, making it easier for teams to collaborate and maintain their documentation.
       </p>
       <ul>
         <li>
