@@ -23,7 +23,7 @@
         </button>
 
         <!-- Commit button -->
-        <button @click="handleCommitFile" class="btn btn-success" :disabled="saving || !hasChanges">
+        <button @click="handleCommitFile" class="btn btn-primary" :disabled="saving || !hasChanges">
           <span v-if="saving">
             <span class="spinner-border spinner-border-sm me-2" role="status"></span>
             Saving...
