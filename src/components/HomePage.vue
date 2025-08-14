@@ -11,7 +11,7 @@
           <p class="card-text text-muted">
             Start a new specification repository with our guided setup wizard
           </p>
-          <router-link to="/create-project" class="btn btn-success">
+          <router-link to="/create-project" class="btn btn-primary">
             <i class="bi bi-rocket"></i>
             Create Repository
           </router-link>
