@@ -57,6 +57,13 @@ export default {
 </script>
 
 <style scoped>
+.alert-warning {
+  position: fixed !important;
+  bottom: 0em;
+  left: 1em;
+  z-index: 1;
+}
+
 .alert-warning ul {
   padding-left: 1.2rem;
 }
@@ -68,4 +75,6 @@ export default {
 .alert-warning li:last-child {
   margin-bottom: 0;
 }
+
+
 </style>
