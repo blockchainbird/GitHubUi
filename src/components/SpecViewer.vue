@@ -15,12 +15,12 @@
           <div class="card-header d-flex justify-content-between align-items-center">
             <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
             <div class="d-flex gap-2">
-              <a :href="resolvedSpecUrl" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm"
+              <a :href="resolvedSpecUrl" target="_blank" rel="noopener" class="btn btn-primary btn-sm"
                 :disabled="!resolvedSpecUrl">
                 <i class="bi bi-box-arrow-up-right"></i>
                 Open in new tab
               </a>
-              <button class="btn btn-outline-secondary btn-sm" @click="reloadIframe" :disabled="!canEmbed">
+              <button class="btn btn-primary btn-sm" @click="reloadIframe" :disabled="!canEmbed">
                 <i class="bi bi-arrow-clockwise"></i>
                 Reload
               </button>
