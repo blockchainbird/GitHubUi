@@ -25,10 +25,6 @@
         <div v-if="!loading" class="card">
           <div class="card-header d-flex justify-content-between align-items-center">
             <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
-            <button @click="saveSpecs" class="btn btn-success" :disabled="saving">
-              <i class="bi bi-save"></i>
-              {{ saving ? 'Saving...' : 'Save Changes' }}
-            </button>
           </div>
           <div class="card-body">
             <!-- External Specs List -->
@@ -444,6 +440,10 @@
               <i class="bi bi-exclamation-triangle"></i>
               You have unsaved changes. Don't forget to save!
             </div>
+            <button @click="saveSpecs" class="btn btn-primary" :disabled="saving">
+              <i class="bi bi-save"></i>
+              {{ saving ? 'Saving...' : 'Save Changes' }}
+            </button>
           </div>
         </div>
       </div>
