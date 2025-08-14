@@ -37,7 +37,7 @@
                 </h5>
                 <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
                 <div class="d-flex gap-2">
-                  <button @click="showCreateModal" class="btn btn-success btn-sm" title="Create New File">
+                  <button @click="showCreateModal" class="btn btn-primary btn-sm" title="Create New File">
                     <i class="bi bi-plus-circle"></i>
                     New File
                   </button>
