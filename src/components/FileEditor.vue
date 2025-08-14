@@ -61,7 +61,7 @@
       </div>
     </div>
 
-    <ContentValidationAlert :warnings="validationWarnings" :show-warnings="showValidationWarnings" />
+    <ContentValidationAlert :warnings="validationWarnings" v-model:showWarnings="showValidationWarnings" />
 
     <!-- Remote Change Alert -->
     <div v-if="remoteChangeDetected" class="alert alert-warning alert-dismissible" role="alert">
@@ -173,17 +173,18 @@
               <!-- Editor with Line Numbers -->
               <div class="editor-container flex-grow-1 d-flex">
                 <!-- Line Numbers -->
-                <div ref="lineNumbers" class="line-numbers" :style="{ height: editorHeight }" @scroll="handleLineNumbersScroll">
+                <div ref="lineNumbers" class="line-numbers" :style="{ height: editorHeight }"
+                  @scroll="handleLineNumbersScroll">
                   <div v-for="lineNum in lineCount" :key="lineNum"
-                       :class="['line-number', { 'line-number-error': isErrorLine(lineNum) }]"
-                       :style="{ height: getLineNumberHeight(lineNum) }">
+                    :class="['line-number', { 'line-number-error': isErrorLine(lineNum) }]"
+                    :style="{ height: getLineNumberHeight(lineNum) }">
                     {{ lineNum }}
                   </div>
                 </div>
-                
+
                 <!-- Editor Textarea -->
-                <textarea ref="editor" v-model="content" @input="handleContentChange" @scroll="handleEditorScroll" wrap="soft"
-                  :style="{ height: editorHeight }"
+                <textarea ref="editor" v-model="content" @input="handleContentChange" @scroll="handleEditorScroll"
+                  wrap="soft" :style="{ height: editorHeight }"
                   :class="['technical-editor-with-lines flex-grow-1', validationWarnings.length > 0 ? 'error' : '']"></textarea>
 
                 <!-- Hidden mirror used to measure wrapped line heights -->
@@ -299,8 +300,8 @@ export default {
   components: {
     SimpleTermsEditor,
     TermsModal,
-  ContentValidationAlert,
-  RepoInfo
+    ContentValidationAlert,
+    RepoInfo
   },
   props: ['owner', 'repo', 'branch', 'path'],
   setup(props) {
@@ -398,8 +399,8 @@ export default {
 
     // Editor state
     const editMode = ref('edit')
-  const editor = ref(null)
-  const mirror = ref(null)
+    const editor = ref(null)
+    const mirror = ref(null)
     const lineNumbers = ref(null)
     const proxyInfo = ref('')
 
@@ -412,7 +413,7 @@ export default {
     // Per-visual-line heights (strings with 'px'), aligned with source logical lines
     const visualLineHeights = ref([])
 
-  const updateMirror = () => {
+    const updateMirror = () => {
       if (!mirror.value || !editor.value) return
       const ta = editor.value
       const m = mirror.value
@@ -889,7 +890,7 @@ export default {
       // Recalc when fonts load (affects metrics)
       if (document && 'fonts' in document) {
         document.fonts.addEventListener?.('loadingdone', refreshLayout)
-        document.fonts.ready.then(refreshLayout).catch(() => {})
+        document.fonts.ready.then(refreshLayout).catch(() => { })
       }
     })
 
@@ -950,7 +951,7 @@ export default {
       }
     })
 
-  return {
+    return {
       // State
       loading,
       saving,
@@ -961,7 +962,7 @@ export default {
       isNewFile,
       editMode,
       editor,
-  mirror,
+      mirror,
       lineNumbers,
       proxyInfo,
 
@@ -969,10 +970,10 @@ export default {
       lineCount,
       editorHeight,
       handleEditorScroll,
-  handleLineNumbersScroll,
+      handleLineNumbersScroll,
       errorLines,
       isErrorLine,
-  getLineNumberHeight,
+      getLineNumberHeight,
 
       // Computed
       filename,
@@ -1081,6 +1082,7 @@ textarea:focus {
   font-size: 14px;
   resize: none;
 }
+
 textarea.error {
   background: rgb(247, 217, 44);
 }
@@ -1248,14 +1250,16 @@ textarea.error {
   user-select: none;
   min-width: 50px;
   max-width: 80px;
-  overflow-y: auto; /* allow vertical scroll to sync with textarea */
+  overflow-y: auto;
+  /* allow vertical scroll to sync with textarea */
   overflow-x: hidden;
   white-space: nowrap;
 }
 
 .line-number {
   display: flex;
-  align-items: flex-start; /* align number to top of wrapped block */
+  align-items: flex-start;
+  /* align number to top of wrapped block */
   justify-content: flex-end;
 }
 
@@ -1267,9 +1271,12 @@ textarea.error {
 }
 
 @keyframes errorPulse {
-  0%, 100% {
+
+  0%,
+  100% {
     background-color: #dc3545;
   }
+
   50% {
     background-color: #bb2d3b;
   }
@@ -1286,7 +1293,8 @@ textarea.error {
   outline: none;
   background: white;
   overflow-y: auto;
-  white-space: pre-wrap; /* allow wrapping */
+  white-space: pre-wrap;
+  /* allow wrapping */
   word-wrap: break-word;
 }
 
@@ -1321,15 +1329,19 @@ textarea.error {
 .editor-mirror {
   position: absolute;
   visibility: hidden;
-  white-space: pre-wrap; /* mirror textarea wrapping */
+  white-space: pre-wrap;
+  /* mirror textarea wrapping */
   word-wrap: break-word;
   overflow-wrap: break-word;
   top: 0;
-  left: -9999px; /* keep off-screen */
+  left: -9999px;
+  /* keep off-screen */
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 14px;
   line-height: 1.5;
 }
 
-.editor-mirror .mirror-line { display: block; }
+.editor-mirror .mirror-line {
+  display: block;
+}
 </style>
