@@ -1,14 +1,14 @@
 <template>
   <div class="container-fluid mt-3">
     <div class="row justify-content-center">
-      <div class="col-md-8">
+      <div class="col-12 col-lg-10">
         <div class="card">
           <div class="card-header d-flex align-items-center">
             <i class="bi bi-gear me-2"></i>
             <h4 class="mb-0">Settings</h4>
           </div>
           <div class="card-body">
-            
+
             <!-- Storage Section -->
             <div class="settings-section">
               <h5 class="section-title">
@@ -18,7 +18,7 @@
               <p class="text-muted mb-3">
                 Clear stored application data to resolve issues after updates.
               </p>
-              
+
               <div class="d-flex align-items-center justify-content-between">
                 <div>
                   <strong>Clear All Local Data</strong>
@@ -26,11 +26,7 @@
                     This will remove all cached data, preferences, and login information.
                   </div>
                 </div>
-                <button 
-                  @click="clearLocalStorage" 
-                  class="btn btn-outline-danger"
-                  :disabled="isClearing"
-                >
+                <button @click="clearLocalStorage" class="btn btn-outline-danger" :disabled="isClearing">
                   <i class="bi bi-trash3" v-if="!isClearing"></i>
                   <div class="spinner-border spinner-border-sm" role="status" v-if="isClearing">
                     <span class="visually-hidden">Clearing...</span>
@@ -46,13 +42,8 @@
     </div>
 
     <!-- Confirmation Modal -->
-    <div 
-      class="modal fade" 
-      id="confirmClearModal" 
-      tabindex="-1" 
-      aria-labelledby="confirmClearModalLabel" 
-      aria-hidden="true"
-    >
+    <div class="modal fade" id="confirmClearModal" tabindex="-1" aria-labelledby="confirmClearModalLabel"
+      aria-hidden="true">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
