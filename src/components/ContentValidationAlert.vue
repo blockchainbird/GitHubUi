@@ -1,6 +1,13 @@
 <template>
-  <div v-if="showWarnings" class="alert alert-warning" role="alert">
-    <div class="d-flex align-items-start">
+  <div v-if="showWarnings && !dismissed" class="alert alert-warning alert-dismissible position-relative" role="alert">
+    <button
+      type="button"
+      class="btn-close position-absolute top-0 end-0 m-2"
+      aria-label="Close"
+      title="Dismiss"
+      @click="handleClose"
+    ></button>
+    <div class="d-flex align-items-start pe-4">
       <i class="bi bi-exclamation-triangle-fill me-2 flex-shrink-0 mt-1"></i>
       <div>
         <strong>Content Validation Issues:</strong>
@@ -10,11 +17,13 @@
       </div>
     </div>
   </div>
+  
 </template>
 
 <script>
 export default {
   name: 'ContentValidationAlert',
+  emits: ['close', 'update:showWarnings'],
   props: {
     warnings: {
       type: Array,
@@ -23,6 +32,25 @@ export default {
     showWarnings: {
       type: Boolean,
       default: false
+    }
+  },
+  data() {
+    return {
+      dismissed: false
+    }
+  },
+  watch: {
+    showWarnings(newVal) {
+      // Reset dismissal when new warnings are shown
+      if (newVal) this.dismissed = false
+    }
+  },
+  methods: {
+    handleClose() {
+      this.dismissed = true
+      // Let parent react if needed (supports both a custom close event and v-model style)
+      this.$emit('close')
+      this.$emit('update:showWarnings', false)
     }
   }
 }
