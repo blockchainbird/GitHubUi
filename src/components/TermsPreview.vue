@@ -1,40 +1,35 @@
 <template>
-  <!-- Full Page View -->
-  <div class="terms-preview-standalone min-vh-100 bg-light rounded p-3 mb-5">
-    <div class="container-fluid mt-3">
-      <!-- Header Section -->
-      <div class="row mb-1">
-        <div class="col-12">
-          <div class="d-flex align-items-center justify-content-between mb-3">
-            <div class="d-flex align-items-center">
-              <!-- <button type="button" class="btn btn-outline-secondary me-3" @click="navigateBack">
-                <i class="bi bi-arrow-left"></i>
-                <span class="d-none d-sm-inline ms-1">Back</span>
-              </button> -->
-              <h2 class="mb-0 d-flex align-items-center">
-                <i class="bi bi-book text-primary me-2"></i>
-                <span class="fw-semibold">Terms & Definitions Preview</span>
-              </h2>
-            </div>
-            <button type="button" class="btn btn-outline-primary d-flex align-items-center gap-1"
-              @click="refreshPreview" :disabled="loading"
-              :title="loading ? 'Refreshing terms...' : 'Clear cache and reload all terms'">
-              <i class="bi" :class="loading ? 'bi-arrow-clockwise spin' : 'bi-arrow-clockwise'"></i>
-              <span class="d-none d-sm-inline">Refresh</span>
-            </button>
+  <div class="container-fluid mt-3">
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-10">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h2 class="mb-0">
+              <i class="bi bi-link-45deg"></i>
+              Terms & Definitions Preview
+            </h2>
           </div>
-          <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
+
+          <button type="button" class="btn btn-outline-primary d-flex align-items-center gap-1" @click="refreshPreview"
+            :disabled="loading" :title="loading ? 'Refreshing terms...' : 'Clear cache and reload all terms'">
+            <i class="bi" :class="loading ? 'bi-arrow-clockwise spin' : 'bi-arrow-clockwise'"></i>
+            <span class="d-none d-sm-inline">Refresh</span>
+          </button>
         </div>
       </div>
 
-      <!-- Content Section (reuse modal content) -->
-      <div class="terms-preview-content bg-white rounded shadow-sm p-4">
+      <!-- Content Section -->
+      <div class="col-12 col-lg-10">
         <template v-if="loading || error || allTerms.length > 0">
-          <!-- Search and Filter Controls (reuse from modal) -->
+          <!-- Search and Filter Controls -->
           <div class="search-controls-section mb-4">
             <div class="card border-0 shadow-sm">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
+              </div>
+
               <div class="card-body p-3">
-                <div class="row g-3 align-items-end">
+                <div class="row g-3 mb-3 align-items-end">
                   <div class="col-md-7">
                     <label class="form-label small text-muted fw-medium mb-1">Search Terms</label>
                     <div class="input-group">
@@ -70,49 +65,65 @@
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Include the rest of the modal content -->
-          <div v-if="loading" class="loading-state-container">
-            <!-- Same loading content as modal -->
-            <div class="text-center py-5">
-              <div class="loading-spinner spinner-border text-primary mb-3" role="status"
-                style="width: 3rem; height: 3rem;">
-                <span class="visually-hidden">{{ loadingMessage }}</span>
-              </div>
-              <h6 class="fw-medium text-dark mb-2">Loading Terms & Definitions</h6>
-              <p class="text-muted mb-0">{{ loadingMessage }}</p>
-            </div>
-
-            <!-- Progress indicator for external specs -->
-            <div v-if="proxyInfo && specsConfig?.specs?.[0]?.external_specs?.length" class="mt-4">
-              <div class="alert alert-info border-0 shadow-sm d-flex align-items-start">
-                <i class="bi bi-info-circle text-info me-3 mt-1"></i>
-                <div class="flex-grow-1">
-                  <div class="fw-medium mb-1">Processing External Specifications</div>
-                  <div class="small text-muted">
-                    Loading {{ specsConfig.specs[0].external_specs.length }} external spec(s) may take a moment...
+                <div class="row align-items-center">
+                  <div class="col-md-8">
+                    <div class="d-flex flex-wrap align-items-center gap-3">
+                      <div class="stats-metric">
+                        <span class="text-primary fs-5">{{ filteredTerms.length }}</span>
+                        <span class="text-muted small"> of {{ allTerms.length }} terms displayed</span>
+                      </div>
+                      <div v-if="getTermCounts().local > 0" class="stats-badge">
+                        <i class="bi bi-folder text-primary me-1"></i>
+                        <span class="fw-medium">{{ getTermCounts().local }}</span>
+                        <span class="text-muted small"> Local</span>
+                      </div>
+                      <div v-if="getTermCounts().external > 0" class="stats-badge">
+                        <i class="bi bi-link-45deg text-success me-1"></i>
+                        <span class="fw-medium">{{ getTermCounts().external }}</span>
+                        <span class="text-muted small"> External</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
+                <!-- Include the rest of the modal content -->
+                <div v-if="loading" class="loading-state-container">
+                  <!-- Same loading content as modal -->
+                  <div class="text-center py-5">
+                    <div class="loading-spinner spinner-border text-primary mb-3" role="status"
+                      style="width: 3rem; height: 3rem;">
+                      <span class="visually-hidden">{{ loadingMessage }}</span>
+                    </div>
+                    <h6 class="fw-medium text-dark mb-2">Loading Terms & Definitions</h6>
+                    <p class="text-muted mb-0">{{ loadingMessage }}</p>
+                  </div>
 
-          <!-- Error State -->
-          <div v-else-if="error" class="alert alert-danger" role="alert">
-            <i class="bi bi-exclamation-triangle"></i>
-            {{ error }}
-          </div>
+                  <!-- Progress indicator for external specs -->
+                  <div v-if="proxyInfo && specsConfig?.specs?.[0]?.external_specs?.length" class="mt-4">
+                    <div class="alert alert-info border-0 shadow-sm d-flex align-items-start">
+                      <i class="bi bi-info-circle text-info me-3 mt-1"></i>
+                      <div class="flex-grow-1">
+                        <div class="fw-medium mb-1">Processing External Specifications</div>
+                        <div class="small text-muted">
+                          Loading {{ specsConfig.specs[0].external_specs.length }} external spec(s) may take a moment...
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-          <!-- Terms Display (reuse from modal) -->
-          <div v-else class="terms-preview-container">
-            <!-- Statistics and Status -->
-            <div class="stats-section mb-4">
-              <div class="card border-0 bg-light">
-                <div class="card-body px-3 py-0">
-                  <div class="row align-items-center">
+                <!-- Error State -->
+                <div v-else-if="error" class="alert alert-danger" role="alert">
+                  <i class="bi bi-exclamation-triangle"></i>
+                  {{ error }}
+                </div>
+
+                <!-- Terms Display -->
+                <div v-else class="terms-preview-container">
+                  <!-- Statistics and Status -->
+                  <div class="stats-section mb-4">
+                    <div class="card border-0 bg-light">
+                      <div class="card-body px-3 py-0">
+                        <!-- <div class="row align-items-center">
                     <div class="col-md-8">
                       <div class="d-flex flex-wrap align-items-center gap-3">
                         <div class="stats-metric">
@@ -131,184 +142,192 @@
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </div> -->
 
-                  <!-- Status Messages -->
-                  <div v-if="proxyInfo && !loading" class="mt-3">
-                    <div class="alert alert-success alert-sm border-0 d-flex align-items-center mb-0 py-2">
-                      <i class="bi bi-check-circle text-success me-2"></i>
-                      <small class="mb-0">{{ proxyInfo }}</small>
-                    </div>
-                  </div>
-
-                  <div v-if="refreshSuccess && !loading" class="mt-3">
-                    <div class="alert alert-info alert-sm border-0 d-flex align-items-center mb-0 py-2">
-                      <i class="bi bi-arrow-clockwise text-info me-2"></i>
-                      <small class="mb-0">Terms refreshed successfully! Cache cleared and reloaded {{ allTerms.length }}
-                        terms.</small>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Include terms list content from modal (same structure) -->
-            <!-- No Results -->
-            <div v-if="filteredTerms.length === 0 && !loading" class="empty-results-state">
-              <div class="text-center py-5">
-                <div class="empty-icon mb-3">
-                  <i class="bi bi-search text-muted" style="font-size: 3rem;"></i>
-                </div>
-                <h6 class="fw-medium text-dark mb-2">
-                  {{ searchQuery ? 'No Terms Found' : 'No Terms Available' }}
-                </h6>
-                <p class="text-muted mb-3">
-                  {{ searchQuery ? 'No terms found matching your search criteria.' :
-                  'This repository does not contain any term definitions.' }}
-                </p>
-                <div v-if="!searchQuery && allTerms.length === 0" class="alert alert-light border d-inline-block">
-                  <div class="d-flex align-items-start">
-                    <i class="bi bi-info-circle text-info me-2 mt-1"></i>
-                    <div class="text-start">
-                      <div class="small fw-medium mb-1">Possible Reasons:</div>
-                      <ul class="small text-muted mb-0 ps-3">
-                        <li>Terms may be located in a different directory structure</li>
-                        <li>Repository may not contain Spec-Up term definitions</li>
-                        <li>External specifications may not be accessible</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-                <div v-if="searchQuery" class="mt-3">
-                  <button class="btn btn-outline-secondary btn-sm" @click="searchQuery = ''; filterTerms()">
-                    <i class="bi bi-x-circle me-1"></i> Clear Search
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Terms List (reuse from modal) -->
-            <div v-else class="terms-list">
-              <!-- Compact View -->
-              <template v-if="viewMode === 'compact'">
-                <div class="compact-terms-container">
-                  <div class="list-group list-group-flush">
-                    <div v-for="term in filteredTerms" :key="getTermKey(term)"
-                      class="list-group-item compact-term-item border-0 border-bottom">
-                      <div class="row align-items-start flex-column flex-sm-row">
-                        <div class="col-md-4 col-lg-3 mb-2 mb-md-0">
-                          <div class="term-header mb-3 mb-sm-0">
-                            <div class="term-name-container d-flex align-items-center mb-1">
-                              <span class="term-name text-primary me-2">{{ term.id }}</span>
-                              <span v-if="term.external" class="badge bg-success badge-sm">
-                                <i class="bi bi-link-45deg"></i> {{ term.externalSpec }}
-                              </span>
-                              <span v-else class="badge bg-primary badge-sm">
-                                <i class="bi bi-folder"></i> Local
-                              </span>
-                            </div>
-
-                            <div v-if="term.aliases && term.aliases.length > 0" class="aliases-compact">
-                              <div class="small text-muted mb-1">
-                                <i class="bi bi-tags me-1"></i>Aliases:
-                              </div>
-                              <div class="alias-tags">
-                                <span v-for="alias in term.aliases.slice(0, 3)" :key="alias" class="alias-tag">
-                                  {{ alias }}
-                                </span>
-                                <span v-if="term.aliases.length > 3" class="text-muted small">
-                                  +{{ term.aliases.length - 3 }} more
-                                </span>
-                              </div>
-                            </div>
+                        <!-- Status Messages -->
+                        <div v-if="proxyInfo && !loading" class="mt-3">
+                          <div class="alert alert-success alert-sm border-0 d-flex align-items-center mb-0 py-2">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <small class="mb-0">{{ proxyInfo }}</small>
                           </div>
                         </div>
 
-                        <div class="col-md-8 col-lg-9">
-                          <div class="definition-preview">
-                            <div v-if="term.definitionText" class="text-secondary small lh-base">
-                              {{ truncateText(term.definitionText, 150) }}
-                            </div>
-                            <div v-else class="text-muted fst-italic small">
-                              <i class="bi bi-exclamation-circle me-1"></i>
-                              No definition available
-                            </div>
+                        <div v-if="refreshSuccess && !loading" class="mt-3">
+                          <div class="alert alert-info alert-sm border-0 d-flex align-items-center mb-0 py-2">
+                            <i class="bi bi-arrow-clockwise text-info me-2"></i>
+                            <small class="mb-0">Terms refreshed successfully! Cache cleared and reloaded {{
+                              allTerms.length }}
+                              terms.</small>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </template>
 
-              <!-- Detailed View -->
-              <template v-else>
-                <div class="detailed-terms-container">
-                  <div class="row g-4">
-                    <div v-for="term in filteredTerms" :key="getTermKey(term)" class="col-12 col-lg-6">
-                      <div class="card term-card h-100 shadow-sm border-0">
-                        <div class="card-header bg-light border-0 d-flex justify-content-between align-items-start">
-                          <div class="term-header-info flex-grow-1">
-                            <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
-                              <h6 class="term-name text-primary mb-0 fw-semibold">{{ term.id }}</h6>
-                              <span v-if="term.external" class="badge bg-success d-flex align-items-center gap-1">
-                                <i class="bi bi-link-45deg"></i>
-                                <span class="small">{{ term.externalSpec }}</span>
-                              </span>
-                              <span v-else class="badge bg-primary d-flex align-items-center gap-1">
-                                <i class="bi bi-folder"></i>
-                                <span class="small">Local</span>
-                              </span>
-                            </div>
-                            <div class="small text-muted">
-                              <i class="bi bi-file-text me-1"></i>
-                              {{ term.source || (term.external ? 'External Reference' : 'Local Definition') }}
-                            </div>
+                  <!-- Include terms list content from modal (same structure) -->
+                  <!-- No Results -->
+                  <div v-if="filteredTerms.length === 0 && !loading" class="empty-results-state">
+                    <div class="text-center py-5">
+                      <div class="empty-icon mb-3">
+                        <i class="bi bi-search text-muted" style="font-size: 3rem;"></i>
+                      </div>
+                      <h6 class="fw-medium text-dark mb-2">
+                        {{ searchQuery ? 'No Terms Found' : 'No Terms Available' }}
+                      </h6>
+                      <p class="text-muted mb-3">
+                        {{ searchQuery ? 'No terms found matching your search criteria.' :
+                          'This repository does not contain any term definitions.' }}
+                      </p>
+                      <div v-if="!searchQuery && allTerms.length === 0" class="alert alert-light border d-inline-block">
+                        <div class="d-flex align-items-start">
+                          <i class="bi bi-info-circle text-info me-2 mt-1"></i>
+                          <div class="text-start">
+                            <div class="small fw-medium mb-1">Possible Reasons:</div>
+                            <ul class="small text-muted mb-0 ps-3">
+                              <li>Terms may be located in a different directory structure</li>
+                              <li>Repository may not contain Spec-Up term definitions</li>
+                              <li>External specifications may not be accessible</li>
+                            </ul>
                           </div>
                         </div>
+                      </div>
+                      <div v-if="searchQuery" class="mt-3">
+                        <button class="btn btn-outline-secondary btn-sm" @click="searchQuery = ''; filterTerms()">
+                          <i class="bi bi-x-circle me-1"></i> Clear Search
+                        </button>
+                      </div>
+                    </div>
+                  </div>
 
-                        <div class="card-body">
-                          <!-- Aliases Section -->
-                          <div v-if="term.aliases && term.aliases.length > 0" class="aliases-section mb-3">
-                            <div class="small fw-medium text-muted mb-2 d-flex align-items-center">
-                              <i class="bi bi-tags me-1"></i>
-                              Also known as:
-                            </div>
-                            <div class="alias-tags-detailed">
-                              <span v-for="alias in term.aliases" :key="alias" class="alias-tag-detailed me-1 mb-1">
-                                {{ alias }}
-                              </span>
-                            </div>
-                          </div>
+                  <!-- Terms List -->
+                  <div v-else class="terms-list">
+                    <!-- Compact View -->
+                    <template v-if="viewMode === 'compact'">
+                      <div class="compact-terms-container">
+                        <div class="list-group list-group-flush">
+                          <div v-for="term in filteredTerms" :key="getTermKey(term)"
+                            class="list-group-item compact-term-item border-0 border-bottom">
+                            <div class="row align-items-start flex-column flex-sm-row">
+                              <div class="col-md-4 col-lg-3 mb-2 mb-md-0">
+                                <div class="term-header mb-3 mb-sm-0">
+                                  <div class="term-name-container d-flex align-items-center mb-1">
+                                    <span class="term-name text-primary me-2">{{ term.id }}</span>
+                                    <span v-if="term.external" class="badge bg-success badge-sm">
+                                      <i class="bi bi-link-45deg"></i> {{ term.externalSpec }}
+                                    </span>
+                                    <span v-else class="badge bg-primary badge-sm">
+                                      <i class="bi bi-folder"></i> Local
+                                    </span>
+                                  </div>
 
-                          <!-- Definition Section -->
-                          <div class="definition-section">
-                            <div class="small fw-medium text-muted mb-2 d-flex align-items-center">
-                              <i class="bi bi-blockquote-left me-1"></i>
-                              Definition:
-                            </div>
-                            <div class="definition-content-detailed">
-                              <div v-if="term.definition" v-html="term.definition"
-                                class="terms-and-definitions-list rendered-definition"></div>
-                              <div v-else-if="term.definitionText" class="definition-text-plain">
-                                {{ term.definitionText }}
+                                  <div v-if="term.aliases && term.aliases.length > 0" class="aliases-compact">
+                                    <div class="small text-muted mb-1">
+                                      <i class="bi bi-tags me-1"></i>Aliases:
+                                    </div>
+                                    <div class="alias-tags">
+                                      <span v-for="alias in term.aliases.slice(0, 3)" :key="alias" class="alias-tag">
+                                        {{ alias }}
+                                      </span>
+                                      <span v-if="term.aliases.length > 3" class="text-muted small">
+                                        +{{ term.aliases.length - 3 }} more
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
-                              <div v-else class="no-definition-notice">
-                                <div class="alert alert-light border d-flex align-items-center mb-0">
-                                  <i class="bi bi-info-circle text-warning me-2"></i>
-                                  <span class="small">No definition available for this term</span>
+
+                              <div class="col-md-8 col-lg-9">
+                                <div class="definition-preview">
+                                  <div v-if="term.definitionText" class="text-secondary small lh-base">
+                                    {{ truncateText(term.definitionText, 150) }}
+                                  </div>
+                                  <div v-else class="text-muted fst-italic small">
+                                    <i class="bi bi-exclamation-circle me-1"></i>
+                                    No definition available
+                                  </div>
                                 </div>
                               </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </template>
+
+                    <!-- Detailed View -->
+                    <template v-else>
+                      <div class="detailed-terms-container">
+                        <div class="row g-4">
+                          <div v-for="term in filteredTerms" :key="getTermKey(term)" class="col-12 col-lg-6">
+                            <div class="card term-card h-100 shadow-sm border-0">
+                              <div
+                                class="card-header bg-light border-0 d-flex justify-content-between align-items-start">
+                                <div class="term-header-info flex-grow-1">
+                                  <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+                                    <h6 class="term-name text-primary mb-0 fw-semibold">{{ term.id }}</h6>
+                                    <span v-if="term.external" class="badge bg-success d-flex align-items-center gap-1">
+                                      <i class="bi bi-link-45deg"></i>
+                                      <span class="small">{{ term.externalSpec }}</span>
+                                    </span>
+                                    <span v-else class="badge bg-primary d-flex align-items-center gap-1">
+                                      <i class="bi bi-folder"></i>
+                                      <span class="small">Local</span>
+                                    </span>
+                                  </div>
+                                  <div class="small text-muted">
+                                    <i class="bi bi-file-text me-1"></i>
+                                    {{ term.source || (term.external ? 'External Reference' : 'Local Definition') }}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div class="card-body">
+                                <!-- Aliases Section -->
+                                <div v-if="term.aliases && term.aliases.length > 0" class="aliases-section mb-3">
+                                  <div class="small fw-medium text-muted mb-2 d-flex align-items-center">
+                                    <i class="bi bi-tags me-1"></i>
+                                    Also known as:
+                                  </div>
+                                  <div class="alias-tags-detailed">
+                                    <span v-for="alias in term.aliases" :key="alias"
+                                      class="alias-tag-detailed me-1 mb-1">
+                                      {{ alias }}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <!-- Definition Section -->
+                                <div class="definition-section">
+                                  <div class="small fw-medium text-muted mb-2 d-flex align-items-center">
+                                    <i class="bi bi-blockquote-left me-1"></i>
+                                    Definition:
+                                  </div>
+                                  <div class="definition-content-detailed">
+                                    <div v-if="term.definition" v-html="term.definition"
+                                      class="terms-and-definitions-list rendered-definition"></div>
+                                    <div v-else-if="term.definitionText" class="definition-text-plain">
+                                      {{ term.definitionText }}
+                                    </div>
+                                    <div v-else class="no-definition-notice">
+                                      <div class="alert alert-light border d-flex align-items-center mb-0">
+                                        <i class="bi bi-info-circle text-warning me-2"></i>
+                                        <span class="small">No definition available for this term</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </template>
                   </div>
                 </div>
-              </template>
+              </div>
             </div>
           </div>
+
+
         </template>
       </div>
     </div>
