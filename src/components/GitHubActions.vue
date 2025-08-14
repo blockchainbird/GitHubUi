@@ -181,7 +181,7 @@
                 <i class="bi bi-arrow-left me-1"></i>
                 Back
               </button>
-              <button @click="triggerWorkflow" class="btn btn-warning"
+              <button @click="triggerWorkflow" class="btn btn-primary"
                 :disabled="!selectedAction || triggeringWorkflow">
                 <span v-if="triggeringWorkflow">
                   <span class="spinner-border spinner-border-sm me-2" role="status"></span>
