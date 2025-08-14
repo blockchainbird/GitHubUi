@@ -9,12 +9,6 @@
               Terms & Definitions Preview
             </h2>
           </div>
-
-          <button type="button" class="btn btn-outline-primary d-flex align-items-center gap-1" @click="refreshPreview"
-            :disabled="loading" :title="loading ? 'Refreshing terms...' : 'Clear cache and reload all terms'">
-            <i class="bi" :class="loading ? 'bi-arrow-clockwise spin' : 'bi-arrow-clockwise'"></i>
-            <span class="d-none d-sm-inline">Refresh</span>
-          </button>
         </div>
       </div>
 
@@ -26,6 +20,13 @@
             <div class="card border-0 shadow-sm">
               <div class="card-header d-flex justify-content-between align-items-center">
                 <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
+                <button type="button" class="btn btn-primary d-flex align-items-center gap-1"
+                  @click="refreshPreview" :disabled="loading"
+                  :title="loading ? 'Refreshing terms...' : 'Clear cache and reload all terms'">
+                  <i class="bi" :class="loading ? 'bi-arrow-clockwise spin' : 'bi-arrow-clockwise'"></i>
+                  <span class="d-none d-sm-inline">Refresh</span>
+                </button>
+
               </div>
 
               <div class="card-body p-3">
@@ -176,7 +177,7 @@
                       </h6>
                       <p class="text-muted mb-3">
                         {{ searchQuery ? 'No terms found matching your search criteria.' :
-                          'This repository does not contain any term definitions.' }}
+                        'This repository does not contain any term definitions.' }}
                       </p>
                       <div v-if="!searchQuery && allTerms.length === 0" class="alert alert-light border d-inline-block">
                         <div class="d-flex align-items-start">
