@@ -1,58 +1,66 @@
 <template>
-  <div>
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
-        <!-- <button @click="$router.push('/home')" class="btn btn-outline-secondary">
+  <div class="container-fluid mt-3">
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-10">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h2 class="mb-0">
+              <i class="bi bi-folder"></i>
+              Files
+            </h2>
+
+            <!-- <button @click="$router.push('/home')" class="btn btn-outline-secondary">
           <i class="bi bi-arrow-left"></i>
           Back to Home
         </button> -->
-      </div>
-    </div>
-
-    <div v-if="error" class="alert alert-danger" role="alert">
-      {{ error }}
-    </div>
-
-    <div v-if="loading" class="text-center py-5">
-      <div class="spinner-border" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
-      <p class="mt-2">Loading files: {{ loadingMessage }}</p>
-    </div>
-
-    <div v-else-if="specDirectory">
-      <div class="card">
-        <div class="card-header">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0">
-              <i class="bi bi-folder-fill"></i>
-              Spec Directory: {{ currentDirectory }}
-            </h5>
-            <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
-            <div class="d-flex gap-2">
-              <button @click="showCreateModal" class="btn btn-success btn-sm" title="Create New File">
-                <i class="bi bi-plus-circle"></i>
-                New File
-              </button>
-            </div>
           </div>
+        </div>
 
-          <!-- Filter/Search Bar -->
-          <div class="row g-2">
-            <div class="col">
-              <div class="input-group">
-                <span class="input-group-text">
-                  <i class="bi bi-search"></i>
-                </span>
-                <input v-model="filterText" type="text" class="form-control" placeholder="Filter files and folders..."
-                  @input="applyFilter" @keydown.escape="clearFilterCompletely">
-                <button v-if="filterText" @click="clearFilterCompletely" class="btn btn-outline-secondary" type="button"
-                  title="Clear filter">
-                  <i class="bi bi-x"></i>
-                </button>
+        <div v-if="error" class="alert alert-danger" role="alert">
+          {{ error }}
+        </div>
+
+        <div v-if="loading" class="text-center py-5">
+          <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="mt-2">Loading files: {{ loadingMessage }}</p>
+        </div>
+
+        <div v-else-if="specDirectory">
+          <div class="card">
+            <div class="card-header">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">
+                  <i class="bi bi-folder-fill"></i>
+                  {{ currentDirectory }}
+                </h5>
+                <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
+                <div class="d-flex gap-2">
+                  <button @click="showCreateModal" class="btn btn-success btn-sm" title="Create New File">
+                    <i class="bi bi-plus-circle"></i>
+                    New File
+                  </button>
+                </div>
               </div>
-            </div>
-            <!-- <div class="col-auto">
+
+              <!-- Filter/Search Bar -->
+              <div class="row g-2">
+                <div class="col">
+                  <div class="input-group">
+                    <span class="input-group-text">
+                      <i class="bi bi-search"></i>
+                    </span>
+                    <input v-model="filterText" type="text" class="form-control"
+                      placeholder="Filter files and folders..." @input="applyFilter"
+                      @keydown.escape="clearFilterCompletely">
+                    <button v-if="filterText" @click="clearFilterCompletely" class="btn btn-outline-secondary"
+                      type="button" title="Clear filter">
+                      <i class="bi bi-x"></i>
+                    </button>
+                  </div>
+                </div>
+                <!-- <div class="col-auto">
               <div class="dropdown">
                 <button ref="dropdownButton" class="btn btn-outline-secondary dropdown-toggle" type="button"
                   @click="toggleDropdown" title="Filter options">
@@ -72,211 +80,214 @@
                 </ul>
               </div>
             </div> -->
-          </div>
+              </div>
 
-          <!-- Results info -->
-          <div v-if="filterText || selectedFilter !== 'All'" class="mt-2">
-            <small class="text-muted">
-              Showing {{ orderedItems.length }} results
-              <span v-if="filterText">(filtered by: "{{ filterText }}")</span>
-              <span v-if="selectedFilter !== 'All'">({{ selectedFilter }})</span>
-            </small>
-          </div>
-        </div>
-        <div class="card-body">
-          <!-- Go Up button: only show if not at root specDirectory -->
-          <div v-if="showGoUpButton" class="mb-3">
-            <button @click="goUpDirectory" class="btn btn-outline-secondary btn-sm" :disabled="loading">
-              <i class="bi bi-arrow-up"></i> Go Up
-            </button>
-          </div>
-          <button v-if="isRootDirectory && hasUnsavedChanges" @click="saveOrder" class="btn btn-primary btn-sm"
-            title="Save Order">
-            <i class="bi bi-save"></i>
-            Save Order
-          </button>
-          <div v-if="orderedItems.length === 0" class="text-center py-4">
-            <i class="bi bi-folder2-open" style="font-size: 3rem; color: #6c757d;"></i>
-            <p class="mt-2 text-muted">
-              <span v-if="filterText || selectedFilter !== 'All'">
-                No items match your filter criteria.
-              </span>
-              <span v-else>
-                No files found in the spec directory.
-              </span>
-            </p>
-          </div>
-
-          <div v-else class="list-group list-group-flush" @dragover="onListDragOver" @drop="onListDrop">
-            <!-- Show items in their dragged order with smooth transitions -->
-            <transition-group name="file-list" tag="div" class="file-list-container">
-              <div v-for="(item, index) in orderedItems" :key="item.path" class="position-relative file-item-wrapper">
-                <!-- Drop zone indicator at the top -->
-                <div v-if="isRootDirectory && isDragging && dragOverIndex === index && dragPosition === 'before'"
-                  class="drop-zone-indicator drop-zone-before">
-                  <div class="drop-line"></div>
-                  <span class="drop-text">Drop here</span>
-                </div>
-
-                <button @click="item.type === 'folder' ? openFolder(item) : openFile(item)"
-                  class="list-group-item list-group-item-action d-flex align-items-center" :class="{
-                    'recently-created': item.type === 'file' && item.name === recentlyCreatedFile,
-                    'recently-moved': recentlyMovedItem && recentlyMovedItem.path === item.path,
-                    'drag-over': isRootDirectory && isDragging && dragOverIndex === index && dragPosition === 'on',
-                    'being-dragged': isRootDirectory && isDragging && draggedIndex === index
-                  }" @dragover="onDragOver($event, index, item.type)" @drop="onDrop($event, index, item.type)"
-                  @dragenter="onDragEnter($event, index)" @dragleave="onDragLeave($event)">
-                  <i v-if="isRootDirectory" class="bi bi-grip-vertical me-2 drag-handle" draggable="true"
-                    @dragstart="onDragStart($event, item, item.type, index)" @dragend="onDragEnd" @click.stop></i>
-                  <i v-if="item.type === 'folder'" class="bi bi-folder-fill me-3" style="color: #ffc107;"></i>
-                  <i v-else class="bi bi-file-text me-3" style="color: #0d6efd;"></i>
-                  <div class="flex-grow-1">
-                    <div class="fw-medium">
-                      {{ item.name }}
-                      <span v-if="item.type === 'file' && item.name === recentlyCreatedFile"
-                        class="badge bg-primary ms-2">New</span>
-                      <span v-if="item.type === 'file' && item.name.startsWith('_')"
-                        title="If a file has an underscore at the beginning of the file name, it is a draft version."
-                        class="badge bg-warning text-dark ms-2">Draft</span>
-                      <span v-if="item.type === 'file' && item.hasExternalRefs"
-                        title="This file has an external reference." class="badge bg-success ms-2">External</span>
-                    </div>
-                    <small class="text-muted">{{ item.path }}</small>
-                  </div>
-                  <div v-if="item.type === 'file'" class="d-flex align-items-center gap-2">
-                    <button @click.stop="showDeleteModal(item)" class="btn btn-outline-danger btn-sm"
-                      title="Delete File">
-                      <i class="bi bi-trash"></i>
-                    </button>
-                    <i class="bi bi-chevron-right"></i>
-                  </div>
-                  <i v-else class="bi bi-chevron-right"></i>
+              <!-- Results info -->
+              <div v-if="filterText || selectedFilter !== 'All'" class="mt-2">
+                <small class="text-muted">
+                  Showing {{ orderedItems.length }} results
+                  <span v-if="filterText">(filtered by: "{{ filterText }}")</span>
+                  <span v-if="selectedFilter !== 'All'">({{ selectedFilter }})</span>
+                </small>
+              </div>
+            </div>
+            <div class="card-body">
+              <!-- Go Up button: only show if not at root specDirectory -->
+              <div v-if="showGoUpButton" class="mb-3">
+                <button @click="goUpDirectory" class="btn btn-outline-secondary btn-sm" :disabled="loading">
+                  <i class="bi bi-arrow-up"></i> Go Up
                 </button>
+              </div>
+              <button v-if="isRootDirectory && hasUnsavedChanges" @click="saveOrder" class="btn btn-primary btn-sm"
+                title="Save Order">
+                <i class="bi bi-save"></i>
+                Save Order
+              </button>
+              <div v-if="orderedItems.length === 0" class="text-center py-4">
+                <i class="bi bi-folder2-open" style="font-size: 3rem; color: #6c757d;"></i>
+                <p class="mt-2 text-muted">
+                  <span v-if="filterText || selectedFilter !== 'All'">
+                    No items match your filter criteria.
+                  </span>
+                  <span v-else>
+                    No files found in the spec directory.
+                  </span>
+                </p>
+              </div>
 
-                <!-- Drop zone indicator at the bottom of last item -->
-                <div v-if="isRootDirectory && isDragging && dragOverIndex === index && dragPosition === 'after'"
+              <div v-else class="list-group list-group-flush" @dragover="onListDragOver" @drop="onListDrop">
+                <!-- Show items in their dragged order with smooth transitions -->
+                <transition-group name="file-list" tag="div" class="file-list-container">
+                  <div v-for="(item, index) in orderedItems" :key="item.path"
+                    class="position-relative file-item-wrapper">
+                    <!-- Drop zone indicator at the top -->
+                    <div v-if="isRootDirectory && isDragging && dragOverIndex === index && dragPosition === 'before'"
+                      class="drop-zone-indicator drop-zone-before">
+                      <div class="drop-line"></div>
+                      <span class="drop-text">Drop here</span>
+                    </div>
+
+                    <button @click="item.type === 'folder' ? openFolder(item) : openFile(item)"
+                      class="list-group-item list-group-item-action d-flex align-items-center" :class="{
+                        'recently-created': item.type === 'file' && item.name === recentlyCreatedFile,
+                        'recently-moved': recentlyMovedItem && recentlyMovedItem.path === item.path,
+                        'drag-over': isRootDirectory && isDragging && dragOverIndex === index && dragPosition === 'on',
+                        'being-dragged': isRootDirectory && isDragging && draggedIndex === index
+                      }" @dragover="onDragOver($event, index, item.type)" @drop="onDrop($event, index, item.type)"
+                      @dragenter="onDragEnter($event, index)" @dragleave="onDragLeave($event)">
+                      <i v-if="isRootDirectory" class="bi bi-grip-vertical me-2 drag-handle" draggable="true"
+                        @dragstart="onDragStart($event, item, item.type, index)" @dragend="onDragEnd" @click.stop></i>
+                      <i v-if="item.type === 'folder'" class="bi bi-folder-fill me-3" style="color: #ffc107;"></i>
+                      <i v-else class="bi bi-file-text me-3" style="color: #0d6efd;"></i>
+                      <div class="flex-grow-1">
+                        <div class="fw-medium">
+                          {{ item.name }}
+                          <span v-if="item.type === 'file' && item.name === recentlyCreatedFile"
+                            class="badge bg-primary ms-2">New</span>
+                          <span v-if="item.type === 'file' && item.name.startsWith('_')"
+                            title="If a file has an underscore at the beginning of the file name, it is a draft version."
+                            class="badge bg-warning text-dark ms-2">Draft</span>
+                          <span v-if="item.type === 'file' && item.hasExternalRefs"
+                            title="This file has an external reference." class="badge bg-success ms-2">External</span>
+                        </div>
+                        <small class="text-muted">{{ item.path }}</small>
+                      </div>
+                      <div v-if="item.type === 'file'" class="d-flex align-items-center gap-2">
+                        <button @click.stop="showDeleteModal(item)" class="btn btn-outline-danger btn-sm"
+                          title="Delete File">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                        <i class="bi bi-chevron-right"></i>
+                      </div>
+                      <i v-else class="bi bi-chevron-right"></i>
+                    </button>
+
+                    <!-- Drop zone indicator at the bottom of last item -->
+                    <div v-if="isRootDirectory && isDragging && dragOverIndex === index && dragPosition === 'after'"
+                      class="drop-zone-indicator drop-zone-after">
+                      <div class="drop-line"></div>
+                      <span class="drop-text">Drop here</span>
+                    </div>
+                  </div>
+                </transition-group>
+
+                <!-- Final drop zone at the very end of the list -->
+                <div v-if="isRootDirectory && isDragging && dragOverIndex === -2"
                   class="drop-zone-indicator drop-zone-after">
                   <div class="drop-line"></div>
-                  <span class="drop-text">Drop here</span>
+                  <span class="drop-text">Drop at end</span>
                 </div>
               </div>
-            </transition-group>
-
-            <!-- Final drop zone at the very end of the list -->
-            <div v-if="isRootDirectory && isDragging && dragOverIndex === -2"
-              class="drop-zone-indicator drop-zone-after">
-              <div class="drop-line"></div>
-              <span class="drop-text">Drop at end</span>
             </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Create New File Modal -->
-    <div v-if="showCreateFileModal" class="modal fade show d-block" tabindex="-1"
-      style="background-color: rgba(0,0,0,0.5);" @click.self="closeCreateFileModal"
-      @keyup.escape="closeCreateFileModal">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">
-              <i class="bi bi-plus-circle"></i>
-              Create New File
-            </h5>
-            <button @click="closeCreateFileModal" type="button" class="btn-close"></button>
-          </div>
-          <div class="modal-body">
-            <div v-if="createFileError" class="alert alert-danger" role="alert">
-              {{ createFileError }}
-            </div>
+        <!-- Create New File Modal -->
+        <div v-if="showCreateFileModal" class="modal fade show d-block" tabindex="-1"
+          style="background-color: rgba(0,0,0,0.5);" @click.self="closeCreateFileModal"
+          @keyup.escape="closeCreateFileModal">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">
+                  <i class="bi bi-plus-circle"></i>
+                  Create New File
+                </h5>
+                <button @click="closeCreateFileModal" type="button" class="btn-close"></button>
+              </div>
+              <div class="modal-body">
+                <div v-if="createFileError" class="alert alert-danger" role="alert">
+                  {{ createFileError }}
+                </div>
 
-            <div class="mb-3">
-              <label for="fileName" class="form-label">File Name</label>
-              <input v-model="newFileName" ref="fileNameInput" type="text" class="form-control" id="fileName"
-                placeholder="example.md" @keyup.enter="createNewFile" @input="updateDefaultContent">
-              <div class="form-text">
-                Supported extensions: .md
+                <div class="mb-3">
+                  <label for="fileName" class="form-label">File Name</label>
+                  <input v-model="newFileName" ref="fileNameInput" type="text" class="form-control" id="fileName"
+                    placeholder="example.md" @keyup.enter="createNewFile" @input="updateDefaultContent">
+                  <div class="form-text">
+                    Supported extensions: .md
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label for="fileContent" class="form-label">Initial Content (Optional)</label>
+                  <textarea v-model="newFileContent" class="form-control" id="fileContent" rows="6"
+                    placeholder="Enter initial content for the file..." @keydown.ctrl.enter="createNewFile"></textarea>
+                  <div class="form-text">
+                    Press Ctrl+Enter to create the file quickly
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label for="commitMsg" class="form-label">Commit Message</label>
+                  <input v-model="newFileCommitMessage" type="text" class="form-control" id="commitMsg"
+                    placeholder="Add new file" @keydown.ctrl.enter="createNewFile">
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button @click="closeCreateFileModal" type="button" class="btn btn-secondary">Cancel</button>
+                <button @click="createNewFile" type="button" class="btn btn-success"
+                  :disabled="!newFileName.trim() || creatingFile">
+                  <span v-if="creatingFile">
+                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                    Creating...
+                  </span>
+                  <span v-else>
+                    <i class="bi bi-plus-circle"></i>
+                    Create Draft
+                  </span>
+                </button>
               </div>
             </div>
-
-            <div class="mb-3">
-              <label for="fileContent" class="form-label">Initial Content (Optional)</label>
-              <textarea v-model="newFileContent" class="form-control" id="fileContent" rows="6"
-                placeholder="Enter initial content for the file..." @keydown.ctrl.enter="createNewFile"></textarea>
-              <div class="form-text">
-                Press Ctrl+Enter to create the file quickly
-              </div>
-            </div>
-
-            <div class="mb-3">
-              <label for="commitMsg" class="form-label">Commit Message</label>
-              <input v-model="newFileCommitMessage" type="text" class="form-control" id="commitMsg"
-                placeholder="Add new file" @keydown.ctrl.enter="createNewFile">
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button @click="closeCreateFileModal" type="button" class="btn btn-secondary">Cancel</button>
-            <button @click="createNewFile" type="button" class="btn btn-success"
-              :disabled="!newFileName.trim() || creatingFile">
-              <span v-if="creatingFile">
-                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-                Creating...
-              </span>
-              <span v-else>
-                <i class="bi bi-plus-circle"></i>
-                Create Draft
-              </span>
-            </button>
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Delete File Confirmation Modal -->
-    <div v-if="showDeleteFileModal" class="modal fade show d-block" tabindex="-1"
-      style="background-color: rgba(0,0,0,0.5);" @click.self="closeDeleteFileModal"
-      @keyup.escape="closeDeleteFileModal">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">
-              <i class="bi bi-exclamation-triangle text-warning"></i>
-              Delete File
-            </h5>
-            <button @click="closeDeleteFileModal" type="button" class="btn-close"></button>
-          </div>
-          <div class="modal-body">
-            <div v-if="deleteFileError" class="alert alert-danger" role="alert">
-              {{ deleteFileError }}
+        <!-- Delete File Confirmation Modal -->
+        <div v-if="showDeleteFileModal" class="modal fade show d-block" tabindex="-1"
+          style="background-color: rgba(0,0,0,0.5);" @click.self="closeDeleteFileModal"
+          @keyup.escape="closeDeleteFileModal">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">
+                  <i class="bi bi-exclamation-triangle text-warning"></i>
+                  Delete File
+                </h5>
+                <button @click="closeDeleteFileModal" type="button" class="btn-close"></button>
+              </div>
+              <div class="modal-body">
+                <div v-if="deleteFileError" class="alert alert-danger" role="alert">
+                  {{ deleteFileError }}
+                </div>
+
+                <p class="mb-3">
+                  Are you sure you want to delete the file <strong>{{ fileToDelete?.name }}</strong>?
+                </p>
+                <p class="text-danger mb-3">
+                  <i class="bi bi-exclamation-circle"></i>
+                  This action cannot be undone.
+                </p>
+
+                <div class="mb-3">
+                  <label for="deleteCommitMsg" class="form-label">Commit Message</label>
+                  <input v-model="deleteFileCommitMessage" type="text" class="form-control" id="deleteCommitMsg"
+                    placeholder="Delete file" @keydown.enter="deleteFile">
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button @click="closeDeleteFileModal" type="button" class="btn btn-secondary">Cancel</button>
+                <button @click="deleteFile" type="button" class="btn btn-danger" :disabled="deletingFile">
+                  <span v-if="deletingFile">
+                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                    Deleting...
+                  </span>
+                  <span v-else>
+                    <i class="bi bi-trash"></i>
+                    Delete File
+                  </span>
+                </button>
+              </div>
             </div>
-
-            <p class="mb-3">
-              Are you sure you want to delete the file <strong>{{ fileToDelete?.name }}</strong>?
-            </p>
-            <p class="text-danger mb-3">
-              <i class="bi bi-exclamation-circle"></i>
-              This action cannot be undone.
-            </p>
-
-            <div class="mb-3">
-              <label for="deleteCommitMsg" class="form-label">Commit Message</label>
-              <input v-model="deleteFileCommitMessage" type="text" class="form-control" id="deleteCommitMsg"
-                placeholder="Delete file" @keydown.enter="deleteFile">
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button @click="closeDeleteFileModal" type="button" class="btn btn-secondary">Cancel</button>
-            <button @click="deleteFile" type="button" class="btn btn-danger" :disabled="deletingFile">
-              <span v-if="deletingFile">
-                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-                Deleting...
-              </span>
-              <span v-else>
-                <i class="bi bi-trash"></i>
-                Delete File
-              </span>
-            </button>
           </div>
         </div>
       </div>
@@ -324,7 +335,7 @@ export default {
     const dragPosition = ref('') // 'before', 'on', or 'after'
     const isReordering = ref(false) // Track when items are animating to new positions
     const recentlyMovedItem = ref(null) // Track which item was just moved
-    
+
     // Throttle drag events to prevent excessive re-renders
     let dragThrottleTimer = null
 
@@ -803,7 +814,7 @@ export default {
       localStorage.removeItem('recentlyCreatedFile') // Also clear from localStorage
       hasUnsavedChanges.value = false // Reset unsaved changes when navigating away from root
       draggedItems.value = [] // Reset drag items when leaving root
-      
+
       // Clear animation states when navigating away from root
       isReordering.value = false
       recentlyMovedItem.value = null
@@ -1188,12 +1199,12 @@ export default {
     onUnmounted(() => {
       document.removeEventListener('click', handleClickOutside)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
-      
+
       // Clean up fragment handling
       if (fragmentCleanup.value) {
         fragmentCleanup.value()
       }
-      
+
       // Clean up drag throttle timer
       if (dragThrottleTimer) {
         clearTimeout(dragThrottleTimer);
@@ -1271,10 +1282,10 @@ export default {
       if (!isRootDirectory.value || !isDragging.value) return;
 
       event.preventDefault();
-      
+
       // Avoid unnecessary updates if we're already at this position
       if (dragOverIndex.value === index) return;
-      
+
       const rect = event.currentTarget.getBoundingClientRect();
       const y = event.clientY - rect.top;
       const height = rect.height;
@@ -1313,7 +1324,7 @@ export default {
 
       // Throttle updates to prevent oscillation
       if (dragThrottleTimer) return;
-      
+
       dragThrottleTimer = setTimeout(() => {
         dragThrottleTimer = null;
       }, 200);
@@ -1365,7 +1376,7 @@ export default {
       if (originalIndex !== targetIndex && Math.abs(originalIndex - targetIndex) > 0) {
         // Set animation state
         isReordering.value = true;
-        
+
         // Reorder the items
         const newItems = [...draggedItems.value];
         const [movedItem] = newItems.splice(originalIndex, 1);
@@ -1421,13 +1432,13 @@ export default {
 
     const onDragEnd = (event) => {
       event.target.style.opacity = '1';
-      
+
       // Clear throttle timer
       if (dragThrottleTimer) {
         clearTimeout(dragThrottleTimer);
         dragThrottleTimer = null;
       }
-      
+
       // Clear all drag state
       draggedIndex.value = -1;
       dragOverIndex.value = -1;
@@ -1524,14 +1535,14 @@ export default {
 
           // Reload specs config first to get fresh order data
           await loadSpecsConfig()
-          
+
           // Then reload files which will apply the updated order
           await loadSpecFiles(currentDirectory.value, attempt)
-          
+
           // If we get here without error, break out of retry loop
           console.log(`Order refresh successful on attempt ${attempt + 1}`)
           return
-          
+
         } catch (refreshErr) {
           console.error(`Order refresh attempt ${attempt + 1} failed:`, refreshErr)
           if (attempt === maxRetries - 1) {
@@ -1547,7 +1558,7 @@ export default {
       try {
         loading.value = true
         loadingMessage.value = 'Saving file order...'
-        
+
         console.log('Saving order for items:', draggedItems.value.map(item => `${item.name} (${item.type})`))
 
         const token = localStorage.getItem('github_token')
@@ -1607,7 +1618,7 @@ export default {
 
         hasUnsavedChanges.value = false
         originalOrder.value = [...draggedItems.value]
-        
+
         // Force refresh with retry logic to ensure we get the updated order
         refreshOrderWithRetry()
 
@@ -1906,16 +1917,16 @@ export default {
     box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.6);
     transform: scale(1.05) translateY(-2px);
   }
-  
+
   30% {
     transform: scale(1.02) translateY(-1px);
   }
-  
+
   60% {
     background-color: #eff6ff !important;
     transform: scale(1.01) translateY(0);
   }
-  
+
   100% {
     background-color: #f0f9ff !important;
     border-color: #0ea5e9 !important;
