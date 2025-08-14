@@ -1,54 +1,74 @@
 <template>
-  <div class="container py-3">
-    <div class="d-flex align-items-center justify-content-between mb-3">
-      <h2 class="h5 mb-0">
-        <i class="bi bi-file-earmark-text me-2"></i>
-        The Spec
-      </h2>
-  <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
-      <div class="d-flex gap-2">
-        <a :href="resolvedSpecUrl" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm"
-          :disabled="!resolvedSpecUrl">
-          <i class="bi bi-box-arrow-up-right"></i>
-          Open in new tab
-        </a>
-        <button class="btn btn-outline-secondary btn-sm" @click="reloadIframe" :disabled="!canEmbed">
-          <i class="bi bi-arrow-clockwise"></i>
-          Reload
-        </button>
-      </div>
-    </div>
-
-    <div v-if="loading" class="alert alert-info py-2">Checking if the specification site exists…</div>
-
-    <div v-else-if="!pagesEnabled" class="alert alert-warning">
-      <div class="d-flex align-items-start">
-        <i class="bi bi-exclamation-triangle me-2 mt-1"></i>
-        <div>
-          <strong>Specification not generated yet.</strong>
-          <div class="small text-muted">GitHub Pages is not enabled for this repository or hasn’t been published.</div>
-          <div v-if="suggestedUrl" class="mt-2">
-            You can try opening the expected URL:
-            <a :href="suggestedUrl" target="_blank" rel="noopener">{{ suggestedUrl }}</a>
+  <div class="container-fluid mt-3">
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-10">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h2 class="mb-0">
+              <i class="bi bi-file-earmark-text me-2"></i>
+              The Spec
+            </h2>
           </div>
         </div>
-      </div>
-    </div>
 
-    <div v-else>
-      <div class="alert alert-secondary py-1 mb-2 small">
-        <i class="bi bi-clock-history me-1"></i>
-        <strong>Page modified:</strong>
-        <span v-if="indexHtmlCreated">{{ indexHtmlCreated }}</span>
-        <span v-else class="text-muted">Loading...</span>
-      </div>
-      <p class="mt-2 mb-0 small text-muted">
-        If the page fails to display due to browser restrictions, use “Open in new tab”.
-      </p>
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
+            <div class="d-flex gap-2">
+              <a :href="resolvedSpecUrl" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm"
+                :disabled="!resolvedSpecUrl">
+                <i class="bi bi-box-arrow-up-right"></i>
+                Open in new tab
+              </a>
+              <button class="btn btn-outline-secondary btn-sm" @click="reloadIframe" :disabled="!canEmbed">
+                <i class="bi bi-arrow-clockwise"></i>
+                Reload
+              </button>
+            </div>
 
-      <div class="border rounded bg-white border-dance" ref="containerRef" style="position:relative;">
-        <iframe :key="iframeKey" ref="iframeRef" :src="resolvedSpecUrl" title="Specification"
-          style="width: 100%; border: 0; display: block;"></iframe>
+          </div>
+
+
+          <div class="card-body">
+            <div v-if="loading" class="alert alert-info py-2">Checking if the specification site exists…</div>
+
+            <div v-else-if="!pagesEnabled" class="alert alert-warning">
+              <div class="d-flex align-items-start">
+                <i class="bi bi-exclamation-triangle me-2 mt-1"></i>
+                <div>
+                  <strong>Specification not generated yet.</strong>
+                  <div class="small text-muted">GitHub Pages is not enabled for this repository or hasn’t been
+                    published.
+                  </div>
+                  <div v-if="suggestedUrl" class="mt-2">
+                    You can try opening the expected URL:
+                    <a :href="suggestedUrl" target="_blank" rel="noopener">{{ suggestedUrl }}</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-else>
+              <div class="alert alert-info py-1 mb-2 small">
+                <p class="mt-2 mb-0 small text-muted">
+                  <i class="bi bi-clock-history me-1"></i>
+                  <strong>Page modified:</strong>
+                  <span v-if="indexHtmlCreated">{{ indexHtmlCreated }}</span>
+                  <span v-else class="text-muted">Loading...</span> – 
+                  If the page fails to display due to browser restrictions, use “Open in new tab”.
+                </p>
+              </div>
+
+              <div class="border rounded bg-white border-dance" ref="containerRef" style="position:relative;">
+                <iframe :key="iframeKey" ref="iframeRef" :src="resolvedSpecUrl" title="Specification"
+                  style="width: 100%; border: 0; display: block;"></iframe>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+
       </div>
     </div>
   </div>
