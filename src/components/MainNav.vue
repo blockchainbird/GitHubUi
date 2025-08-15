@@ -27,11 +27,11 @@
 
           <!-- File menu -->
           <li v-if="showRepoRelatedButtons" class="nav-item dropdown" data-menu="file"
-              @mouseenter="onHoverMenu('file', true)" @mouseleave="onHoverMenu('file', false)">
-            <button
-              :class="['nav-link', 'btn', 'btn-link', 'dropdown-toggle', { active: isFileSectionActive }]"
+            @mouseenter="onHoverMenu('file', true)" @mouseleave="onHoverMenu('file', false)">
+            <button :class="['nav-link', 'btn', 'btn-link', 'dropdown-toggle', { active: isFileSectionActive }]"
               id="fileMenuButton" aria-haspopup="true" :aria-expanded="isFileOpen.toString()"
-        aria-controls="fileMenuDropdown" @click="toggleMenu('file')" @keydown="handleMenuKeydown('file', $event)" ref="fileToggle">
+              aria-controls="fileMenuDropdown" @click="toggleMenu('file')" @keydown="handleMenuKeydown('file', $event)"
+              ref="fileToggle">
               File
             </button>
             <ul id="fileMenuDropdown" class="dropdown-menu" :class="{ show: isFileOpen }"
@@ -45,9 +45,9 @@
           </li>
 
           <!-- Render (single item) -->
-      <li v-if="showRepoRelatedButtons" class="nav-item">
+          <li v-if="showRepoRelatedButtons" class="nav-item">
             <button @click="navigateToActionsAndClose"
-        :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/actions') }]"
+              :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/actions') }]"
               title="Run GitHub Actions">
               <i class="bi bi-play-circle"></i>
               Render
@@ -56,11 +56,11 @@
 
           <!-- View menu -->
           <li v-if="showRepoRelatedButtons" class="nav-item dropdown" data-menu="view"
-              @mouseenter="onHoverMenu('view', true)" @mouseleave="onHoverMenu('view', false)">
-            <button
-              :class="['nav-link', 'btn', 'btn-link', 'dropdown-toggle', { active: isViewSectionActive }]"
+            @mouseenter="onHoverMenu('view', true)" @mouseleave="onHoverMenu('view', false)">
+            <button :class="['nav-link', 'btn', 'btn-link', 'dropdown-toggle', { active: isViewSectionActive }]"
               id="viewMenuButton" aria-haspopup="true" :aria-expanded="isViewOpen.toString()"
-        aria-controls="viewMenuDropdown" @click="toggleMenu('view')" @keydown="handleMenuKeydown('view', $event)" ref="viewToggle">
+              aria-controls="viewMenuDropdown" @click="toggleMenu('view')" @keydown="handleMenuKeydown('view', $event)"
+              ref="viewToggle">
               View
             </button>
             <ul id="viewMenuDropdown" class="dropdown-menu" :class="{ show: isViewOpen }"
@@ -83,8 +83,8 @@
                 </button>
               </li>
               <li>
-                <a class="dropdown-item" v-if="githubRepoUrl" :href="githubRepoUrl" target="_blank"
-                  rel="noopener" @click="closeNavbar">
+                <a class="dropdown-item" v-if="githubRepoUrl" :href="githubRepoUrl" target="_blank" rel="noopener"
+                  @click="closeNavbar">
                   <i class="bi bi-box-arrow-up-right"></i> Repo (new tab)
                 </a>
               </li>
@@ -93,11 +93,11 @@
 
           <!-- Config menu -->
           <li v-if="showRepoRelatedButtons" class="nav-item dropdown" data-menu="config"
-              @mouseenter="onHoverMenu('config', true)" @mouseleave="onHoverMenu('config', false)">
-            <button
-              :class="['nav-link', 'btn', 'btn-link', 'dropdown-toggle', { active: isConfigSectionActive }]"
+            @mouseenter="onHoverMenu('config', true)" @mouseleave="onHoverMenu('config', false)">
+            <button :class="['nav-link', 'btn', 'btn-link', 'dropdown-toggle', { active: isConfigSectionActive }]"
               id="configMenuButton" aria-haspopup="true" :aria-expanded="isConfigOpen.toString()"
-        aria-controls="configMenuDropdown" @click="toggleMenu('config')" @keydown="handleMenuKeydown('config', $event)" ref="configToggle">
+              aria-controls="configMenuDropdown" @click="toggleMenu('config')"
+              @keydown="handleMenuKeydown('config', $event)" ref="configToggle">
               Config
             </button>
             <ul id="configMenuDropdown" class="dropdown-menu" :class="{ show: isConfigOpen }"
@@ -124,24 +124,25 @@
           </li>
 
           <!-- Sound Toggle Button -->
-      <li class="nav-item d-flex align-items-center me-2">
+          <li class="nav-item d-flex align-items-center me-2">
             <button :title="isSoundEnabled ? 'Turn sound off' : 'Turn sound on'" @click="toggleSound"
-        class="btn btn-outline-secondary btn-sm">
+              class="btn btn-outline-secondary btn-sm">
               <i :class="isSoundEnabled ? 'bi bi-volume-up' : 'bi bi-volume-mute'"></i>
             </button>
           </li>
 
           <!-- Authentication UI -->
-      <li class="nav-item d-flex align-items-center ms-2">
+          <li class="nav-item d-flex align-items-center ms-2">
             <div v-if="isAuthenticated" class="d-flex align-items-center">
               <span class="visually-hidden">{{ user.login }}</span>
-        <button :title="user.login" @click="handleLogout" class="btn btn-outline-primary btn-sm">
+              <button :title="user.login" @click="handleLogout" class="btn btn-outline-primary btn-sm">
                 <i class="bi bi-box-arrow-right"></i> Logout
               </button>
             </div>
             <div v-else class="d-flex align-items-center">
               <span class="visually-hidden">Not logged in</span>
-        <button title="Not logged in" @click="navigateAndClose('/login')" class="btn btn-outline-secondary btn-sm">
+              <button title="Not logged in" @click="navigateAndClose('/login')"
+                class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-box-arrow-in-right"></i> Login
               </button>
             </div>
@@ -163,7 +164,8 @@
         <strong>Spec-Up-T Editor</strong> is a web-based consensus building tool running on Git.
       </p>
       <p>
-        It provides an intuitive interface for editing specifications with a versioned glossary engine, making it easier for teams to collaborate and maintain their documentation.
+        It provides an intuitive interface for editing specifications with a versioned glossary engine, making it easier
+        for teams to collaborate and maintain their documentation.
       </p>
       <ul>
         <li>
@@ -242,17 +244,17 @@ export default {
     const route = useRoute();
     const router = useRouter();
     const isNavbarOpen = ref(false);
-  // Dropdown open states and refs
-  const isFileOpen = ref(false);
-  const isViewOpen = ref(false);
-  const isConfigOpen = ref(false);
-  // Element refs for focus management
-  const fileToggle = ref(null);
-  const viewToggle = ref(null);
-  const configToggle = ref(null);
-  const fileMenuEl = ref(null);
-  const viewMenuEl = ref(null);
-  const configMenuEl = ref(null);
+    // Dropdown open states and refs
+    const isFileOpen = ref(false);
+    const isViewOpen = ref(false);
+    const isConfigOpen = ref(false);
+    // Element refs for focus management
+    const fileToggle = ref(null);
+    const viewToggle = ref(null);
+    const configToggle = ref(null);
+    const fileMenuEl = ref(null);
+    const viewMenuEl = ref(null);
+    const configMenuEl = ref(null);
 
     // Sound system
     const { isSoundEnabled, toggleSound } = useSoundSystem();
@@ -280,13 +282,13 @@ export default {
 
     const toggleNavbar = () => {
       isNavbarOpen.value = !isNavbarOpen.value;
-  // Close dropdowns when toggling navbar
-  if (!isNavbarOpen.value) closeAllMenus();
+      // Close dropdowns when toggling navbar
+      if (!isNavbarOpen.value) closeAllMenus();
     };
 
     const closeNavbar = () => {
       isNavbarOpen.value = false;
-  closeAllMenus();
+      closeAllMenus();
     };
 
     const navigateAndClose = (path) => {
@@ -378,7 +380,7 @@ export default {
       closeAllMenus();
     };
 
-  const closeAllMenus = () => {
+    const closeAllMenus = () => {
       isFileOpen.value = false;
       isViewOpen.value = false;
       isConfigOpen.value = false;
@@ -503,7 +505,7 @@ export default {
       logAuthState();
       document.addEventListener('click', handleClickOutside);
       window.addEventListener('resize', handleResize);
-  window.addEventListener('keydown', onGlobalKeydown);
+      window.addEventListener('keydown', onGlobalKeydown);
     });
 
     // Watch for changes in authentication state
@@ -525,7 +527,7 @@ export default {
     onUnmounted(() => {
       document.removeEventListener('click', handleClickOutside);
       window.removeEventListener('resize', handleResize);
-  window.removeEventListener('keydown', onGlobalKeydown);
+      window.removeEventListener('keydown', onGlobalKeydown);
     });
 
     // Get build info from Vite's define
@@ -568,25 +570,25 @@ export default {
     return {
       route,
       showRepoRelatedButtons,
-  isFileOpen,
-  isViewOpen,
-  isConfigOpen,
-  // showAlwaysVisibleButtons,
-  fileToggle,
-  viewToggle,
-  configToggle,
-  fileMenuEl,
-  viewMenuEl,
-  configMenuEl,
+      isFileOpen,
+      isViewOpen,
+      isConfigOpen,
+      // showAlwaysVisibleButtons,
+      fileToggle,
+      viewToggle,
+      configToggle,
+      fileMenuEl,
+      viewMenuEl,
+      configMenuEl,
       githubRepoUrl,
       isNavbarOpen,
       toggleNavbar,
       closeNavbar,
       navigateAndClose,
-  handleMenuKeydown,
-  handleMenuListKeydown,
-  onHoverMenu,
-  toggleMenu,
+      handleMenuKeydown,
+      handleMenuListKeydown,
+      onHoverMenu,
+      toggleMenu,
       navigateToHealthCheck,
       navigateToHealthCheckAndClose,
       navigateToAdmin,
@@ -600,9 +602,9 @@ export default {
       isAuthenticated,
       user,
       isActiveRoute,
-  isFileSectionActive,
-  isViewSectionActive,
-  isConfigSectionActive,
+      isFileSectionActive,
+      isViewSectionActive,
+      isConfigSectionActive,
       isSoundEnabled,
       toggleSound
     };
