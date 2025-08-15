@@ -107,7 +107,8 @@
               </label>
 
               <input type="radio" class="btn-check" id="edit-mode" v-model="editMode" value="edit" autocomplete="off">
-              <label class="btn btn-outline-primary btn-sm" :class="{ 'rounded-start': !isAdvancedUser }" for="edit-mode">
+              <label class="btn btn-outline-primary btn-sm" :class="{ 'rounded-start': !isAdvancedUser }"
+                for="edit-mode">
                 <i class="bi bi-pencil"></i> {{ isTermsFileComputed ? 'Technical' : 'Edit' }}
               </label>
 
@@ -269,7 +270,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, onUnmounted, nextTick, watch, getCurrentInstance } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { addToVisitedRepos } from '../utils/visitedRepos.js'
 import { useGoogleAnalytics } from '../composables/useGoogleAnalytics.js'
@@ -289,6 +290,7 @@ import {
   debounce
 } from '../utils/editorUtils.js'
 import { isInTermsDirectory } from '../utils/termsFileDetection.js'
+import { useAdvancedUser } from '../composables/useAdvancedUser.js'
 
 // Components
 import SimpleTermsEditor from './SimpleTermsEditor.vue'
@@ -306,9 +308,9 @@ export default {
   },
   props: ['owner', 'repo', 'branch', 'path'],
   setup(props) {
-    // Global advancedUser
-    const { appContext } = getCurrentInstance()
-    const isAdvancedUser = computed(() => !!appContext.config.globalProperties.advancedUser)
+    // Advanced user reactive state
+    const { isAdvancedUser } = useAdvancedUser()
+
     const router = useRouter()
     const route = useRoute()
     const { trackFileOperation } = useGoogleAnalytics()

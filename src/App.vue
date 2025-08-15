@@ -55,6 +55,7 @@ export default {
       });
     }
 
+
     onMounted(() => {
       // Check if user is already logged in
       const token = localStorage.getItem('github_token')

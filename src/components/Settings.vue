@@ -31,8 +31,7 @@
                 </div>
 
                 <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" id="advancedUserSwitch" v-model="isAdvancedUser"
-                    @change="toggleAdvancedUser">
+                  <input class="form-check-input" type="checkbox" id="advancedUserSwitch" v-model="isAdvancedUser">
                   <label class="form-check-label" for="advancedUserSwitch">Enable Advanced User Mode</label>
                 </div>
               </div>
@@ -117,8 +116,9 @@
 </template>
 
 <script>
-import { ref, getCurrentInstance, onMounted } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAdvancedUser } from '../composables/useAdvancedUser.js'
 
 export default {
   name: 'Settings',
@@ -126,24 +126,8 @@ export default {
     const router = useRouter()
     const isClearing = ref(false)
 
-    // Advanced User toggle
-    const { appContext } = getCurrentInstance()
-    const isAdvancedUser = ref(false)
-    // Load from localStorage on mount
-    onMounted(() => {
-      const stored = localStorage.getItem('advancedUser')
-      if (stored !== null) {
-        isAdvancedUser.value = stored === 'true'
-        appContext.config.globalProperties.advancedUser = isAdvancedUser.value
-      } else {
-        isAdvancedUser.value = !!appContext.config.globalProperties.advancedUser
-      }
-    })
-    function toggleAdvancedUser() {
-      appContext.config.globalProperties.advancedUser = isAdvancedUser.value
-      localStorage.setItem('advancedUser', isAdvancedUser.value ? 'true' : 'false')
-      console.log("🚀 ~ toggleAdvancedUser ~ appContext.config.globalProperties.advancedUser:", appContext.config.globalProperties.advancedUser)
-    }
+    // Advanced User toggle via shared composable
+    const { isAdvancedUser } = useAdvancedUser()
 
     const clearLocalStorage = () => {
       const modal = new bootstrap.Modal(document.getElementById('confirmClearModal'))
@@ -174,8 +158,7 @@ export default {
       isClearing,
       clearLocalStorage,
       confirmClearStorage,
-      isAdvancedUser,
-      toggleAdvancedUser
+      isAdvancedUser
     }
   }
 }

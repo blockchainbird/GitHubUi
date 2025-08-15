@@ -107,7 +107,7 @@
                   <i class="bi bi-shield-lock"></i> Local config
                 </button>
               </li>
-              <li>
+              <li v-if="isAdvancedUser">
                 <button class="dropdown-item"
                   @click="navigateAndClose(`/external-specs/${route.params.owner}/${route.params.repo}/${route.params.branch}`)">
                   <i class="bi bi-link-45deg"></i> External config
@@ -225,6 +225,7 @@ import { useRoute, useRouter } from 'vue-router';
 import Modal from './Modal.vue';
 import RateLimitIndicator from './RateLimitIndicator.vue';
 import { useSoundSystem } from '../composables/useSoundSystem.js';
+import { useAdvancedUser } from '../composables/useAdvancedUser.js';
 
 export default {
   name: 'MainNav',
@@ -255,6 +256,8 @@ export default {
     const fileMenuEl = ref(null);
     const viewMenuEl = ref(null);
     const configMenuEl = ref(null);
+    // Advanced user reactive state
+    const { isAdvancedUser } = useAdvancedUser();
 
     // Sound system
     const { isSoundEnabled, toggleSound } = useSoundSystem();
@@ -568,6 +571,7 @@ export default {
     };
 
     return {
+      isAdvancedUser,
       route,
       showRepoRelatedButtons,
       isFileOpen,
@@ -606,7 +610,7 @@ export default {
       isViewSectionActive,
       isConfigSectionActive,
       isSoundEnabled,
-      toggleSound
+      toggleSound,
     };
   },
   data() {
