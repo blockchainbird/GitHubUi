@@ -101,12 +101,13 @@
             <div class="btn-group" role="group">
               <input type="radio" class="btn-check" id="simple-mode" v-model="editMode" value="simple"
                 autocomplete="off" v-if="isTermsFileComputed">
-              <label class="btn btn-outline-success btn-sm" for="simple-mode" v-if="isTermsFileComputed">
+              <label class="btn btn-outline-success btn-sm" for="simple-mode"
+                v-if="isTermsFileComputed && isAdvancedUser">
                 <i class="bi bi-ui-checks"></i> Simple
               </label>
 
               <input type="radio" class="btn-check" id="edit-mode" v-model="editMode" value="edit" autocomplete="off">
-              <label class="btn btn-outline-primary btn-sm" for="edit-mode">
+              <label class="btn btn-outline-primary btn-sm" :class="{ 'rounded-start': !isAdvancedUser }" for="edit-mode">
                 <i class="bi bi-pencil"></i> {{ isTermsFileComputed ? 'Technical' : 'Edit' }}
               </label>
 
@@ -268,7 +269,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch, getCurrentInstance } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { addToVisitedRepos } from '../utils/visitedRepos.js'
 import { useGoogleAnalytics } from '../composables/useGoogleAnalytics.js'
@@ -305,6 +306,9 @@ export default {
   },
   props: ['owner', 'repo', 'branch', 'path'],
   setup(props) {
+    // Global advancedUser
+    const { appContext } = getCurrentInstance()
+    const isAdvancedUser = computed(() => !!appContext.config.globalProperties.advancedUser)
     const router = useRouter()
     const route = useRoute()
     const { trackFileOperation } = useGoogleAnalytics()
@@ -953,6 +957,7 @@ export default {
 
     return {
       // State
+      isAdvancedUser,
       loading,
       saving,
       error,

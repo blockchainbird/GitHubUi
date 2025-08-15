@@ -9,8 +9,39 @@
           </div>
           <div class="card-body">
 
-            <!-- Storage Section -->
+
+
+
+
             <div class="settings-section">
+              <h5 class="section-title">
+                <i class="bi bi-person me-2"></i>
+                Usertype
+              </h5>
+              <p class="text-muted mb-3">
+                Choose between Basic and Advanced user modes.
+              </p>
+
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <div>
+                  <strong>Set the user type</strong>
+                  <div class="text-muted small">
+                    Advanced users will have access to additional features and settings.
+                  </div>
+                </div>
+
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="advancedUserSwitch" v-model="isAdvancedUser"
+                    @change="toggleAdvancedUser">
+                  <label class="form-check-label" for="advancedUserSwitch">Enable Advanced User Mode</label>
+                </div>
+              </div>
+
+
+
+
+              <hr class="mt-5">
+
               <h5 class="section-title">
                 <i class="bi bi-database me-2"></i>
                 Storage Management
@@ -18,6 +49,7 @@
               <p class="text-muted mb-3">
                 Clear stored application data to resolve issues after updates.
               </p>
+
 
               <div class="d-flex align-items-center justify-content-between">
                 <div>
@@ -85,7 +117,7 @@
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, getCurrentInstance, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 export default {
@@ -93,6 +125,25 @@ export default {
   setup() {
     const router = useRouter()
     const isClearing = ref(false)
+
+    // Advanced User toggle
+    const { appContext } = getCurrentInstance()
+    const isAdvancedUser = ref(false)
+    // Load from localStorage on mount
+    onMounted(() => {
+      const stored = localStorage.getItem('advancedUser')
+      if (stored !== null) {
+        isAdvancedUser.value = stored === 'true'
+        appContext.config.globalProperties.advancedUser = isAdvancedUser.value
+      } else {
+        isAdvancedUser.value = !!appContext.config.globalProperties.advancedUser
+      }
+    })
+    function toggleAdvancedUser() {
+      appContext.config.globalProperties.advancedUser = isAdvancedUser.value
+      localStorage.setItem('advancedUser', isAdvancedUser.value ? 'true' : 'false')
+      console.log("🚀 ~ toggleAdvancedUser ~ appContext.config.globalProperties.advancedUser:", appContext.config.globalProperties.advancedUser)
+    }
 
     const clearLocalStorage = () => {
       const modal = new bootstrap.Modal(document.getElementById('confirmClearModal'))
@@ -122,7 +173,9 @@ export default {
     return {
       isClearing,
       clearLocalStorage,
-      confirmClearStorage
+      confirmClearStorage,
+      isAdvancedUser,
+      toggleAdvancedUser
     }
   }
 }

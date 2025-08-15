@@ -124,6 +124,9 @@ axios.interceptors.response.use(
 const app = createApp(App)
 app.use(router)
 
+// Make advancedUser globally available
+app.config.globalProperties.advancedUser = false; // Set default value, change as needed
+
 // Register tooltip directive
 const enhanceTooltips = autoEnhanceTooltips(app)
 
