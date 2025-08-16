@@ -18,7 +18,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
   const specsConfig = ref(null)
   const referenceType = ref('auto')
   const proxyInfo = ref('')
-  
+
   // Definition collapse state
   const definitionsCollapsed = ref(true)
   const individualTermsExpanded = ref(new Map())
@@ -33,11 +33,11 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
         const basicMatch = term.id.toLowerCase().includes(filter) ||
           term.aliases.some(alias => alias.toLowerCase().includes(filter)) ||
           (term.external && term.externalSpec.toLowerCase().includes(filter))
-        
-        const definitionMatch = term.definitionText && 
-          term.definitionText.toLowerCase().includes(filter) && 
+
+        const definitionMatch = term.definitionText &&
+          term.definitionText.toLowerCase().includes(filter) &&
           isTermDefinitionVisible(term)
-        
+
         return basicMatch || definitionMatch
       })
     }
@@ -55,11 +55,11 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
   // Toggle global definitions collapse state
   const toggleDefinitionsCollapse = () => {
     definitionsCollapsed.value = !definitionsCollapsed.value
-    
+
     if (!definitionsCollapsed.value) {
       individualTermsExpanded.value.clear()
     }
-    
+
     filterTerms()
   }
 
@@ -143,56 +143,13 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
       const response = await axios.get(url, config)
 
       const content = atob(response.data.content)
-      const lines = content.split('\n')
-      const extractedTerms = []
+      const extractedTerms = parseTermsFromContent(content, filePath)
 
-      console.log(consoleMessages.scanningFile(filePath))
-
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim()
-        if (line) {
-          const termMatch = line.match(/^\[\[def:\s*([^,\]]+)(?:,\s*([^\]]+))?\]\]/)
-          if (termMatch) {
-            const termId = termMatch[1].trim()
-            const aliasesStr = termMatch[2]
-            const aliases = aliasesStr ? 
-              aliasesStr.split(',').map(a => a.trim()).filter(a => a.length > 0) : []
-
-            const definitionLines = []
-            for (let j = i + 1; j < lines.length; j++) {
-              const defLine = lines[j]
-              if (defLine.startsWith('~ ') || defLine.startsWith('~')) {
-                definitionLines.push(defLine.replace(/^~\s?/, ''))
-              } else if (defLine.trim() && !defLine.startsWith('[[def:')) {
-                // Continue reading definition lines until we hit another term or empty line
-                break
-              }
-            }
-
-            const definitionHtml = definitionLines.length > 0 ?
-              `<dl><dd>${definitionLines.join('</dd><dd>')}</dd></dl>` : ''
-
-            if (termId) {
-              console.log(consoleMessages.foundTerm(termId, filePath))
-              extractedTerms.push({
-                id: termId,
-                aliases: aliases,
-                file: filePath,
-                definition: definitionHtml,
-                definitionText: definitionLines.join(' ').trim(),
-                external: false,
-                source: `Local: ${filePath}`
-              })
-            }
-          }
-        }
-      }
-
-      if (extractedTerms.length > 0) {
+      if (extractedTerms && extractedTerms.length > 0) {
         console.log(consoleMessages.extractedTerms(extractedTerms.length, filePath))
       }
 
-      return extractedTerms.length > 0 ? extractedTerms : null
+      return extractedTerms && extractedTerms.length > 0 ? extractedTerms : null
     } catch (err) {
       console.error(consoleMessages.errorLoadingFile(filePath, err.message))
       if (checkAuthAndRedirect(err)) {
@@ -200,6 +157,56 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
       }
     }
     return null
+  }
+
+  // Parse terms from raw file content (helper so we can reuse when only a single file is needed)
+  const parseTermsFromContent = (content, filePath) => {
+    const lines = content.split('\n')
+    const extractedTerms = []
+
+    console.log(consoleMessages.scanningFile(filePath))
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim()
+      if (line) {
+        const termMatch = line.match(/^\[\[def:\s*([^,\]]+)(?:,\s*([^\]]+))?\]\]/)
+        if (termMatch) {
+          const termId = termMatch[1].trim()
+          const aliasesStr = termMatch[2]
+          const aliases = aliasesStr ?
+            aliasesStr.split(',').map(a => a.trim()).filter(a => a.length > 0) : []
+
+          const definitionLines = []
+          for (let j = i + 1; j < lines.length; j++) {
+            const defLine = lines[j]
+            if (defLine.startsWith('~ ') || defLine.startsWith('~')) {
+              definitionLines.push(defLine.replace(/^~\s?/, ''))
+            } else if (defLine.trim() && !defLine.startsWith('[[def:')) {
+              // Continue reading definition lines until we hit another term or empty line
+              break
+            }
+          }
+
+          const definitionHtml = definitionLines.length > 0 ?
+            `<dl><dd>${definitionLines.join('</dd><dd>')}</dd></dl>` : ''
+
+          if (termId) {
+            console.log(consoleMessages.foundTerm(termId, filePath))
+            extractedTerms.push({
+              id: termId,
+              aliases: aliases,
+              file: filePath,
+              definition: definitionHtml,
+              definitionText: definitionLines.join(' ').trim(),
+              external: false,
+              source: `Local: ${filePath}`
+            })
+          }
+        }
+      }
+    }
+
+    return extractedTerms.length > 0 ? extractedTerms : null
   }
 
   // Load external specs and extract terms
@@ -228,7 +235,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
     for (const spec of externalSpecs) {
       processedSpecs++
       proxyInfo.value = `Loading external spec ${processedSpecs}/${externalSpecs.length}: ${spec.external_spec}...`
-      
+
       let success = false
 
       for (let proxyIndex = 0; proxyIndex < corsProxies.length && !success; proxyIndex++) {
@@ -265,7 +272,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
           })
 
           proxyInfo.value = `Processing terms from ${spec.external_spec}...`
-          
+
           // Parse the HTML to extract terms from the dl.terms-and-definitions-list
           const parser = new DOMParser()
           const doc = parser.parseFromString(response.data, 'text/html')
@@ -334,7 +341,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
       if (!success) {
         console.error(consoleMessages.unableToLoad(spec.external_spec, spec.gh_page))
       }
-      
+
       // Brief pause between specs to allow UI updates
       await new Promise(resolve => setTimeout(resolve, 100))
     }
@@ -346,6 +353,39 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
     }
 
     return externalTerms
+  }
+
+  // Load terms for a single file only (does not enumerate repository terms)
+  // This is useful when opening a single file in the editor to avoid fetching the entire terms directory
+  const loadTermsForFile = async (filePath, fileContent = null) => {
+    loadingTerms.value = true
+    termsError.value = ''
+    try {
+      let extracted = null
+      if (fileContent) {
+        extracted = parseTermsFromContent(fileContent, filePath)
+      } else {
+        extracted = await extractTermsFromFile(filePath)
+      }
+
+      if (extracted && Array.isArray(extracted)) {
+        terms.value = extracted
+        filteredTerms.value = extracted
+        // Save a small cache so repeated opens are cheap
+        saveTermsToStorage(extracted)
+      } else {
+        terms.value = []
+        filteredTerms.value = []
+      }
+
+      return terms.value
+    } catch (err) {
+      console.error(consoleMessages.errorLoadingTerms(err.message))
+      termsError.value = 'Failed to load terms for file.'
+      return null
+    } finally {
+      loadingTerms.value = false
+    }
   }
 
   // Load terms from repository
@@ -369,7 +409,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
       }
 
       const termsData = []
-      
+
       // Load terms from the traditional terms directory
       try {
         proxyInfo.value = 'Loading local terms from repository...'
@@ -403,7 +443,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
             }
           })
         }
-        
+
         console.log(consoleMessages.loadedLocalTerms(termsData.length))
         if (termsData.length > 0) {
           proxyInfo.value = `Found ${termsData.length} local terms`
@@ -463,7 +503,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
     termsError.value = ''
     termFilter.value = ''
     filteredTerms.value = []
-    
+
     const modal = new bootstrap.Modal(document.getElementById('termsModal'))
     modal.show()
 
@@ -473,7 +513,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
         await loadTermsFromRepository()
       }
     }
-    
+
     loadingTerms.value = false
     filteredTerms.value = terms.value
   }
@@ -488,7 +528,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
         console.error('Failed to load specs config in initializeTerms:', error)
       }
     }
-    
+
     // Try to load from storage first, then from repository if needed
     if (!loadTermsFromStorage()) {
       loadingTerms.value = true
@@ -529,7 +569,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
     individualTermsExpanded,
     specsConfig,
     proxyInfo,
-    
+
     // Methods
     filterTerms,
     isTermDefinitionVisible,
@@ -538,6 +578,8 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
     showTermsModal,
     refreshTerms,
     loadTermsFromRepository,
-    initializeTerms
+    initializeTerms,
+    loadTermsForFile,
+    loadSpecsConfig
   }
 }

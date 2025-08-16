@@ -355,7 +355,9 @@ export default {
       toggleIndividualTerm,
       showTermsModal,
       refreshTerms,
-      initializeTerms
+      initializeTerms,
+      loadTermsForFile,
+      loadSpecsConfig
     } = termsManagement
 
     // Simple editor
@@ -857,11 +859,21 @@ export default {
     onMounted(async () => {
       addToVisitedRepos(props.owner, props.repo, props.branch)
 
-      // Initialize terms FIRST to ensure specsConfig is available for validation
-      await initializeTerms()
+      // Initialize specsConfig only (do not load full terms directory to avoid extra GitHub API calls)
+      await loadSpecsConfig()
 
       // Load file content
       await loadFileContent()
+
+      // If this is a terms file, parse/load terms only for this file to avoid scanning the whole terms directory
+      try {
+        if (isTermsFileComputed.value) {
+          // Provide already-fetched file content (content.value) to avoid another API call
+          await termsManagement.loadTermsForFile(decodedPath.value, content.value)
+        }
+      } catch (e) {
+        console.warn('Failed to load single-file terms:', e)
+      }
 
       // Initialize remote monitoring for existing files
       if (!isNewFile.value && fileSha.value) {
@@ -933,6 +945,14 @@ export default {
           error.value = ''
           success.value = ''
           loadFileContent()
+          // After loading the new file, if it's a terms file, load terms only for that file
+          loadFileContent().then(() => {
+            if (isTermsFileComputed.value) {
+              termsManagement.loadTermsForFile(decodedPath.value, content.value).catch(err => {
+                console.warn('Failed to load single-file terms on path change:', err)
+              })
+            }
+          })
         }
       }
     })
