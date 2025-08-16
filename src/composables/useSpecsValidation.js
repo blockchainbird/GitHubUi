@@ -53,11 +53,11 @@ export function useSpecsValidation() {
 
   const validateAllSpecs = (externalSpecs) => {
     const invalidSpecs = externalSpecs.filter(spec =>
-      !spec.external_spec || 
-      !spec.gh_page || 
-      !spec.url || 
+      !spec.external_spec ||
+      !spec.gh_page ||
+      !spec.url ||
       !spec.terms_dir ||
-      !isValidUrl(spec.gh_page) || 
+      !isValidUrl(spec.gh_page) ||
       !isValidUrl(spec.url)
     )
 
@@ -71,7 +71,7 @@ export function useSpecsValidation() {
     const allSpecs = [...externalSpecs, ...newSpecs]
     const specIds = allSpecs.map(spec => spec.external_spec)
     const duplicates = specIds.filter((id, index) => specIds.indexOf(id) !== index)
-    
+
     return {
       hasDuplicates: duplicates.length > 0,
       duplicates: [...new Set(duplicates)]
