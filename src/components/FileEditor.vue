@@ -355,7 +355,6 @@ export default {
       toggleIndividualTerm,
       showTermsModal,
       refreshTerms,
-      initializeTerms,
       loadTermsForFile,
       loadSpecsConfig
     } = termsManagement

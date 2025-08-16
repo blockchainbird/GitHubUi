@@ -20,9 +20,8 @@
             <div class="card border-0 shadow-sm">
               <div class="card-header d-flex justify-content-between align-items-center">
                 <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
-                <button type="button" class="btn btn-primary d-flex align-items-center gap-1"
-                  @click="refreshPreview" :disabled="loading"
-                  :title="loading ? 'Refreshing terms...' : 'Clear cache and reload all terms'">
+                <button type="button" class="btn btn-primary d-flex align-items-center gap-1" @click="refreshPreview"
+                  :disabled="loading" :title="loading ? 'Refreshing terms...' : 'Clear cache and reload all terms'">
                   <i class="bi" :class="loading ? 'bi-arrow-clockwise spin' : 'bi-arrow-clockwise'"></i>
                   <span class="d-none d-sm-inline">Refresh</span>
                 </button>
@@ -177,7 +176,7 @@
                       </h6>
                       <p class="text-muted mb-3">
                         {{ searchQuery ? 'No terms found matching your search criteria.' :
-                        'This repository does not contain any term definitions.' }}
+                          'This repository does not contain any term definitions.' }}
                       </p>
                       <div v-if="!searchQuery && allTerms.length === 0" class="alert alert-light border d-inline-block">
                         <div class="d-flex align-items-start">
@@ -395,7 +394,9 @@ export default {
       termsError,
       proxyInfo,
       specsConfig,
-      refreshTerms
+      refreshTerms,
+      loadTermsForFile,
+      loadSpecsConfig
     } = useTermsManagement(props, checkAuthAndRedirect)
 
     // Use loading and error states from composable
@@ -455,6 +456,19 @@ export default {
     // Load terms when component is mounted
     const loadAllTerms = async () => {
       try {
+        // If a specific file path is requested via query (file, path, or filePath), load terms only for that file
+        const fileQuery = route.query.file || route.query.path || route.query.filePath
+        if (fileQuery) {
+          // Ensure specs config is available for any downstream logic
+          await loadSpecsConfig().catch(() => { })
+          const decoded = decodeURIComponent(fileQuery)
+          const single = await loadTermsForFile(decoded)
+          allTerms.value = single && Array.isArray(single) ? [...single] : []
+          filterTerms()
+          return
+        }
+
+        // Default: initialize full terms (standalone preview mode)
         await initializeTerms()
         allTerms.value = [...managedTerms.value]
         filterTerms()
@@ -468,12 +482,23 @@ export default {
       console.log('🔄 Refresh preview clicked - clearing cache and reloading...')
       refreshSuccess.value = false
       try {
-        // Clear cache and force reload from repository
-        await refreshTerms()
-        // Update local state with the fresh data
-        allTerms.value = [...managedTerms.value]
-        filterTerms()
-        console.log(`✅ Refresh completed - loaded ${allTerms.value.length} terms`)
+        const fileQuery = route.query.file || route.query.path || route.query.filePath
+        if (fileQuery) {
+          // Refresh only the single file
+          const decoded = decodeURIComponent(fileQuery)
+          await loadSpecsConfig().catch(() => { })
+          const single = await loadTermsForFile(decoded)
+          allTerms.value = single && Array.isArray(single) ? [...single] : []
+          filterTerms()
+          console.log(`✅ Refresh completed - loaded ${allTerms.value.length} terms (single file)`)
+        } else {
+          // Clear cache and force reload from repository
+          await refreshTerms()
+          // Update local state with the fresh data
+          allTerms.value = [...managedTerms.value]
+          filterTerms()
+          console.log(`✅ Refresh completed - loaded ${allTerms.value.length} terms`)
+        }
 
         // Show success feedback briefly
         refreshSuccess.value = true
