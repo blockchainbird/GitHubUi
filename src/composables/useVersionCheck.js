@@ -19,7 +19,7 @@ export function useVersionCheck(options = {}) {
 
   // Storage keys
   const LAST_SEEN_VERSION_KEY = 'last_seen_version'
-  const VERSION_CHECK_INTERVAL = 30 * 60 * 1000 // 30 minutes
+  const VERSION_CHECK_INTERVAL = 5 * 60 * 1000 // 30 minutes
 
   /**
    * Get current build info from Vite's define
