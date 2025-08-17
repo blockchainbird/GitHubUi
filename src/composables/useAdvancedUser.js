@@ -1,7 +1,7 @@
 import { ref, watch } from 'vue'
 
 // Singleton reactive state for Advanced User mode
-const isAdvancedUser = ref(false)
+const isAdvancedUser = ref(true)
 
 // Initialize from localStorage once on first import
 const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('advancedUser') : null
