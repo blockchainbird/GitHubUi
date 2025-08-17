@@ -1,267 +1,273 @@
 <template>
-  <div>
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2>
-        <i class="bi" :class="isNewFile ? 'bi-plus-circle' : 'bi-pencil-square'"></i>
-        {{ isNewFile ? 'Creating: ' : 'Editing: ' }}{{ filename }}
-        <span title="If a file has an underscore at the beginning of the file name, it is a draft version."
-          v-if="isDraft" class="badge bg-warning text-dark ms-2">
-          <i class="bi bi-file-earmark-text"></i>
-          Draft
-        </span>
-        <span v-if="isNewFile" class="badge bg-info text-white ms-2">
-          <i class="bi bi-asterisk"></i>
-          New File
-        </span>
-      </h2>
-      <div>
-        <button @click="handleTogglePublish" class="btn me-2" :class="isDraft ? 'btn-success' : 'btn-warning'"
-          :disabled="saving || isNewFile"
-          :title="isNewFile ? 'Create the file first before publishing/unpublishing' : ''">
-          <i class="bi" :class="isDraft ? 'bi-eye' : 'bi-eye-slash'"></i>
-          {{ isDraft ? 'Publish' : 'Unpublish' }}
-        </button>
-
-        <!-- Commit button -->
-        <button @click="handleCommitFile" class="btn btn-primary" :disabled="saving || !hasChanges">
-          <span v-if="saving">
-            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-            Saving...
-          </span>
-          <span v-else>
-            <i class="bi" :class="isNewFile ? 'bi-plus-circle' : 'bi-cloud-arrow-up'"></i>
-            {{ isNewFile ? 'Create & Commit' : 'Commit' }}
-          </span>
-        </button>
-
-        <!--  -->
-        <button @click="goBack" class="btn btn-outline-secondary ms-2">
-          <i class="bi bi-x-circle me-2"></i>
-          Close
-        </button>
-      </div>
-    </div>
-
-    <div v-if="error" class="alert alert-danger" role="alert">
-      {{ error }}
-    </div>
-
-    <div v-if="success" class="alert alert-success" role="alert">
-      {{ success }}
-    </div>
-
-    <div v-if="isNewFile" class="alert alert-info" role="alert">
-      <div class="d-flex align-items-start">
-        <i class="bi bi-info-circle-fill me-2 flex-shrink-0 mt-1"></i>
-        <div>
-          <strong>Creating New File:</strong>
-          This file doesn't exist yet. You can edit and use all toolbar functions. Click "Create & Commit" when you're
-          ready to save it to the repository.
-        </div>
-      </div>
-    </div>
-
-    <ContentValidationAlert :warnings="validationWarnings" v-model:showWarnings="showValidationWarnings" />
-
-    <!-- Remote Change Alert -->
-    <div v-if="remoteChangeDetected" class="alert alert-warning alert-dismissible" role="alert">
-      <div class="d-flex align-items-start">
-        <i class="bi bi-exclamation-triangle-fill me-2 flex-shrink-0 mt-1"></i>
-        <div class="flex-grow-1">
-          <strong>Remote Change Detected!</strong>
-          <p class="mb-2">{{ remoteChangeMessage }}</p>
-          <div class="d-flex gap-2">
-            <button @click="acceptRemoteChanges" class="btn btn-warning btn-sm">
-              <i class="bi bi-download"></i>
-              Load Remote Version
+  <div class="container-fluid mt-3">
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-10">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2>
+            <i class="bi" :class="isNewFile ? 'bi-plus-circle' : 'bi-pencil-square'"></i>
+            {{ isNewFile ? 'Creating: ' : 'Editing: ' }}{{ filename }}
+            <span title="If a file has an underscore at the beginning of the file name, it is a draft version."
+              v-if="isDraft" class="badge bg-warning text-dark ms-2">
+              <i class="bi bi-file-earmark-text"></i>
+              Draft
+            </span>
+            <span v-if="isNewFile" class="badge bg-info text-white ms-2">
+              <i class="bi bi-asterisk"></i>
+              New File
+            </span>
+          </h2>
+          <div>
+            <button @click="handleTogglePublish" class="btn me-2" :class="isDraft ? 'btn-success' : 'btn-warning'"
+              :disabled="saving || isNewFile"
+              :title="isNewFile ? 'Create the file first before publishing/unpublishing' : ''">
+              <i class="bi" :class="isDraft ? 'bi-eye' : 'bi-eye-slash'"></i>
+              {{ isDraft ? 'Publish' : 'Unpublish' }}
             </button>
-            <button @click="dismissRemoteChange" class="btn btn-outline-secondary btn-sm">
-              <i class="bi bi-x"></i>
-              Keep Local Version
+
+            <!-- Commit button -->
+            <button @click="handleCommitFile" class="btn btn-primary" :disabled="saving || !hasChanges">
+              <span v-if="saving">
+                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                Saving...
+              </span>
+              <span v-else>
+                <i class="bi" :class="isNewFile ? 'bi-plus-circle' : 'bi-cloud-arrow-up'"></i>
+                {{ isNewFile ? 'Create & Commit' : 'Commit' }}
+              </span>
+            </button>
+
+            <!--  -->
+            <button @click="goBack" class="btn btn-outline-secondary ms-2">
+              <i class="bi bi-x-circle me-2"></i>
+              Close
             </button>
           </div>
         </div>
-      </div>
-    </div>
 
-    <div v-if="loading" class="text-center py-5">
-      <div class="spinner-border" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
-      <p class="mt-2">{{ isNewFile ? 'Setting up new file...' : 'Loading file content...' }}</p>
-    </div>
+        <div v-if="error" class="alert alert-danger" role="alert">
+          {{ error }}
+        </div>
 
-    <div v-else class="row">
-      <div class="col-12">
-        <div class="card">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">
-              <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
-            </h5>
-            <div class="btn-group" role="group">
-              <input type="radio" class="btn-check" id="simple-mode" v-model="editMode" value="simple"
-                autocomplete="off" v-if="isTermsFileComputed">
-              <label class="btn btn-outline-success btn-sm" for="simple-mode"
-                v-if="isTermsFileComputed && isAdvancedUser">
-                <i class="bi bi-ui-checks"></i> Simple
-              </label>
+        <div v-if="success" class="alert alert-success" role="alert">
+          {{ success }}
+        </div>
 
-              <input type="radio" class="btn-check" id="edit-mode" v-model="editMode" value="edit" autocomplete="off">
-              <label class="btn btn-outline-primary btn-sm" :class="{ 'rounded-start': !isAdvancedUser }"
-                for="edit-mode">
-                <i class="bi bi-pencil"></i> {{ isTermsFileComputed ? 'Technical' : 'Edit' }}
-              </label>
-
-              <input type="radio" class="btn-check" id="preview-mode" v-model="editMode" value="preview"
-                autocomplete="off">
-              <label class="btn btn-outline-primary btn-sm" for="preview-mode">
-                <i class="bi bi-eye"></i> Preview
-              </label>
+        <div v-if="isNewFile" class="alert alert-info" role="alert">
+          <div class="d-flex align-items-start">
+            <i class="bi bi-info-circle-fill me-2 flex-shrink-0 mt-1"></i>
+            <div>
+              <strong>Creating New File:</strong>
+              This file doesn't exist yet. You can edit and use all toolbar functions. Click "Create & Commit" when
+              you're
+              ready to save it to the repository.
             </div>
           </div>
-          <div class="card-body p-0">
-            <!-- Simple Editor (Terms Files Only) -->
-            <div v-if="editMode === 'simple'" class="p-3">
-              <SimpleTermsEditor v-model:termType="simpleEditor.termType"
-                v-model:externalRepo="simpleEditor.externalRepo" v-model:mainTerm="simpleEditor.mainTerm"
-                v-model:aliases="simpleEditor.aliases" v-model:definition="simpleEditor.definition"
-                @form-change="onSimpleFormChange" @definition-input="onSimpleDefinitionInput"
-                @definition-enter="handleDefinitionEnter" @show-external-terms="showExternalTermsModal"
-                @insert-definition-text="insertDefinitionText" ref="simpleEditorRef" />
-            </div>
+        </div>
 
-            <!-- Technical/Edit Mode -->
-            <div v-else-if="editMode === 'edit'" class="d-flex flex-column h-100">
-              <!-- Toolbar -->
-              <div class="editor-toolbar p-2 border-bottom flex-shrink-0">
-                <div class="btn-group btn-group-sm me-2" role="group">
-                  <button @click="handleInsertHeading" class="btn btn-outline-secondary" title="Insert Heading">
-                    <i class="bi bi-type-h2"></i>
-                  </button>
-                  <button @click="handleInsertList" class="btn btn-outline-secondary" title="Insert List">
-                    <i class="bi bi-list-ul"></i>
-                  </button>
-                  <button @click="handleInsertBold" class="btn btn-outline-secondary" title="Bold">
-                    <i class="bi bi-type-bold"></i>
-                  </button>
-                  <button @click="handleInsertItalic" class="btn btn-outline-secondary" title="Italic">
-                    <i class="bi bi-type-italic"></i>
-                  </button>
+        <ContentValidationAlert :warnings="validationWarnings" v-model:showWarnings="showValidationWarnings" />
+
+        <!-- Remote Change Alert -->
+        <div v-if="remoteChangeDetected" class="alert alert-warning alert-dismissible" role="alert">
+          <div class="d-flex align-items-start">
+            <i class="bi bi-exclamation-triangle-fill me-2 flex-shrink-0 mt-1"></i>
+            <div class="flex-grow-1">
+              <strong>Remote Change Detected!</strong>
+              <p class="mb-2">{{ remoteChangeMessage }}</p>
+              <div class="d-flex gap-2">
+                <button @click="acceptRemoteChanges" class="btn btn-warning btn-sm">
+                  <i class="bi bi-download"></i>
+                  Load Remote Version
+                </button>
+                <button @click="dismissRemoteChange" class="btn btn-outline-secondary btn-sm">
+                  <i class="bi bi-x"></i>
+                  Keep Local Version
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="loading" class="text-center py-5">
+          <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="mt-2">{{ isNewFile ? 'Setting up new file...' : 'Loading file content...' }}</p>
+        </div>
+
+        <div v-else class="row">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                  <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
+                </h5>
+                <div class="btn-group" role="group">
+                  <input type="radio" class="btn-check" id="simple-mode" v-model="editMode" value="simple"
+                    autocomplete="off" v-if="isTermsFileComputed">
+                  <label class="btn btn-outline-success btn-sm" for="simple-mode"
+                    v-if="isTermsFileComputed && isAdvancedUser">
+                    <i class="bi bi-ui-checks"></i> Simple
+                  </label>
+
+                  <input type="radio" class="btn-check" id="edit-mode" v-model="editMode" value="edit"
+                    autocomplete="off">
+                  <label class="btn btn-outline-primary btn-sm" :class="{ 'rounded-start': !isAdvancedUser }"
+                    for="edit-mode">
+                    <i class="bi bi-pencil"></i> {{ isTermsFileComputed ? 'Technical' : 'Edit' }}
+                  </label>
+
+                  <input type="radio" class="btn-check" id="preview-mode" v-model="editMode" value="preview"
+                    autocomplete="off">
+                  <label class="btn btn-outline-primary btn-sm" for="preview-mode">
+                    <i class="bi bi-eye"></i> Preview
+                  </label>
+                </div>
+              </div>
+              <div class="card-body p-0">
+                <!-- Simple Editor (Terms Files Only) -->
+                <div v-if="editMode === 'simple'" class="p-3">
+                  <SimpleTermsEditor v-model:termType="simpleEditor.termType"
+                    v-model:externalRepo="simpleEditor.externalRepo" v-model:mainTerm="simpleEditor.mainTerm"
+                    v-model:aliases="simpleEditor.aliases" v-model:definition="simpleEditor.definition"
+                    @form-change="onSimpleFormChange" @definition-input="onSimpleDefinitionInput"
+                    @definition-enter="handleDefinitionEnter" @show-external-terms="showExternalTermsModal"
+                    @insert-definition-text="insertDefinitionText" ref="simpleEditorRef" />
                 </div>
 
-                <div class="btn-group btn-group-sm me-2" role="group">
-                  <button @click="showTermsModal" class="btn btn-outline-info" title="Insert Term Reference">
-                    <i class="bi bi-bookmark"></i>
-                    Terms
-                  </button>
-                  <button @click="copyToNotepad" class="btn btn-outline-success" title="Copy content to Notepad">
-                    <i class="bi bi-sticky"></i>
-                    To Notepad
-                  </button>
-                  <!-- <button @click="showAddTermModal" class="btn btn-outline-success" title="Add New Term">
+                <!-- Technical/Edit Mode -->
+                <div v-else-if="editMode === 'edit'" class="d-flex flex-column h-100">
+                  <!-- Toolbar -->
+                  <div class="editor-toolbar p-2 border-bottom flex-shrink-0">
+                    <div class="btn-group btn-group-sm me-2" role="group">
+                      <button @click="handleInsertHeading" class="btn btn-outline-secondary" title="Insert Heading">
+                        <i class="bi bi-type-h2"></i>
+                      </button>
+                      <button @click="handleInsertList" class="btn btn-outline-secondary" title="Insert List">
+                        <i class="bi bi-list-ul"></i>
+                      </button>
+                      <button @click="handleInsertBold" class="btn btn-outline-secondary" title="Bold">
+                        <i class="bi bi-type-bold"></i>
+                      </button>
+                      <button @click="handleInsertItalic" class="btn btn-outline-secondary" title="Italic">
+                        <i class="bi bi-type-italic"></i>
+                      </button>
+                    </div>
+
+                    <div class="btn-group btn-group-sm me-2" role="group">
+                      <button @click="showTermsModal" class="btn btn-outline-info" title="Insert Term Reference">
+                        <i class="bi bi-bookmark"></i>
+                        Terms
+                      </button>
+                      <button @click="copyToNotepad" class="btn btn-outline-success" title="Copy content to Notepad">
+                        <i class="bi bi-sticky"></i>
+                        To Notepad
+                      </button>
+                      <!-- <button @click="showAddTermModal" class="btn btn-outline-success" title="Add New Term">
                     <i class="bi bi-plus-circle"></i>
                     Add Term
                   </button> -->
-                </div>
+                    </div>
 
-                <div class="btn-group btn-group-sm" role="group">
-                  <button @click="showHelpModal" class="btn btn-outline-secondary" title="Help">
-                    <i class="bi bi-question-circle"></i>
-                    Help
-                  </button>
-                </div>
-              </div>
+                    <div class="btn-group btn-group-sm" role="group">
+                      <button @click="showHelpModal" class="btn btn-outline-secondary" title="Help">
+                        <i class="bi bi-question-circle"></i>
+                        Help
+                      </button>
+                    </div>
+                  </div>
 
-              <!-- Editor with Line Numbers -->
-              <div class="editor-container flex-grow-1 d-flex">
-                <!-- Line Numbers -->
-                <div ref="lineNumbers" class="line-numbers" :style="{ height: editorHeight }"
-                  @scroll="handleLineNumbersScroll">
-                  <div v-for="lineNum in lineCount" :key="lineNum"
-                    :class="['line-number', { 'line-number-error': isErrorLine(lineNum) }]"
-                    :style="{ height: getLineNumberHeight(lineNum) }">
-                    {{ lineNum }}
+                  <!-- Editor with Line Numbers -->
+                  <div class="editor-container flex-grow-1 d-flex">
+                    <!-- Line Numbers -->
+                    <div ref="lineNumbers" class="line-numbers" :style="{ height: editorHeight }"
+                      @scroll="handleLineNumbersScroll">
+                      <div v-for="lineNum in lineCount" :key="lineNum"
+                        :class="['line-number', { 'line-number-error': isErrorLine(lineNum) }]"
+                        :style="{ height: getLineNumberHeight(lineNum) }">
+                        {{ lineNum }}
+                      </div>
+                    </div>
+
+                    <!-- Editor Textarea -->
+                    <textarea ref="editor" v-model="content" @input="handleContentChange" @scroll="handleEditorScroll"
+                      wrap="soft" :style="{ height: editorHeight }"
+                      :class="['technical-editor-with-lines flex-grow-1', validationWarnings.length > 0 ? 'error' : '']"></textarea>
+
+                    <!-- Hidden mirror used to measure wrapped line heights -->
+                    <div ref="mirror" class="editor-mirror" aria-hidden="true"></div>
                   </div>
                 </div>
 
-                <!-- Editor Textarea -->
-                <textarea ref="editor" v-model="content" @input="handleContentChange" @scroll="handleEditorScroll"
-                  wrap="soft" :style="{ height: editorHeight }"
-                  :class="['technical-editor-with-lines flex-grow-1', validationWarnings.length > 0 ? 'error' : '']"></textarea>
-
-                <!-- Hidden mirror used to measure wrapped line heights -->
-                <div ref="mirror" class="editor-mirror" aria-hidden="true"></div>
+                <!-- Preview Mode -->
+                <div v-else-if="editMode === 'preview'" class="p-3">
+                  <div class="markdown-preview" v-html="renderedContent"></div>
+                </div>
               </div>
             </div>
+          </div>
+        </div>
 
-            <!-- Preview Mode -->
-            <div v-else-if="editMode === 'preview'" class="p-3">
-              <div class="markdown-preview" v-html="renderedContent"></div>
+        <!-- Terms Modal -->
+        <TermsModal :loading="loadingTerms" :error="termsError" :proxy-info="proxyInfo" :terms="filteredTerms"
+          v-model:searchFilter="termFilter" v-model:referenceType="referenceType"
+          :definitions-collapsed="definitionsCollapsed" :is-definition-visible="isTermDefinitionVisible"
+          :is-from-simple-editor="isTermsModalFromSimpleEditor" @filter-terms="filterTerms"
+          @toggle-definitions="toggleDefinitionsCollapse" @toggle-individual-term="toggleIndividualTerm"
+          @refresh-terms="refreshTerms" @insert-term="handleInsertTerm" />
+
+        <!-- Commit Modal -->
+        <div class="modal fade" id="commitModal" tabindex="-1">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">
+                  <i class="bi" :class="isNewFile ? 'bi-plus-circle' : 'bi-save'"></i>
+                  {{ isNewFile ? 'Create & Commit File' : 'Save & Commit Changes' }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label for="commitMessage" class="form-label">Commit Message</label>
+                  <input type="text" class="form-control" id="commitMessage" v-model="commitMessage"
+                    :placeholder="isNewFile ? `Create ${filename}` : `Update ${filename}`" required>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" @click="commitChanges" :disabled="saving">
+                  <span v-if="saving">
+                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                    {{ isNewFile ? 'Creating...' : 'Saving...' }}
+                  </span>
+                  <span v-else>
+                    <i class="bi" :class="isNewFile ? 'bi-plus-circle' : 'bi-save'"></i>
+                    {{ isNewFile ? 'Create File' : 'Save Changes' }}
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Terms Modal -->
-    <TermsModal :loading="loadingTerms" :error="termsError" :proxy-info="proxyInfo" :terms="filteredTerms"
-      v-model:searchFilter="termFilter" v-model:referenceType="referenceType"
-      :definitions-collapsed="definitionsCollapsed" :is-definition-visible="isTermDefinitionVisible"
-      :is-from-simple-editor="isTermsModalFromSimpleEditor" @filter-terms="filterTerms"
-      @toggle-definitions="toggleDefinitionsCollapse" @toggle-individual-term="toggleIndividualTerm"
-      @refresh-terms="refreshTerms" @insert-term="handleInsertTerm" />
-
-    <!-- Commit Modal -->
-    <div class="modal fade" id="commitModal" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">
-              <i class="bi" :class="isNewFile ? 'bi-plus-circle' : 'bi-save'"></i>
-              {{ isNewFile ? 'Create & Commit File' : 'Save & Commit Changes' }}
-            </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <div class="mb-3">
-              <label for="commitMessage" class="form-label">Commit Message</label>
-              <input type="text" class="form-control" id="commitMessage" v-model="commitMessage"
-                :placeholder="isNewFile ? `Create ${filename}` : `Update ${filename}`" required>
+        <!-- Help Modal -->
+        <div class="modal fade" id="helpModal" tabindex="-1">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">
+                  <i class="bi bi-question-circle"></i>
+                  Editor Help
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <div class="help-content" v-html="helpContent"></div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              </div>
             </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="button" class="btn btn-success" @click="commitChanges" :disabled="saving">
-              <span v-if="saving">
-                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-                {{ isNewFile ? 'Creating...' : 'Saving...' }}
-              </span>
-              <span v-else>
-                <i class="bi" :class="isNewFile ? 'bi-plus-circle' : 'bi-save'"></i>
-                {{ isNewFile ? 'Create File' : 'Save Changes' }}
-              </span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Help Modal -->
-    <div class="modal fade" id="helpModal" tabindex="-1">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">
-              <i class="bi bi-question-circle"></i>
-              Editor Help
-            </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <div class="help-content" v-html="helpContent"></div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
           </div>
         </div>
       </div>
