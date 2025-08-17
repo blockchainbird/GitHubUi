@@ -1,36 +1,36 @@
 <template>
-  <div class="simple-editor">
-    <div class="card">
-      <div class="card-header">
-        <h5>
-          <i class="bi bi-ui-checks"></i>
+  <div class="simple-editor p-2">
+    <div class="card border-2 shadow-sm">
+      <div class="card-header fw-semibold">
+        <h5 class="m-0 d-flex align-items-center">
+          <i class="bi bi-ui-checks me-2"></i>
           Simple Terms Editor
         </h5>
       </div>
       <div class="card-body">
         <!-- Term Type Selection -->
         <div class="mb-3">
-          <label class="form-label">Term Type <i
+          <label class="form-label fw-semibold text-dark">Term Type <i
               title="Local terms are defined in this repository. External terms reference definitions from other specifications."
-              class="bi bi-question-circle fs-5 ms-3 text-primary"></i></label>
-          <div class="btn-group w-100" role="group">
+              class="bi bi-question-circle fs-5 ms-1 text-primary"></i></label>
+          <div class="btn-group" role="group">
             <input type="radio" class="btn-check" id="termType-local" v-model="termType" value="local"
               @change="onFormChange">
             <label class="btn btn-outline-primary" for="termType-local">
-              <i class="bi bi-house"></i> Local Term
+              <i class="bi bi-house"></i> Local
             </label>
 
             <input type="radio" class="btn-check" id="termType-external" v-model="termType" value="external"
               @change="onFormChange">
             <label class="btn btn-outline-success" for="termType-external">
-              <i class="bi bi-link-45deg"></i> External Term
+              <i class="bi bi-link-45deg"></i> External
             </label>
           </div>
         </div>
 
         <!-- External Repository (shown only for external terms) -->
         <div v-if="termType === 'external'" class="mb-3">
-          <label class="form-label">External Repository <i
+          <label class="form-label fw-semibold text-dark">External Repository <i
               title="The identifier of the external specification containing the term."
               class="bi bi-question-circle fs-5 ms-3 text-primary"></i></label>
           <div class="input-group">
@@ -44,7 +44,7 @@
 
         <!-- Main Term -->
         <div class="mb-3">
-          <label for="mainTerm" class="form-label">Term Name <i
+          <label for="mainTerm" class="form-label fw-semibold text-dark">Term Name <i
               title="The primary name for this term (e.g., “verifiable-credential”)."
               class="bi bi-question-circle fs-5 ms-3 text-primary"></i></label>
           <input type="text" class="form-control" id="mainTerm" v-model="mainTerm" @input="onFormChange"
@@ -53,7 +53,7 @@
 
         <!-- Aliases -->
         <div class="mb-3">
-          <label class="form-label">Aliases (Optional) <i
+          <label class="form-label fw-semibold text-dark">Aliases (Optional) <i
               title="Alternative names for the term (e.g., “VC”, “credential”)."
               class="bi bi-question-circle fs-5 ms-3 text-primary"></i></label>
           <div v-for="(alias, index) in aliases" :key="index" class="input-group mb-2">
@@ -71,9 +71,9 @@
         </div>
 
         <!-- Generated Term Line Preview -->
-        <div v-if="generatedTermLine" class="generated-term-line">
-          <label class="form-label">Generated Term Line</label>
-          <code>{{ generatedTermLine }}</code>
+        <div v-if="generatedTermLine" class="generated-term-line bg-light border rounded-2 p-3 mb-3">
+          <label class="form-label fw-semibold text-dark">Generated Term Line</label>
+          <code class="bg-white border p-2 rounded d-block font-monospace text-body">{{ generatedTermLine }}</code>
         </div>
 
         <!-- Definition -->
@@ -83,7 +83,7 @@
               class="bi bi-question-circle fs-5 ms-3 text-primary"></i></label>
 
           <!-- Definition Toolbar -->
-          <div class="definition-editor-toolbar">
+          <div class="definition-editor-toolbar bg-light border rounded-2 p-2 mb-3">
             <div class="btn-group btn-group-sm" role="group">
               <button type="button" class="btn btn-outline-secondary"
                 @click="$emit('insert-definition-text', '**', '**')" title="Bold">
@@ -276,68 +276,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-.simple-editor .card {
-  border-width: 2px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.simple-editor .card-header {
-  font-weight: 600;
-}
-
-.simple-editor .card-header h5 {
-  margin: 0;
-  display: flex;
-  align-items: center;
-}
-
-.simple-editor .card-header i {
-  margin-right: 0.5rem;
-}
-
-.generated-term-line {
-  background-color: #f8f9fa;
-  border: 1px solid #dee2e6;
-  border-radius: 0.375rem;
-  padding: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.generated-term-line code {
-  background-color: white;
-  border: 1px solid #e9ecef;
-  padding: 0.5rem;
-  border-radius: 0.25rem;
-  display: block;
-  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-  color: #495057;
-}
-
-.definition-editor-toolbar {
-  background-color: #f8f9fa;
-  border: 1px solid #dee2e6;
-  border-radius: 0.375rem;
-  padding: 0.5rem;
-  margin-bottom: 0.75rem;
-}
-
-.form-label {
-  color: #495057;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-
-.form-text {
-  color: #6c757d;
-  font-size: 0.875rem;
-  margin-top: 0.25rem;
-}
-
-.btn-group .btn-check:checked + .btn {
-  background-color: #0d6efd;
-  border-color: #0d6efd;
-  color: white;
-}
-</style>
