@@ -319,5 +319,4 @@ export default {
 .definition-editor-toolbar .btn {
   opacity: 0.95;
 }
-
 </style>
