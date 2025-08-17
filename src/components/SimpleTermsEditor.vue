@@ -40,13 +40,6 @@
           </div>
         </div>
 
-
-
-
-
-
-
-
         <!-- Term Type Selection (External Repository input shown inline for external terms) -->
         <div class="mb-3 row align-items-center">
           <label class="col-sm-3 col-form-label text-dark"><i
@@ -79,11 +72,10 @@
           </div>
         </div>
 
-
         <!-- Generated Term Line Preview -->
         <div v-if="generatedTermLine" class="generated-term-line mb-3 row">
           <label class="col-sm-3 col-form-label text-dark"><i title="The term, using the brackets templates."
-              class="bi bi-question-circle fs-5 text-primary"></i> Term</label>
+              class="bi bi-question-circle fs-5 text-primary"></i> Generated Term</label>
           <div class="col-sm-9">
             <code
               class="bg-white border p-2 rounded d-inline-block font-monospace text-body">{{ generatedTermLine }}</code>
@@ -187,12 +179,14 @@ export default {
         }
       } else {
         const externalRepo = props.externalRepo.trim()
-        if (!externalRepo) return ''
+        // Keep the preview visible even when the external repo hasn't been filled in yet.
+        // Show a lightweight placeholder so the user sees the external tref format immediately.
+        const repoDisplay = externalRepo || '<repo>'
 
         if (validAliases.length === 0) {
-          return `[[tref: ${externalRepo}, ${mainTerm}]]`
+          return `[[tref: ${repoDisplay}, ${mainTerm}]]`
         } else {
-          return `[[tref: ${externalRepo}, ${mainTerm}, ${validAliases.join(', ')}]]`
+          return `[[tref: ${repoDisplay}, ${mainTerm}, ${validAliases.join(', ')}]]`
         }
       }
     })
