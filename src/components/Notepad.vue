@@ -346,7 +346,7 @@ export default {
     border: 2px solid #4dabf7;
     border-radius: 12px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-    z-index: 1001;
+    z-index: 1020;
     overflow: hidden;
     user-select: none;
 }
