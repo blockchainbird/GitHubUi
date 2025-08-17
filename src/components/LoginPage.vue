@@ -74,7 +74,7 @@
       </div>
     </div>
   </div>
-  <div class="container-fluid mt-5 mb-5">
+  <div class="container mt-5 mb-5">
     <div class="container">
       <h2 class="text-center mb-5">
         <i class="bi bi-shield-lock"></i>

@@ -1,6 +1,6 @@
 <template>
   <nav class="navbar navbar-expand-lg main-nav sticky-top bg-light" role="navigation" aria-label="Main">
-    <div class="container-fluid">
+    <div class="container">
       <!-- Brand/Logo -->
       <span class="navbar-brand mb-0 h1 d-flex align-items-center">
         <img src="/assets/logo.svg" alt="Spec-Up-T Logo" style="height: 2rem; width: auto; margin-right: 0.5rem;" />

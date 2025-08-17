@@ -1,13 +1,13 @@
 <template>
-  <div>
+  <!-- <div> -->
     <MainNav :isAuthenticated="isAuthenticated" :user="user" @logout="handleLogout" />
-    <main class="container-fluid mt-3">
+    <main class="container mt-3">
       <router-view @login="handleLogin" @logout="handleLogout"></router-view>
     </main>
     <BackToTop />
     <VersionNotification />
     <Notepad />
-  </div>
+  <!-- </div> -->
 </template>
 
 <script>

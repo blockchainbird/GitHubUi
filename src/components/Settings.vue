@@ -1,5 +1,5 @@
 <template>
-  <div class="container-fluid mt-3">
+  <div class="container mt-3">
     <div class="row justify-content-center">
       <div class="col-12 col-lg-10">
         <div class="card">
