@@ -47,13 +47,13 @@
 
 
 
-        <!-- Term Type Selection -->
+        <!-- Term Type Selection (External Repository input shown inline for external terms) -->
         <div class="mb-3 row align-items-center">
           <label class="col-sm-3 col-form-label text-dark"><i
               title="Local terms are defined in this repository. External terms reference definitions from other specifications."
               class="bi bi-question-circle fs-5 text-primary"></i> Term Type</label>
-          <div class="col-sm-9">
-            <div class="btn-group" role="group">
+          <div class="col-sm-9 d-flex align-items-center">
+            <div class="btn-group me-3" role="group">
               <input type="radio" class="btn-check" id="termType-local" v-model="termType" value="local"
                 @change="onFormChange">
               <label class="btn btn-outline-primary" for="termType-local">
@@ -66,21 +66,15 @@
                 <i class="bi bi-link-45deg"></i> External
               </label>
             </div>
-          </div>
-        </div>
 
-        <!-- External Repository (shown only for external terms) -->
-        <div v-if="termType === 'external'" class="mb-3 row align-items-center">
-          <label class="col-sm-3 col-form-label text-dark"><i
-              title="The identifier of the external specification containing the term."
-              class="bi bi-question-circle fs-5 text-primary"></i> External Repository</label>
-          <div class="col-sm-9">
-            <div class="input-group">
-              <input type="text" class="form-control" v-model="externalRepo" @input="onFormChange"
-                placeholder="e.g., toip1, did-core">
-              <button class="btn btn-outline-info" type="button" @click="$emit('show-external-terms')">
-                <i class="bi bi-search"></i> Browse
-              </button>
+            <div v-if="termType === 'external'" class="flex-grow-1">
+              <div class="input-group">
+                <input type="text" class="form-control" v-model="externalRepo" @input="onFormChange"
+                  placeholder="e.g., toip1, did-core">
+                <button class="btn btn-outline-info" type="button" @click="$emit('show-external-terms')">
+                  <i class="bi bi-search"></i> Browse
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -302,11 +296,14 @@ export default {
 <style scoped>
 /* Reduce emphasis from heavy bold headings/labels used only in this editor */
 .simple-editor .card-header {
-  font-weight: 500; /* lighter than fw-semibold */
+  font-weight: 500;
+  /* lighter than fw-semibold */
 }
+
 .simple-editor .col-form-label,
 .simple-editor .form-label {
-  font-weight: 500; /* moderate weight for readability without shouting */
+  font-weight: 500;
+  /* moderate weight for readability without shouting */
   margin-bottom: 0.25rem;
 }
 
@@ -323,11 +320,4 @@ export default {
   opacity: 0.95;
 }
 
-/* Slightly narrow inputs on wide screens to avoid huge 100% width feeling */
-@media (min-width: 992px) {
-  .simple-editor .col-sm-9 > .form-control,
-  .simple-editor .col-sm-9 > .input-group {
-    max-width: 680px;
-  }
-}
 </style>
