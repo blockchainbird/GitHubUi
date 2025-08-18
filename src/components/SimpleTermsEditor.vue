@@ -89,6 +89,11 @@
               class="bi bi-question-circle fs-5 text-primary"></i> Definition</label>
 
           <div class="col-sm-9">
+            <div v-if="termType === 'external'"class="external-term-reference">
+              <p class="text-muted mb-2">
+                &lt;external term definition, see “Preview” tab&gt;
+              </p>
+            </div>
             <!-- Definition Toolbar -->
             <div class="definition-editor-toolbar bg-light border rounded-2 p-2 mb-3">
               <div class="btn-group btn-group-sm" role="group">
