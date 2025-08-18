@@ -73,7 +73,7 @@
         </div>
 
         <!-- Generated Term Line Preview -->
-        <div v-if="generatedTermLine" class="generated-term-line mb-3 row">
+        <div v-if="generatedTermLine" class="d-none generated-term-line mb-3 row">
           <label class="col-sm-3 col-form-label text-dark"><i title="The term, using the brackets templates."
               class="bi bi-question-circle fs-5 text-primary"></i> Generated Term</label>
           <div class="col-sm-9">
