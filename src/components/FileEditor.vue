@@ -155,10 +155,12 @@
                       <!-- Toolbar -->
                       <div class="editor-toolbar p-2 border-bottom flex-shrink-0">
                         <div class="btn-group btn-group-sm me-2" role="group">
-                          <button @click="handleInsertHeading" class="btn btn-outline-secondary btn-sm" title="Insert Heading">
+                          <button @click="handleInsertHeading" class="btn btn-outline-secondary btn-sm"
+                            title="Insert Heading">
                             <i class="bi bi-type-h2"></i>
                           </button>
-                          <button @click="handleInsertList" class="btn btn-outline-secondary btn-sm" title="Insert List">
+                          <button @click="handleInsertList" class="btn btn-outline-secondary btn-sm"
+                            title="Insert List">
                             <i class="bi bi-list-ul"></i>
                           </button>
                           <button @click="handleInsertBold" class="btn btn-outline-secondary btn-sm" title="Bold">
@@ -170,11 +172,13 @@
                         </div>
 
                         <div class="btn-group btn-group-sm me-2" role="group">
-                          <button @click="showTermsModal" class="btn btn-outline-info btn-sm" title="Insert Term Reference">
+                          <button @click="showTermsModal" class="btn btn-outline-info btn-sm"
+                            title="Insert Term Reference">
                             <i class="bi bi-bookmark"></i>
                             Terms
                           </button>
-                          <button @click="copyToNotepad" class="btn btn-outline-success btn-sm" title="Copy content to Notepad">
+                          <button @click="copyToNotepad" class="btn btn-outline-success btn-sm"
+                            title="Copy content to Notepad">
                             <i class="bi bi-sticky"></i>
                             To Notepad
                           </button>
@@ -201,8 +205,8 @@
                         </div>
 
                         <!-- Editor Textarea -->
-                        <textarea ref="editor" v-model="content" @input="handleContentChange" @scroll="handleEditorScroll"
-                          wrap="soft" :style="{ height: splitEditorHeight }"
+                        <textarea ref="editor" v-model="content" @input="handleContentChange"
+                          @scroll="handleEditorScroll" wrap="soft" :style="{ height: splitEditorHeight }"
                           :class="['technical-editor-with-lines flex-grow-1', validationWarnings.length > 0 ? 'error' : '']"></textarea>
 
                         <!-- Hidden mirror used to measure wrapped line heights -->
@@ -417,7 +421,7 @@ export default {
     // Inject split view state management from App
     const splitViewState = inject('splitViewState', {
       isSplitViewActive: ref(false),
-      setSplitViewActive: () => {}
+      setSplitViewActive: () => { }
     })
 
     const router = useRouter()
@@ -516,6 +520,8 @@ export default {
 
     // Editor state
     const editMode = ref('edit')
+    // Local storage key to persist selected editor view. Scoped to owner/repo/branch so different repos can have different prefs.
+    const storageKey = `fileEditor.editMode.${props.owner || 'global'}.${props.repo || 'global'}.${props.branch || 'global'}`
     const editor = ref(null)
     const mirror = ref(null)
     const lineNumbers = ref(null)
@@ -693,7 +699,7 @@ export default {
       error.value = ''
       success.value = ''
       await validateContent(content.value, filename.value, specsConfig.value)
-      
+
       // Trigger sync to simple editor when technical content changes
       syncTechnicalToSimpleDebounced()
     }
@@ -976,6 +982,8 @@ export default {
     onMounted(async () => {
       addToVisitedRepos(props.owner, props.repo, props.branch)
 
+
+
       // Initialize specsConfig only (do not load full terms directory to avoid extra GitHub API calls)
       await loadSpecsConfig()
 
@@ -984,6 +992,26 @@ export default {
 
       // Load file content
       await loadFileContent()
+
+      // Restore user's preferred editor mode from localStorage if present and valid
+      try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          const stored = window.localStorage.getItem(storageKey)
+          const allowedModes = ['edit', 'preview', 'simple', 'split']
+          if (stored && allowedModes.includes(stored)) {
+            // Only allow simple/split modes if this is a terms file and user is advanced
+            if ((stored === 'simple' || stored === 'split')) {
+              if (isTermsFileComputed.value && isAdvancedUser.value) {
+                editMode.value = stored
+              }
+            } else {
+              editMode.value = stored
+            }
+          }
+        }
+      } catch (e) {
+        // ignore localStorage errors
+      }
 
       // If this is a terms file, initialize simple editor with the loaded content
       if (isTermsFileComputed.value && content.value) {
@@ -1103,19 +1131,27 @@ export default {
     watch(editMode, (newMode, oldMode) => {
       // Update split view state in parent App component
       splitViewState.setSplitViewActive(newMode === 'split')
-      
+
       if (isTermsFileComputed.value && !isSyncing.value) {
-        if ((newMode === 'simple' || newMode === 'split') && 
-            (oldMode === 'edit' || oldMode === 'preview')) {
+        if ((newMode === 'simple' || newMode === 'split') &&
+          (oldMode === 'edit' || oldMode === 'preview')) {
           // Switching to simple mode or split view: sync technical content to simple editor
           syncTechnicalToSimple(content.value)
-        } else if ((oldMode === 'simple' || oldMode === 'split') && 
-                   (newMode === 'edit' || newMode === 'preview')) {
+        } else if ((oldMode === 'simple' || oldMode === 'split') &&
+          (newMode === 'edit' || newMode === 'preview')) {
           // Switching from simple mode or split view: sync simple editor to technical content
           syncSimpleToTechnical((newContent) => {
             content.value = newContent
           })
         }
+      }
+      // Persist user's editor mode preference to localStorage (only in browser)
+      try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          window.localStorage.setItem(storageKey, newMode)
+        }
+      } catch (e) {
+        // ignore storage errors (e.g., quota/private mode)
       }
     })
 
@@ -1528,7 +1564,8 @@ textarea.error {
   display: flex;
   flex-direction: column;
   border-right: 1px solid #dee2e6;
-  min-width: 0; /* Prevent flex items from overflowing */
+  min-width: 0;
+  /* Prevent flex items from overflowing */
 }
 
 .split-pane:last-child {
@@ -1579,17 +1616,17 @@ textarea.error {
     flex-direction: column;
     height: auto;
   }
-  
+
   .split-pane {
     border-right: none;
     border-bottom: 1px solid #dee2e6;
     height: 400px;
   }
-  
+
   .split-pane:last-child {
     border-bottom: none;
   }
-  
+
   .split-pane-simple,
   .split-pane-technical,
   .split-pane-preview {
