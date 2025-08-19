@@ -117,13 +117,18 @@ body {
 
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg,
-      #e3ecfa 0%,
-      #c7daf6 25%,
-      #cfdcf4 50%,
-      #c9d2ea 75%,
-      #c5d1ef 100%);
-  min-height: 100vh;
+    background: linear-gradient(135deg,
+        #e3ecfa 0%,
+        #c7daf6 25%,
+        #cfdcf4 50%,
+        #c9d2ea 75%,
+        #c5d1ef 100%);
+    min-height: 100vh;
+  
+    /* Make the gradient fixed and cover the viewport */
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    background-size: cover;
 }
 
 #app {
