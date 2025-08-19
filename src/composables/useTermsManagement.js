@@ -355,13 +355,39 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
     return externalTerms
   }
 
+  // Load cached terms (external terms from localStorage) without fetching local repository terms
+  const loadCachedTermsOnly = () => {
+    const storageKey = `terms_${props.owner}_${props.repo}_${props.branch}`
+    const stored = localStorage.getItem(storageKey)
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored)
+        if (Date.now() - parsed.timestamp < 3600000) { // 1 hour cache
+          // Only load external terms from cache to avoid overwriting local file terms
+          const externalTerms = (parsed.terms || []).filter(term => term.external)
+          if (externalTerms.length > 0) {
+            terms.value = externalTerms
+            filteredTerms.value = externalTerms
+            console.log(`Loaded ${externalTerms.length} external terms from cache`)
+            return true
+          }
+        }
+      } catch (err) {
+        console.error(consoleMessages.errorParsingStoredTerms(err.message))
+      }
+    }
+    return false
+  }
+
   // Load terms for a single file only (does not enumerate repository terms)
   // This is useful when opening a single file in the editor to avoid fetching the entire terms directory
   const loadTermsForFile = async (filePath, fileContent = null) => {
     loadingTerms.value = true
     termsError.value = ''
     try {
+      let localTerms = []
       let extracted = null
+      
       if (fileContent) {
         extracted = parseTermsFromContent(fileContent, filePath)
       } else {
@@ -369,13 +395,33 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
       }
 
       if (extracted && Array.isArray(extracted)) {
-        terms.value = extracted
-        filteredTerms.value = extracted
-        // Save a small cache so repeated opens are cheap
-        saveTermsToStorage(extracted)
-      } else {
-        terms.value = []
-        filteredTerms.value = []
+        localTerms = extracted
+      }
+
+      // Load external terms from cache and combine with local file terms
+      const storageKey = `terms_${props.owner}_${props.repo}_${props.branch}`
+      const stored = localStorage.getItem(storageKey)
+      let externalTerms = []
+      
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored)
+          if (Date.now() - parsed.timestamp < 3600000) { // 1 hour cache
+            externalTerms = (parsed.terms || []).filter(term => term.external)
+          }
+        } catch (err) {
+          console.error('Error loading external terms from cache:', err)
+        }
+      }
+
+      // Combine local file terms with cached external terms
+      const allTerms = [...localTerms, ...externalTerms]
+      terms.value = allTerms
+      filteredTerms.value = allTerms
+
+      // Update cache with the combined terms (preserve external terms)
+      if (allTerms.length > 0) {
+        saveTermsToStorage(allTerms)
       }
 
       return terms.value
@@ -580,6 +626,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
     loadTermsFromRepository,
     initializeTerms,
     loadTermsForFile,
-    loadSpecsConfig
+    loadSpecsConfig,
+    loadCachedTermsOnly
   }
 }

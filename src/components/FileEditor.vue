@@ -362,7 +362,8 @@ export default {
       showTermsModal,
       refreshTerms,
       loadTermsForFile,
-      loadSpecsConfig
+      loadSpecsConfig,
+      loadCachedTermsOnly
     } = termsManagement
 
     // Simple editor
@@ -866,6 +867,9 @@ export default {
 
       // Initialize specsConfig only (do not load full terms directory to avoid extra GitHub API calls)
       await loadSpecsConfig()
+
+      // Load cached external terms for preview functionality (doesn't cost PAT tokens)
+      loadCachedTermsOnly()
 
       // Load file content
       await loadFileContent()
