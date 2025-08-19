@@ -1283,10 +1283,24 @@ export default {
 
 .markdown-preview h1,
 .markdown-preview h2,
-.markdown-preview h3 {
+.markdown-preview h3,
+.markdown-preview h4,
+.markdown-preview h5,
+.markdown-preview h6 {
   margin-top: 1.5rem;
   margin-bottom: 0.5rem;
   font-weight: 600;
+}
+
+.markdown-preview h1 { font-size: 2rem; }
+.markdown-preview h2 { font-size: 1.75rem; }
+.markdown-preview h3 { font-size: 1.5rem; }
+.markdown-preview h4 { font-size: 1.25rem; }
+.markdown-preview h5 { font-size: 1.125rem; }
+.markdown-preview h6 { font-size: 1rem; }
+
+.markdown-preview p {
+  margin-bottom: 1rem;
 }
 
 .markdown-preview code {
@@ -1294,6 +1308,15 @@ export default {
   padding: 0.125rem 0.25rem;
   border-radius: 0.25rem;
   font-size: 0.875em;
+}
+
+.markdown-preview a {
+  color: #0d6efd;
+  text-decoration: none;
+}
+
+.markdown-preview a:hover {
+  text-decoration: underline;
 }
 
 .markdown-preview ul {

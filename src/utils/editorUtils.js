@@ -84,8 +84,51 @@ export const processTermReferences = (content, terms = []) => {
 
   let html = content
 
-  // Process definition paragraphs (lines starting with ~)
-  html = html.replace(/^~\s*(.+)$/gm, '<p class="definition-paragraph">$1</p>')
+  // Split content into lines for processing
+  const lines = html.split('\n')
+  const processedLines = []
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i]
+
+    // Process markdown headings
+    if (line.match(/^#{6}\s+(.+)$/)) {
+      line = line.replace(/^#{6}\s+(.+)$/, '<h6>$1</h6>')
+    } else if (line.match(/^#{5}\s+(.+)$/)) {
+      line = line.replace(/^#{5}\s+(.+)$/, '<h5>$1</h5>')
+    } else if (line.match(/^#{4}\s+(.+)$/)) {
+      line = line.replace(/^#{4}\s+(.+)$/, '<h4>$1</h4>')
+    } else if (line.match(/^#{3}\s+(.+)$/)) {
+      line = line.replace(/^#{3}\s+(.+)$/, '<h3>$1</h3>')
+    } else if (line.match(/^#{2}\s+(.+)$/)) {
+      line = line.replace(/^#{2}\s+(.+)$/, '<h2>$1</h2>')
+    } else if (line.match(/^#{1}\s+(.+)$/)) {
+      line = line.replace(/^#{1}\s+(.+)$/, '<h1>$1</h1>')
+    } else if (line.match(/^~\s*(.+)$/)) {
+      // Process definition paragraphs (lines starting with ~)
+      line = line.replace(/^~\s*(.+)$/, '<p class="definition-paragraph">$1</p>')
+    } else if (line.trim() === '') {
+      // Keep empty lines as paragraph breaks
+      line = ''
+    } else if (!line.match(/^<[^>]+>/)) {
+      // For regular text lines (not already HTML), wrap in paragraph tags
+      line = '<p>' + line + '</p>'
+    }
+
+    processedLines.push(line)
+  }
+
+  // Join lines back together
+  html = processedLines.join('\n')
+
+  // Process inline markdown formatting
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+  html = html.replace(/\*([^*]+?)\*/g, '<em>$1</em>')
+  html = html.replace(/_([^_]+?)_/g, '<em>$1</em>')
+  html = html.replace(/`([^`]+?)`/g, '<code>$1</code>')
+
+  // Process basic links
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
 
   // Handle tref patterns (external term definitions)
   html = html.replace(/\[\[tref:\s*([^,\]]+),\s*([^,\]]+)(?:,\s*([^\]]+))?\]\]/g, (match, specName, termId, aliases) => {
