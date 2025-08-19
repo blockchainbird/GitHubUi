@@ -476,8 +476,6 @@ export default {
       definitionEditor,
       isTermsModalFromSimpleEditor,
       isSyncing,
-      lastTechnicalContentHash,
-      lastSimpleContentHash,
       generatedTermLine,
       syncSimpleToTechnical,
       syncTechnicalToSimple,
@@ -672,35 +670,23 @@ export default {
 </pre></code>
     `)
 
-    // Optimized sync functions with cursor preservation
-    const syncSimpleToTechnicalOptimized = debounce(() => {
+    // Simple sync functions with debouncing
+    const syncSimpleToTechnicalDebounced = debounce(() => {
       if (!isSyncing.value && isTermsFileComputed.value) {
-        // Store cursor position before sync
-        const textarea = editor.value
-        const cursorPos = textarea ? textarea.selectionStart : 0
-        
         syncSimpleToTechnical((newContent) => {
           content.value = newContent
-          
-          // Restore cursor position after sync
-          nextTick(() => {
-            if (textarea && textarea.value === newContent) {
-              const newPos = Math.min(cursorPos, newContent.length)
-              textarea.setSelectionRange(newPos, newPos)
-            }
-          })
         })
       }
     }, 300)
 
-    const syncTechnicalToSimpleOptimized = debounce(() => {
+    const syncTechnicalToSimpleDebounced = debounce(() => {
       if (!isSyncing.value && isTermsFileComputed.value) {
-        // Only sync if we're showing simple editor (simple mode or split view)
+        // Sync to simple editor if it's currently visible (simple mode or split view)
         if (editMode.value === 'simple' || editMode.value === 'split') {
           syncTechnicalToSimple(content.value)
         }
       }
-    }, 100)
+    }, 150)
 
     // Event handlers
     const handleContentChange = async () => {
@@ -708,27 +694,27 @@ export default {
       success.value = ''
       await validateContent(content.value, filename.value, specsConfig.value)
       
-      // Sync to simple editor if content changed from technical editor
-      if (isTermsFileComputed.value && !isSyncing.value) {
-        syncTechnicalToSimpleOptimized()
-      }
+      // Trigger sync to simple editor when technical content changes
+      syncTechnicalToSimpleDebounced()
     }
 
     const onSimpleFormChange = () => {
-      syncSimpleToTechnicalOptimized()
+      syncSimpleToTechnicalDebounced()
     }
 
     const onSimpleDefinitionInput = () => {
-      syncSimpleToTechnicalOptimized()
+      syncSimpleToTechnicalDebounced()
     }
 
     const handleDefinitionEnter = async (event) => {
-      // Immediate sync for Enter key to prevent cursor jumping
-      if (isTermsFileComputed.value && !isSyncing.value) {
-        await syncSimpleToTechnical((newContent) => {
-          content.value = newContent
-        })
-      }
+      // Immediate sync for Enter key to maintain cursor position
+      setTimeout(() => {
+        if (isTermsFileComputed.value && !isSyncing.value) {
+          syncSimpleToTechnical((newContent) => {
+            content.value = newContent
+          })
+        }
+      }, 10)
     }
 
     const showExternalTermsModal = async () => {
@@ -1119,10 +1105,12 @@ export default {
       splitViewState.setSplitViewActive(newMode === 'split')
       
       if (isTermsFileComputed.value && !isSyncing.value) {
-        if ((newMode === 'simple' || newMode === 'split') && oldMode !== 'simple' && oldMode !== 'split') {
+        if ((newMode === 'simple' || newMode === 'split') && 
+            (oldMode === 'edit' || oldMode === 'preview')) {
           // Switching to simple mode or split view: sync technical content to simple editor
           syncTechnicalToSimple(content.value)
-        } else if ((oldMode === 'simple' || oldMode === 'split') && newMode !== 'simple' && newMode !== 'split') {
+        } else if ((oldMode === 'simple' || oldMode === 'split') && 
+                   (newMode === 'edit' || newMode === 'preview')) {
           // Switching from simple mode or split view: sync simple editor to technical content
           syncSimpleToTechnical((newContent) => {
             content.value = newContent

@@ -18,10 +18,6 @@ export function useSimpleEditor() {
   const definitionEditor = ref(null)
   const isTermsModalFromSimpleEditor = ref(false)
   const isSyncing = ref(false)
-  
-  // Track last known content hash to prevent unnecessary syncs
-  const lastTechnicalContentHash = ref('')
-  const lastSimpleContentHash = ref('')
 
   // Generate term line for preview
   const generatedTermLine = computed(() => {
@@ -52,11 +48,6 @@ export function useSimpleEditor() {
     }
   })
 
-  // Helper to generate content hash
-  const generateContentHash = (content) => {
-    return btoa(content).substring(0, 16)
-  }
-
   // Sync simple editor to technical content
   const syncSimpleToTechnical = async (setContent) => {
     if (isSyncing.value) return
@@ -68,7 +59,6 @@ export function useSimpleEditor() {
       
       if (!termLine.trim()) {
         setContent('')
-        lastTechnicalContentHash.value = generateContentHash('')
         return
       }
       
@@ -87,14 +77,7 @@ export function useSimpleEditor() {
         parts.push(definitionContent)
       }
       
-      const newContent = parts.join('\n')
-      const newHash = generateContentHash(newContent)
-      
-      // Only update if content actually changed
-      if (newHash !== lastTechnicalContentHash.value) {
-        setContent(newContent)
-        lastTechnicalContentHash.value = newHash
-      }
+      setContent(parts.join('\n'))
       
     } finally {
       isSyncing.value = false
@@ -105,18 +88,9 @@ export function useSimpleEditor() {
   const syncTechnicalToSimple = (content) => {
     if (isSyncing.value) return
     
-    const contentHash = generateContentHash(content)
-    
-    // Skip if content hasn't changed
-    if (contentHash === lastSimpleContentHash.value) {
-      return
-    }
-    
     isSyncing.value = true
     
     try {
-      lastSimpleContentHash.value = contentHash
-      
       if (!content.trim()) {
         simpleEditor.value = {
           termType: 'local',
@@ -132,7 +106,7 @@ export function useSimpleEditor() {
       const firstLine = lines[0]?.trim() || ''
 
       // Reset to defaults
-      const newSimpleEditor = {
+      simpleEditor.value = {
         termType: 'local',
         externalRepo: '',
         mainTerm: '',
@@ -144,23 +118,23 @@ export function useSimpleEditor() {
       if (firstLine.startsWith('[[def:')) {
         const match = firstLine.match(/^\[\[def:\s*([^,\]]+)(?:,\s*([^\]]+))?\]\]/)
         if (match) {
-          newSimpleEditor.mainTerm = match[1].trim()
+          simpleEditor.value.mainTerm = match[1].trim()
           
           if (match[2]) {
             const aliases = match[2].split(',').map(a => a.trim()).filter(a => a.length > 0)
-            newSimpleEditor.aliases = aliases.length > 0 ? [...aliases, null] : [null]
+            simpleEditor.value.aliases = aliases.length > 0 ? [...aliases, null] : [null]
           }
         }
       } else if (firstLine.startsWith('[[tref:')) {
         const match = firstLine.match(/^\[\[tref:\s*([^,\]]+),\s*([^,\]]+)(?:,\s*([^\]]+))?\]\]/)
         if (match) {
-          newSimpleEditor.termType = 'external'
-          newSimpleEditor.externalRepo = match[1].trim()
-          newSimpleEditor.mainTerm = match[2].trim()
+          simpleEditor.value.termType = 'external'
+          simpleEditor.value.externalRepo = match[1].trim()
+          simpleEditor.value.mainTerm = match[2].trim()
           
           if (match[3]) {
             const aliases = match[3].split(',').map(a => a.trim()).filter(a => a.length > 0)
-            newSimpleEditor.aliases = aliases.length > 0 ? [...aliases, null] : [null]
+            simpleEditor.value.aliases = aliases.length > 0 ? [...aliases, null] : [null]
           }
         }
       }
@@ -188,11 +162,7 @@ export function useSimpleEditor() {
         }
       }
       
-      newSimpleEditor.definition = definitionLines.join('\n').trim()
-      
-      // Update all at once to prevent multiple reactivity triggers
-      simpleEditor.value = newSimpleEditor
-      
+      simpleEditor.value.definition = definitionLines.join('\n').trim()
     } finally {
       isSyncing.value = false
     }
@@ -244,8 +214,6 @@ export function useSimpleEditor() {
     definitionEditor,
     isTermsModalFromSimpleEditor,
     isSyncing,
-    lastTechnicalContentHash,
-    lastSimpleContentHash,
     
     // Computed
     generatedTermLine,
