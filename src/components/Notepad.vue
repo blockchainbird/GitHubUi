@@ -6,10 +6,10 @@
         </button>
 
         <!-- Notepad window -->
-        <div v-if="isOpen" ref="notepadContainer" class="notepad-container"
+        <div v-if="isOpen" ref="notepadContainer" class="notepad-container d-flex flex-column"
             :style="{ top: position.y + 'px', left: position.x + 'px', width: size.width + 'px', height: size.height + 'px' }">
             <!-- Notepad header with drag handle -->
-            <div ref="notepadHeader" class="notepad-header" @mousedown="startDrag">
+            <div ref="notepadHeader" class="notepad-header flex-shrink-0" @mousedown="startDrag">
                 <div class="notepad-title">
                     <i class="bi bi-sticky-fill"></i>
                     <span>Notepad</span>
@@ -28,15 +28,15 @@
             </div>
 
             <!-- Notepad content -->
-            <div class="notepad-body">
-                <div v-if="notepadMessage" class="notepad-message">
+            <div class="notepad-body d-flex flex-column h-100">
+                <div v-if="notepadMessage" class="notepad-message flex-shrink-0">
                     <i class="bi bi-check-circle-fill text-success"></i>
                     {{ notepadMessage }}
                 </div>
 
                 <textarea data-notepad-content ref="notepadTextarea" v-model="content" @input="handleContentChange"
-                    class="notepad-textarea" placeholder="Your notes will be auto-saved here..."></textarea>
-                <div class="notepad-footer">
+                    class="notepad-textarea flex-grow-1" placeholder="Your notes will be auto-saved here..."></textarea>
+                <div class="notepad-footer flex-shrink-0">
                     <small class="text-muted">
                         <i class="bi bi-cloud-check"></i>
                         Auto-saved • {{ formatSize(currentSize) }} used
@@ -74,7 +74,7 @@ export default {
             formatSize,
             notepadMessage,
             setNotepadMessage
-    } = getNotepadInstance()
+        } = getNotepadInstance()
 
         // Position and size state
         const position = ref({ x: 100, y: 100 })
@@ -394,13 +394,10 @@ export default {
 }
 
 .notepad-body {
-    display: flex;
-    flex-direction: column;
     height: calc(100% - 40px);
 }
 
 .notepad-textarea {
-    flex: 1;
     border: none;
     background: transparent;
     padding: 12px;

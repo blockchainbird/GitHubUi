@@ -1,13 +1,13 @@
 <template>
-  <div class="simple-editor p-0">
-    <div class="card border-0 no-shadow">
-      <div class="card-header fw-normal">
+  <div class="simple-editor p-0 h-100 d-flex flex-column">
+    <div class="card border-0 h-100 d-flex flex-column">
+      <div class="card-header fw-normal flex-shrink-0">
         <h5 class="m-0 d-flex align-items-center">
           <i class="bi bi-ui-checks me-2"></i>
           Simple Terms Editor
         </h5>
       </div>
-      <div class="card-body">
+      <div class="card-body flex-grow-1 d-flex flex-column">
         <!-- Main Term -->
         <div class="mb-3 row align-items-center">
           <label for="mainTerm" class="col-sm-3 col-form-label text-dark"><i
@@ -83,19 +83,19 @@
         </div>
 
         <!-- Definition -->
-        <div class="mb-3 row align-items-start">
+        <div class="mb-3 row align-items-start flex-grow-1">
           <label for="definition" class="col-sm-3 col-form-label"><i
               title="The definition content. Each paragraph will be automatically prefixed with “~” in the technical format."
               class="bi bi-question-circle fs-5 text-primary"></i> Definition</label>
 
-          <div class="col-sm-9">
-            <div v-if="termType === 'external'"class="external-term-reference">
+          <div class="col-sm-9 d-flex flex-column h-100">
+            <div v-if="termType === 'external'" class="external-term-reference">
               <p class="text-muted mb-2">
                 &lt;external term definition, see “Preview” tab&gt;
               </p>
             </div>
             <!-- Definition Toolbar -->
-            <div class="definition-editor-toolbar bg-light border rounded-2 p-2 mb-3">
+            <div class="definition-editor-toolbar bg-light border rounded-2 p-2 mb-3 flex-shrink-0">
               <div class="btn-group btn-group-sm" role="group">
                 <button type="button" class="btn btn-outline-secondary"
                   @click="$emit('insert-definition-text', '**', '**')" title="Bold">
@@ -116,9 +116,10 @@
               </div>
             </div>
 
-            <textarea class="form-control" id="definition" rows="6" ref="definitionEditor" v-model="definition"
+            <textarea class="form-control flex-grow-1" id="definition" ref="definitionEditor" v-model="definition"
               @input="onDefinitionInput" @keydown.enter="onDefinitionEnter"
-              placeholder="Write the definition content here..."></textarea>
+              placeholder="Write the definition content here..."
+              style="min-height: 200px; resize: vertical;"></textarea>
           </div>
         </div>
       </div>
@@ -317,5 +318,9 @@ export default {
 /* Reduce prominence of toolbar icons */
 .definition-editor-toolbar .btn {
   opacity: 0.95;
+}
+/* Ensure textarea uses available height optimally */
+.simple-editor .flex-grow-1 textarea {
+  min-height: 300px;
 }
 </style>

@@ -1,6 +1,6 @@
 <template>
-  <div class="container mt-3">
-    <div class="row justify-content-center">
+  <div class="container mt-3 vh-100 d-flex flex-column">
+    <div class="row justify-content-center flex-shrink-0">
       <div class="col-12 col-lg-10">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
@@ -13,7 +13,7 @@
       </div>
 
       <!-- Content Section -->
-      <div class="col-12 col-lg-10">
+      <div class="col-12 col-lg-10 d-flex flex-column flex-grow-1">
         <template v-if="loading || error || allTerms.length > 0">
           <!-- Search and Filter Controls -->
           <div class="search-controls-section mb-4">

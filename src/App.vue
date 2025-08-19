@@ -1,13 +1,14 @@
 <template>
-  <!-- <div> -->
-    <MainNav :isAuthenticated="isAuthenticated" :user="user" @logout="handleLogout" />
-    <main :class="isSplitViewActive ? 'container-fluid mt-3' : 'container mt-3'">
+  <div id="app" class="d-flex flex-column h-100">
+    <MainNav :isAuthenticated="isAuthenticated" :user="user" @logout="handleLogout" class="flex-shrink-0" />
+    <main
+      :class="isSplitViewActive ? 'container-fluid mt-3 flex-grow-1 d-flex flex-column' : 'container mt-3 flex-grow-1'">
       <router-view @login="handleLogin" @logout="handleLogout"></router-view>
     </main>
     <BackToTop />
     <VersionNotification />
     <Notepad />
-  <!-- </div> -->
+  </div>
 </template>
 
 <script>
@@ -32,7 +33,7 @@ export default {
 
     // Split view state management
     const isSplitViewActive = ref(false)
-    
+
     const setSplitViewActive = (active) => {
       isSplitViewActive.value = active
     }
@@ -107,6 +108,13 @@ export default {
 </script>
 
 <style>
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: linear-gradient(135deg,
@@ -116,6 +124,12 @@ body {
       #c9d2ea 75%,
       #c5d1ef 100%);
   min-height: 100vh;
+}
+
+#app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .navbar-brand {
@@ -129,5 +143,12 @@ body {
 .card {
   box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
   border: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+/* Utility class for full-height editors */
+.full-height-editor {
+  height: calc(100vh - 200px) !important;
+  min-height: 400px !important;
+  resize: vertical;
 }
 </style>

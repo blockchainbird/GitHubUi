@@ -1,6 +1,6 @@
 <template>
-  <div class="container mt-3">
-    <div class="row justify-content-center">
+  <div class="container mt-3 vh-100 d-flex flex-column">
+    <div class="row justify-content-center flex-shrink-0">
       <div class="col-12 col-lg-10">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
@@ -11,8 +11,8 @@
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="card h-100 d-flex flex-column">
+          <div class="card-header d-flex justify-content-between align-items-center flex-shrink-0">
             <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
             <div class="d-flex gap-2">
               <a :href="resolvedSpecUrl" target="_blank" rel="noopener" class="btn btn-primary btn-sm"
@@ -29,7 +29,7 @@
           </div>
 
 
-          <div class="card-body">
+          <div class="card-body flex-grow-1 d-flex flex-column">
             <div v-if="loading" class="alert alert-info py-2">Checking if the specification site exists…</div>
 
             <div v-else-if="!pagesEnabled" class="alert alert-warning">
@@ -54,21 +54,20 @@
                   <i class="bi bi-clock-history me-1"></i>
                   <strong>Page modified:</strong>
                   <span v-if="indexHtmlCreated">{{ indexHtmlCreated }}</span>
-                  <span v-else class="text-muted">Loading...</span> – 
+                  <span v-else class="text-muted">Loading...</span> –
                   If the page fails to display due to browser restrictions, use “Open in new tab”.
                 </p>
               </div>
 
-              <div class="border rounded bg-white border-dance" ref="containerRef" style="position:relative;">
+              <div class="border rounded bg-white border-dance flex-grow-1 d-flex" ref="containerRef"
+                style="position:relative;">
                 <iframe :key="iframeKey" ref="iframeRef" :src="resolvedSpecUrl" title="Specification"
-                  style="width: 100%; border: 0; display: block;"></iframe>
+                  style="width: 100%; height: 100%; border: 0; display: block;"></iframe>
               </div>
             </div>
           </div>
 
         </div>
-
-
       </div>
     </div>
   </div>

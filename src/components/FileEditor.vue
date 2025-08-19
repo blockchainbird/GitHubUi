@@ -1,6 +1,6 @@
 <template>
-  <div class="container-fluid mt-3" :class="{ 'px-2': editMode === 'split' }">
-    <div class="row justify-content-center">
+  <div class="container-fluid mt-3 vh-100 d-flex flex-column" :class="{ 'px-2': editMode === 'split' }">
+    <div class="row justify-content-center flex-shrink-0">
       <div class="col-12" :class="{ 'col-lg-10': editMode !== 'split' }">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <h2>
@@ -94,10 +94,10 @@
           <p class="mt-2">{{ isNewFile ? 'Setting up new file...' : 'Loading file content...' }}</p>
         </div>
 
-        <div v-else class="row">
-          <div class="col-12">
-            <div class="card">
-              <div class="card-header d-flex justify-content-between align-items-center">
+        <div v-else class="row flex-grow-1">
+          <div class="col-12 h-100">
+            <div class="card h-100 d-flex flex-column">
+              <div class="card-header d-flex justify-content-between align-items-center flex-shrink-0">
                 <h5 class="mb-0">
                   <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
                 </h5>
@@ -130,14 +130,14 @@
                   </label>
                 </div>
               </div>
-              <div class="card-body p-0">
+              <div class="card-body p-0 flex-grow-1 d-flex flex-column">
                 <!-- Split View Mode -->
-                <div v-if="editMode === 'split'" class="split-view-container">
-                  <div class="split-pane split-pane-simple">
-                    <div class="split-pane-header">
+                <div v-if="editMode === 'split'" class="split-view-container h-100 d-flex">
+                  <div class="split-pane split-pane-simple d-flex flex-column border-end">
+                    <div class="split-pane-header bg-light border-bottom p-3 flex-shrink-0">
                       <h6 class="mb-0"><i class="bi bi-ui-checks"></i> Simple Editor</h6>
                     </div>
-                    <div class="split-pane-content">
+                    <div class="split-pane-content flex-grow-1 p-3 overflow-auto">
                       <SimpleTermsEditor v-model:termType="simpleEditor.termType"
                         v-model:externalRepo="simpleEditor.externalRepo" v-model:mainTerm="simpleEditor.mainTerm"
                         v-model:aliases="simpleEditor.aliases" v-model:definition="simpleEditor.definition"
@@ -147,11 +147,11 @@
                     </div>
                   </div>
 
-                  <div class="split-pane split-pane-technical">
-                    <div class="split-pane-header">
+                  <div class="split-pane split-pane-technical d-flex flex-column border-end">
+                    <div class="split-pane-header bg-light border-bottom p-3 flex-shrink-0">
                       <h6 class="mb-0"><i class="bi bi-pencil"></i> Technical Editor</h6>
                     </div>
-                    <div class="split-pane-content d-flex flex-column h-100">
+                    <div class="split-pane-content d-flex flex-column h-100 flex-grow-1">
                       <!-- Toolbar -->
                       <div class="editor-toolbar p-2 border-bottom flex-shrink-0">
                         <div class="btn-group btn-group-sm me-2" role="group">
@@ -215,18 +215,18 @@
                     </div>
                   </div>
 
-                  <div class="split-pane split-pane-preview">
-                    <div class="split-pane-header">
+                  <div class="split-pane split-pane-preview d-flex flex-column">
+                    <div class="split-pane-header bg-light border-bottom p-3 flex-shrink-0">
                       <h6 class="mb-0"><i class="bi bi-eye"></i> Preview</h6>
                     </div>
-                    <div class="split-pane-content">
+                    <div class="split-pane-content flex-grow-1 p-3 overflow-auto">
                       <div class="markdown-preview" v-html="renderedContent"></div>
                     </div>
                   </div>
                 </div>
 
                 <!-- Simple Editor (Terms Files Only) -->
-                <div v-else-if="editMode === 'simple'" class="p-3">
+                <div v-else-if="editMode === 'simple'" class="p-3 h-100 d-flex flex-column">
                   <SimpleTermsEditor v-model:termType="simpleEditor.termType"
                     v-model:externalRepo="simpleEditor.externalRepo" v-model:mainTerm="simpleEditor.mainTerm"
                     v-model:aliases="simpleEditor.aliases" v-model:definition="simpleEditor.definition"
@@ -579,8 +579,31 @@ export default {
       recalcLineHeights()
     }, 50)
 
-    const editorHeight = ref('calc(100vh - 300px)')
-    const splitEditorHeight = ref('calc(100vh - 350px)')
+    const editorHeight = ref('calc(100vh - 250px)')
+    const splitEditorHeight = ref('calc(100vh - 280px)')
+
+    // Simple function to optimize editor heights based on viewport
+    const updateEditorHeights = () => {
+      const viewportHeight = window.innerHeight
+      const headerSpace = 200 // Approximate space for headers, nav, etc.
+      const toolbarSpace = 50 // Space for toolbars
+
+      const availableHeight = viewportHeight - headerSpace
+      const splitAvailableHeight = viewportHeight - headerSpace - toolbarSpace
+
+      editorHeight.value = `${Math.max(400, availableHeight)}px`
+      splitEditorHeight.value = `${Math.max(350, splitAvailableHeight)}px`
+    }
+
+    // Update heights on mount and resize
+    onMounted(() => {
+      updateEditorHeights()
+      window.addEventListener('resize', updateEditorHeights)
+    })
+
+    onUnmounted(() => {
+      window.removeEventListener('resize', updateEditorHeights)
+    })
 
     const syncingScroll = ref(false)
 
@@ -1551,27 +1574,7 @@ textarea.error {
   display: block;
 }
 
-/* Split View Styles */
-.split-view-container {
-  display: flex;
-  // height: calc(100vh - 250px);
-  min-height: 600px;
-  width: 100% !important;
-}
-
-.split-pane {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid #dee2e6;
-  min-width: 0;
-  /* Prevent flex items from overflowing */
-}
-
-.split-pane:last-child {
-  border-right: none;
-}
-
+/* Split View Styles - Simplified to use Bootstrap classes where possible */
 .split-pane-simple {
   flex: 0 0 30%;
   min-width: 300px;
@@ -1587,51 +1590,30 @@ textarea.error {
   min-width: 300px;
 }
 
-.split-pane-header {
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #dee2e6;
-  padding: 0.75rem 1rem;
-  font-weight: 600;
-  color: #495057;
-  flex-shrink: 0;
-}
-
-.split-pane-content {
-  flex: 1;
-  overflow: auto;
-  position: relative;
-}
-
-.split-pane-simple .split-pane-content {
-  padding: 1rem;
-}
-
-.split-pane-preview .split-pane-content {
-  padding: 1rem;
-}
+/* Removed split-pane-content styles as they're now handled by Bootstrap classes */
 
 /* Responsive adjustments for split view */
 @media (max-width: 1200px) {
   .split-view-container {
-    flex-direction: column;
-    height: auto;
+    flex-direction: column !important;
+    height: auto !important;
   }
 
   .split-pane {
-    border-right: none;
-    border-bottom: 1px solid #dee2e6;
-    height: 400px;
+    border-right: none !important;
+    border-bottom: 1px solid #dee2e6 !important;
+    height: 400px !important;
   }
 
   .split-pane:last-child {
-    border-bottom: none;
+    border-bottom: none !important;
   }
 
   .split-pane-simple,
   .split-pane-technical,
   .split-pane-preview {
-    flex: none;
-    min-width: auto;
+    flex: none !important;
+    min-width: auto !important;
   }
 }
 
