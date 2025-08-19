@@ -19,6 +19,10 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
   const referenceType = ref('auto')
   const proxyInfo = ref('')
 
+  // Refresh feedback state
+  const refreshFeedback = ref('')
+  const isRefreshing = ref(false)
+
   // Definition collapse state
   const definitionsCollapsed = ref(true)
   const individualTermsExpanded = ref(new Map())
@@ -593,14 +597,45 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
   // Refresh terms (clear cache and reload)
   const refreshTerms = async () => {
     console.log(consoleMessages.refreshingTerms())
-    const storageKey = `terms_${props.owner}_${props.repo}_${props.branch}`
-    localStorage.removeItem(storageKey)
-    // Clear proxy info when starting refresh
-    proxyInfo.value = ''
-    console.log(consoleMessages.cacheCleared())
-    await loadTermsFromRepository()
-    filterTerms()
-    console.log(consoleMessages.refreshComplete(terms.value.length))
+    
+    // Set initial feedback
+    isRefreshing.value = true
+    refreshFeedback.value = 'Clearing cache...'
+    
+    try {
+      const storageKey = `terms_${props.owner}_${props.repo}_${props.branch}`
+      localStorage.removeItem(storageKey)
+      // Clear proxy info when starting refresh
+      proxyInfo.value = ''
+      console.log(consoleMessages.cacheCleared())
+      
+      refreshFeedback.value = 'Reloading terms...'
+      
+      await loadTermsFromRepository()
+      filterTerms()
+      
+      const count = terms.value.length
+      console.log(consoleMessages.refreshComplete(count))
+      
+      // Show success feedback
+      refreshFeedback.value = `✅ ${count} terms loaded`
+      
+      // Clear feedback after 3 seconds
+      setTimeout(() => {
+        refreshFeedback.value = ''
+        isRefreshing.value = false
+      }, 3000)
+      
+    } catch (error) {
+      console.error('Refresh failed:', error)
+      refreshFeedback.value = '❌ Refresh failed'
+      
+      // Clear error feedback after 5 seconds
+      setTimeout(() => {
+        refreshFeedback.value = ''
+        isRefreshing.value = false
+      }, 5000)
+    }
   }
 
   return {
@@ -615,6 +650,8 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
     individualTermsExpanded,
     specsConfig,
     proxyInfo,
+    refreshFeedback,
+    isRefreshing,
 
     // Methods
     filterTerms,

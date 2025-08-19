@@ -21,9 +21,11 @@
               <div class="card-header d-flex justify-content-between align-items-center">
                 <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
                 <button type="button" class="btn btn-primary d-flex align-items-center gap-1" @click="refreshPreview"
-                  :disabled="loading" :title="loading ? 'Refreshing terms...' : 'Clear cache and reload all terms'">
-                  <i class="bi" :class="loading ? 'bi-arrow-clockwise spin' : 'bi-arrow-clockwise'"></i>
-                  <span class="d-none d-sm-inline">Refresh</span>
+                  :disabled="loading || isRefreshing" :title="isRefreshing ? 'Refreshing terms...' : 'Clear cache and reload all terms'">
+                  <i class="bi" :class="(loading || isRefreshing) ? 'bi-arrow-clockwise spin' : 'bi-arrow-clockwise'"></i>
+                  <span class="d-none d-sm-inline">
+                    {{ refreshFeedback || (isRefreshing ? 'Refreshing...' : 'Refresh') }}
+                  </span>
                 </button>
 
               </div>
@@ -395,6 +397,8 @@ export default {
       proxyInfo,
       specsConfig,
       refreshTerms,
+      refreshFeedback,
+      isRefreshing,
       loadTermsForFile,
       loadSpecsConfig
     } = useTermsManagement(props, checkAuthAndRedirect)
@@ -534,6 +538,8 @@ export default {
       proxyInfo,
       specsConfig,
       refreshSuccess,
+      refreshFeedback,
+      isRefreshing,
 
       // Methods
       filterTerms,

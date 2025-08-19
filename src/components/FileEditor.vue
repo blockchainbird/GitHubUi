@@ -221,10 +221,12 @@
                       <button v-if="isTermsFileComputed" 
                               class="btn btn-outline-primary btn-sm" 
                               @click="refreshTerms"
-                              :disabled="loadingTerms"
-                              title="Refresh terms to resolve 'Definition not found' errors">
-                        <i class="bi" :class="loadingTerms ? 'bi-arrow-clockwise spin' : 'bi-arrow-clockwise'"></i>
-                        <span class="d-none d-md-inline ms-1">Refresh Terms</span>
+                              :disabled="isRefreshing"
+                              title="Refresh terms to resolve 'Definition not found' errors. This can take a moment and use a lot of API tokens">
+                        <i class="bi" :class="isRefreshing ? 'bi-arrow-clockwise spin' : 'bi-arrow-clockwise'"></i>
+                        <span class="d-none d-md-inline ms-1">
+                          {{ refreshFeedback || (isRefreshing ? 'Refreshing...' : 'Refresh Terms') }}
+                        </span>
                       </button>
                     </div>
                     <div class="split-pane-content flex-grow-1 p-3 overflow-auto">
@@ -313,10 +315,12 @@
                     <h6 class="mb-0"><i class="bi bi-eye"></i> Preview</h6>
                     <button class="btn btn-outline-primary btn-sm" 
                             @click="refreshTerms"
-                            :disabled="loadingTerms"
+                            :disabled="isRefreshing"
                             title="Refresh terms to resolve 'Definition not found' errors">
-                      <i class="bi" :class="loadingTerms ? 'bi-arrow-clockwise spin' : 'bi-arrow-clockwise'"></i>
-                      <span class="d-none d-md-inline ms-1">Refresh Terms</span>
+                      <i class="bi" :class="isRefreshing ? 'bi-arrow-clockwise spin' : 'bi-arrow-clockwise'"></i>
+                      <span class="d-none d-md-inline ms-1">
+                        {{ refreshFeedback || (isRefreshing ? 'Refreshing...' : 'Refresh Terms') }}
+                      </span>
                     </button>
                   </div>
                   <div class="flex-grow-1 p-3 overflow-auto">
@@ -332,7 +336,8 @@
         <TermsModal :loading="loadingTerms" :error="termsError" :proxy-info="proxyInfo" :terms="filteredTerms"
           v-model:searchFilter="termFilter" v-model:referenceType="referenceType"
           :definitions-collapsed="definitionsCollapsed" :is-definition-visible="isTermDefinitionVisible"
-          :is-from-simple-editor="isTermsModalFromSimpleEditor" @filter-terms="filterTerms"
+          :is-from-simple-editor="isTermsModalFromSimpleEditor" :refresh-feedback="refreshFeedback"
+          :is-refreshing="isRefreshing" @filter-terms="filterTerms"
           @toggle-definitions="toggleDefinitionsCollapse" @toggle-individual-term="toggleIndividualTerm"
           @refresh-terms="refreshTerms" @insert-term="handleInsertTerm" />
 
@@ -482,6 +487,8 @@ export default {
       definitionsCollapsed,
       individualTermsExpanded,
       specsConfig,
+      refreshFeedback,
+      isRefreshing,
       filterTerms,
       isTermDefinitionVisible,
       toggleDefinitionsCollapse,
@@ -1249,6 +1256,8 @@ export default {
       referenceType,
       definitionsCollapsed,
       individualTermsExpanded,
+      refreshFeedback,
+      isRefreshing,
 
       // Validation
       validationWarnings,

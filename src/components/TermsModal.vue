@@ -23,10 +23,11 @@
                        placeholder="Search terms...">
                 <button class="btn btn-outline-primary" 
                         @click="$emit('refresh-terms')"
+                        :disabled="isRefreshing"
                         type="button"
                         title="Refresh terms list">
-                  <i class="bi bi-arrow-clockwise"></i>
-                  Refresh
+                  <i class="bi" :class="isRefreshing ? 'bi-arrow-clockwise spin' : 'bi-arrow-clockwise'"></i>
+                  {{ refreshFeedback || (isRefreshing ? 'Refreshing...' : 'Refresh') }}
                 </button>
               </div>
             </div>
@@ -179,6 +180,14 @@ export default {
       required: true
     },
     isFromSimpleEditor: {
+      type: Boolean,
+      default: false
+    },
+    refreshFeedback: {
+      type: String,
+      default: ''
+    },
+    isRefreshing: {
       type: Boolean,
       default: false
     }
