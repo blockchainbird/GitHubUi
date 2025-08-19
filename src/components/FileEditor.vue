@@ -216,8 +216,16 @@
                   </div>
 
                   <div class="split-pane split-pane-preview d-flex flex-column">
-                    <div class="split-pane-header bg-light border-bottom p-3 flex-shrink-0">
+                    <div class="split-pane-header bg-light border-bottom p-3 flex-shrink-0 d-flex justify-content-between align-items-center">
                       <h6 class="mb-0"><i class="bi bi-eye"></i> Preview</h6>
+                      <button v-if="isTermsFileComputed" 
+                              class="btn btn-outline-primary btn-sm" 
+                              @click="refreshTerms"
+                              :disabled="loadingTerms"
+                              title="Refresh terms to resolve 'Definition not found' errors">
+                        <i class="bi" :class="loadingTerms ? 'bi-arrow-clockwise spin' : 'bi-arrow-clockwise'"></i>
+                        <span class="d-none d-md-inline ms-1">Refresh Terms</span>
+                      </button>
                     </div>
                     <div class="split-pane-content flex-grow-1 p-3 overflow-auto">
                       <div class="markdown-preview" v-html="renderedContent"></div>
@@ -300,8 +308,20 @@
                 </div>
 
                 <!-- Preview Mode -->
-                <div v-else-if="editMode === 'preview'" class="p-3">
-                  <div class="markdown-preview" v-html="renderedContent"></div>
+                <div v-else-if="editMode === 'preview'" class="d-flex flex-column h-100">
+                  <div v-if="isTermsFileComputed" class="bg-light border-bottom p-3 flex-shrink-0 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="bi bi-eye"></i> Preview</h6>
+                    <button class="btn btn-outline-primary btn-sm" 
+                            @click="refreshTerms"
+                            :disabled="loadingTerms"
+                            title="Refresh terms to resolve 'Definition not found' errors">
+                      <i class="bi" :class="loadingTerms ? 'bi-arrow-clockwise spin' : 'bi-arrow-clockwise'"></i>
+                      <span class="d-none d-md-inline ms-1">Refresh Terms</span>
+                    </button>
+                  </div>
+                  <div class="flex-grow-1 p-3 overflow-auto">
+                    <div class="markdown-preview" v-html="renderedContent"></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1648,5 +1668,19 @@ textarea.error {
 
 .split-pane-technical .editor-toolbar {
   padding: 0.5rem;
+}
+
+/* Spinning animation for refresh button */
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>
