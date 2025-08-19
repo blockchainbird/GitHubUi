@@ -476,6 +476,8 @@ export default {
       definitionEditor,
       isTermsModalFromSimpleEditor,
       isSyncing,
+      lastTechnicalContentHash,
+      lastSimpleContentHash,
       generatedTermLine,
       syncSimpleToTechnical,
       syncTechnicalToSimple,
@@ -670,44 +672,63 @@ export default {
 </pre></code>
     `)
 
-    // Debounced sync functions
-    const syncSimpleToTechnicalDebounced = debounce(() => {
+    // Optimized sync functions with cursor preservation
+    const syncSimpleToTechnicalOptimized = debounce(() => {
       if (!isSyncing.value && isTermsFileComputed.value) {
+        // Store cursor position before sync
+        const textarea = editor.value
+        const cursorPos = textarea ? textarea.selectionStart : 0
+        
         syncSimpleToTechnical((newContent) => {
           content.value = newContent
+          
+          // Restore cursor position after sync
+          nextTick(() => {
+            if (textarea && textarea.value === newContent) {
+              const newPos = Math.min(cursorPos, newContent.length)
+              textarea.setSelectionRange(newPos, newPos)
+            }
+          })
         })
       }
-    }, 200)
+    }, 300)
 
-    const onDefinitionInputDebounced = debounce(() => {
+    const syncTechnicalToSimpleOptimized = debounce(() => {
       if (!isSyncing.value && isTermsFileComputed.value) {
-        syncSimpleToTechnical((newContent) => {
-          content.value = newContent
-        })
+        // Only sync if we're showing simple editor (simple mode or split view)
+        if (editMode.value === 'simple' || editMode.value === 'split') {
+          syncTechnicalToSimple(content.value)
+        }
       }
-    }, 500)
+    }, 100)
 
     // Event handlers
     const handleContentChange = async () => {
       error.value = ''
       success.value = ''
       await validateContent(content.value, filename.value, specsConfig.value)
+      
+      // Sync to simple editor if content changed from technical editor
+      if (isTermsFileComputed.value && !isSyncing.value) {
+        syncTechnicalToSimpleOptimized()
+      }
     }
 
     const onSimpleFormChange = () => {
-      syncSimpleToTechnicalDebounced()
+      syncSimpleToTechnicalOptimized()
     }
 
     const onSimpleDefinitionInput = () => {
-      onDefinitionInputDebounced()
+      syncSimpleToTechnicalOptimized()
     }
 
     const handleDefinitionEnter = async (event) => {
-      setTimeout(async () => {
+      // Immediate sync for Enter key to prevent cursor jumping
+      if (isTermsFileComputed.value && !isSyncing.value) {
         await syncSimpleToTechnical((newContent) => {
           content.value = newContent
         })
-      }, 100)
+      }
     }
 
     const showExternalTermsModal = async () => {
@@ -1091,11 +1112,6 @@ export default {
       }
       // Update layout when content changes
       refreshLayout()
-      
-      // Sync to simple editor if we're in simple mode and the content changed from outside the simple editor
-      if (isTermsFileComputed.value && editMode.value === 'simple' && !isSyncing.value) {
-        syncTechnicalToSimple(content.value)
-      }
     }, { flush: 'post' })
 
     watch(editMode, (newMode, oldMode) => {
@@ -1103,11 +1119,11 @@ export default {
       splitViewState.setSplitViewActive(newMode === 'split')
       
       if (isTermsFileComputed.value && !isSyncing.value) {
-        if (newMode === 'simple' && oldMode !== 'simple') {
-          // Switching to simple mode: sync technical content to simple editor
+        if ((newMode === 'simple' || newMode === 'split') && oldMode !== 'simple' && oldMode !== 'split') {
+          // Switching to simple mode or split view: sync technical content to simple editor
           syncTechnicalToSimple(content.value)
-        } else if (oldMode === 'simple' && newMode !== 'simple') {
-          // Switching from simple mode: sync simple editor to technical content
+        } else if ((oldMode === 'simple' || oldMode === 'split') && newMode !== 'simple' && newMode !== 'split') {
+          // Switching from simple mode or split view: sync simple editor to technical content
           syncSimpleToTechnical((newContent) => {
             content.value = newContent
           })

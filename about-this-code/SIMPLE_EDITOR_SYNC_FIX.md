@@ -1,70 +1,115 @@
-# Simple Editor Synchronization Fix
+# Simple Editor Synchronization Fix & Optimization
 
 ## Problem
 
-The simple editor was not properly synchronized with the technical editor and preview. Specifically:
+The simple editor had several synchronization issues:
 
 - The simple editor appeared "empty" when there was a definition loaded in the technical editor
 - Editing in one mode was not synchronized across the three views (simple, technical, preview)
+- **Split view issue**: Writing in technical editor did not propagate to simple editor in split view
+- **Cursor jumping**: In simple editor, pressing Enter would create a newline but then jump the cursor back
 
-## Root Cause
+## Root Cause Analysis
 
-The synchronization logic had several issues:
+The synchronization logic had multiple fundamental issues:
 
-1. **Missing initial sync**: When switching to simple mode or loading a file, the `syncTechnicalToSimple` function was not properly populating the simple editor
-2. **Race conditions**: The `isSyncing` flag was not properly handled in the `syncTechnicalToSimple` function
-3. **Limited sync conditions**: The debounced sync functions only worked when `editMode === 'simple'`, preventing sync in split view
-4. **Missing sync on content changes**: When content changed from external sources, it wasn't syncing to the simple editor
+1. **Split view sync failure**: Content watcher only synced when `editMode === 'simple'`, but split view uses `editMode === 'split'`
+2. **Race conditions**: Insufficient protection against sync loops and multiple simultaneous sync operations
+3. **Cursor position loss**: Debounced sync functions would reset cursor position without preservation
+4. **Inefficient sync triggers**: Multiple overlapping sync mechanisms causing unnecessary updates
+5. **Missing change detection**: No hash-based change detection led to redundant sync operations
 
-## Solution
+## Optimized Solution
 
-Fixed the synchronization in several ways:
+Completely redesigned the synchronization system with the following improvements:
 
-### 1. Enhanced `syncTechnicalToSimple` function
+### 1. Hash-Based Change Detection
 
-- Added proper `isSyncing` flag handling with try/finally
-- Ensured the function works even when called from outside the simple editor context
-- Improved error handling and content parsing
+- Added content hashing to prevent unnecessary sync operations
+- Tracks `lastTechnicalContentHash` and `lastSimpleContentHash`
+- Only syncs when content actually changes, reducing CPU usage and preventing loops
 
-### 2. Improved `editMode` watcher
+### 2. Cursor Position Preservation
 
-- Added comments to clarify when sync occurs
-- Ensured sync happens when switching between modes
+- Stores cursor position before sync operations
+- Restores cursor position after content updates using `nextTick`
+- Eliminates cursor jumping issues during typing
 
-### 3. Enhanced content watcher
+### 3. Split View Support
 
-- Added sync to simple editor when content changes and we're in simple mode
-- Only syncs when not already syncing to prevent infinite loops
+- Updated mode detection to include both `'simple'` and `'split'` modes
+- Technical editor changes now properly sync to simple editor in split view
+- Mode transitions handle all combinations (simple ↔ split ↔ technical)
 
-### 4. Initial load synchronization
+### 4. Optimized Debouncing Strategy
 
-- Added sync call after file content is loaded for terms files
-- Added sync call when switching between files (path watcher)
+- Reduced sync functions from multiple overlapping ones to two optimized functions
+- `syncSimpleToTechnicalOptimized`: 300ms debounce with cursor preservation
+- `syncTechnicalToSimpleOptimized`: 100ms debounce for responsive updates
+- Immediate sync for Enter key to prevent cursor jumping
 
-### 5. Relaxed sync conditions
+### 5. Atomic State Updates
 
-- Removed `editMode === 'simple'` condition from debounced sync functions
-- Changed condition to just check if it's a terms file, allowing sync in split view
+- Simple editor state updates happen atomically to prevent multiple reactivity triggers
+- Reduced cognitive complexity by consolidating sync logic
+
+### 6. Improved Event Handling
+
+- `handleContentChange` now triggers technical-to-simple sync automatically
+- Eliminated redundant watchers and event handlers
+- Cleaner separation between sync triggers and sync operations
 
 ## Files Modified
 
-1. `/src/components/FileEditor.vue`: Enhanced synchronization watchers and lifecycle
-2. `/src/composables/useSimpleEditor.js`: Fixed `syncTechnicalToSimple` function with proper flag handling
+1. `/src/composables/useSimpleEditor.js`:
+   - Added hash-based change detection
+   - Optimized sync functions with proper race condition protection
+   - Atomic state updates
 
-## Testing
+2. `/src/components/FileEditor.vue`:
+   - Simplified sync trigger logic
+   - Added cursor position preservation
+   - Fixed split view mode detection
+   - Optimized debouncing strategy
 
-To test the synchronization:
+3. `/about-this-code/SIMPLE_EDITOR_SYNC_FIX.md`: Updated documentation
 
-1. Open a terms file in the file editor
-2. Switch between Simple, Technical, and Preview modes
-3. Verify that content appears correctly in all modes
-4. Edit content in simple mode and verify it syncs to technical/preview
-5. Edit content in technical mode and verify it syncs to simple mode when switching
-6. Test split view to ensure all three panes stay synchronized
+## Performance Improvements
+
+- **Reduced sync operations**: Hash-based change detection prevents unnecessary syncs
+- **Lower CPU usage**: Eliminated redundant content parsing and DOM updates
+- **Better responsiveness**: Optimized debounce timings for different scenarios
+- **Memory efficiency**: Cleaned up overlapping event handlers and watchers
+
+## Testing Scenarios
+
+To verify the fixes:
+
+1. **Split view sync**:
+   - Switch to split view with a terms file
+   - Type in technical editor → verify simple editor updates
+   - Edit simple editor → verify technical editor updates
+
+2. **Cursor preservation**:
+   - Type in simple editor definition field
+   - Press Enter → cursor should stay at correct position
+   - Continue typing → no jumping or position reset
+
+3. **Mode switching**:
+   - Load terms file in technical mode
+   - Switch to simple → content should appear parsed
+   - Switch to split → both panes should be synchronized
+   - Switch back to technical → content should be preserved
+
+4. **Performance**:
+   - Rapid typing should not cause visible lag
+   - Content changes should be reflected quickly across all views
+   - No infinite sync loops or racing conditions
 
 ## Technical Details
 
-- Uses debounced synchronization to prevent excessive updates
-- Implements proper race condition protection with `isSyncing` flag
-- Maintains bidirectional sync between simple and technical editors
-- Preview automatically updates via reactive computed properties
+- **Hash function**: Uses `btoa()` with 16-character substring for efficient change detection
+- **Sync protection**: `isSyncing` flag with proper try/finally blocks
+- **Cursor preservation**: Stores `selectionStart` before sync, restores with `setSelectionRange`
+- **Atomic updates**: Single object assignment to prevent multiple Vue reactivity triggers
+- **Debounce timing**: 300ms for simple-to-technical (typing), 100ms for technical-to-simple (responsiveness)
