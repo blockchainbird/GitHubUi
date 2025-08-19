@@ -1,7 +1,7 @@
 <template>
   <!-- <div> -->
     <MainNav :isAuthenticated="isAuthenticated" :user="user" @logout="handleLogout" />
-    <main class="container mt-3">
+    <main :class="isSplitViewActive ? 'container-fluid mt-3' : 'container mt-3'">
       <router-view @login="handleLogin" @logout="handleLogout"></router-view>
     </main>
     <BackToTop />
@@ -12,7 +12,7 @@
 
 <script>
 
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, provide } from 'vue'
 import { useRouter } from 'vue-router'
 import MainNav from './components/MainNav.vue'
 import BackToTop from './components/BackToTop.vue'
@@ -29,6 +29,19 @@ export default {
     const router = useRouter()
     const isAuthenticated = ref(false)
     const user = ref({})
+
+    // Split view state management
+    const isSplitViewActive = ref(false)
+    
+    const setSplitViewActive = (active) => {
+      isSplitViewActive.value = active
+    }
+
+    // Provide the split view state and setter to child components
+    provide('splitViewState', {
+      isSplitViewActive,
+      setSplitViewActive
+    })
 
     const handleLogin = (userData) => {
       console.log('App: handleLogin called with:', userData);
@@ -86,7 +99,8 @@ export default {
       isAuthenticated,
       user,
       handleLogin,
-      handleLogout
+      handleLogout,
+      isSplitViewActive
     }
   }
 }

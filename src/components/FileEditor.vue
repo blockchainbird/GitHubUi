@@ -1,7 +1,7 @@
 <template>
-  <div class="container mt-3">
+  <div class="container-fluid mt-3" :class="{ 'px-2': editMode === 'split' }">
     <div class="row justify-content-center">
-      <div class="col-12 col-lg-10">
+      <div class="col-12" :class="{ 'col-lg-10': editMode !== 'split' }">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <h2>
             <i class="bi" :class="isNewFile ? 'bi-plus-circle' : 'bi-pencil-square'"></i>
@@ -121,11 +121,108 @@
                   <label class="btn btn-outline-primary btn-sm" for="preview-mode">
                     <i class="bi bi-eye"></i> Preview
                   </label>
+
+                  <input type="radio" class="btn-check" id="split-mode" v-model="editMode" value="split"
+                    autocomplete="off" v-if="isTermsFileComputed && isAdvancedUser">
+                  <label class="btn btn-outline-info btn-sm" for="split-mode"
+                    v-if="isTermsFileComputed && isAdvancedUser">
+                    <i class="bi bi-layout-three-columns"></i> Split View
+                  </label>
                 </div>
               </div>
               <div class="card-body p-0">
+                <!-- Split View Mode -->
+                <div v-if="editMode === 'split'" class="split-view-container">
+                  <div class="split-pane split-pane-simple">
+                    <div class="split-pane-header">
+                      <h6 class="mb-0"><i class="bi bi-ui-checks"></i> Simple Editor</h6>
+                    </div>
+                    <div class="split-pane-content">
+                      <SimpleTermsEditor v-model:termType="simpleEditor.termType"
+                        v-model:externalRepo="simpleEditor.externalRepo" v-model:mainTerm="simpleEditor.mainTerm"
+                        v-model:aliases="simpleEditor.aliases" v-model:definition="simpleEditor.definition"
+                        @form-change="onSimpleFormChange" @definition-input="onSimpleDefinitionInput"
+                        @definition-enter="handleDefinitionEnter" @show-external-terms="showExternalTermsModal"
+                        @insert-definition-text="insertDefinitionText" ref="simpleEditorRef" />
+                    </div>
+                  </div>
+
+                  <div class="split-pane split-pane-technical">
+                    <div class="split-pane-header">
+                      <h6 class="mb-0"><i class="bi bi-pencil"></i> Technical Editor</h6>
+                    </div>
+                    <div class="split-pane-content d-flex flex-column h-100">
+                      <!-- Toolbar -->
+                      <div class="editor-toolbar p-2 border-bottom flex-shrink-0">
+                        <div class="btn-group btn-group-sm me-2" role="group">
+                          <button @click="handleInsertHeading" class="btn btn-outline-secondary btn-sm" title="Insert Heading">
+                            <i class="bi bi-type-h2"></i>
+                          </button>
+                          <button @click="handleInsertList" class="btn btn-outline-secondary btn-sm" title="Insert List">
+                            <i class="bi bi-list-ul"></i>
+                          </button>
+                          <button @click="handleInsertBold" class="btn btn-outline-secondary btn-sm" title="Bold">
+                            <i class="bi bi-type-bold"></i>
+                          </button>
+                          <button @click="handleInsertItalic" class="btn btn-outline-secondary btn-sm" title="Italic">
+                            <i class="bi bi-type-italic"></i>
+                          </button>
+                        </div>
+
+                        <div class="btn-group btn-group-sm me-2" role="group">
+                          <button @click="showTermsModal" class="btn btn-outline-info btn-sm" title="Insert Term Reference">
+                            <i class="bi bi-bookmark"></i>
+                            Terms
+                          </button>
+                          <button @click="copyToNotepad" class="btn btn-outline-success btn-sm" title="Copy content to Notepad">
+                            <i class="bi bi-sticky"></i>
+                            To Notepad
+                          </button>
+                        </div>
+
+                        <div class="btn-group btn-group-sm" role="group">
+                          <button @click="showHelpModal" class="btn btn-outline-secondary btn-sm" title="Help">
+                            <i class="bi bi-question-circle"></i>
+                            Help
+                          </button>
+                        </div>
+                      </div>
+
+                      <!-- Editor with Line Numbers -->
+                      <div class="editor-container flex-grow-1 d-flex">
+                        <!-- Line Numbers -->
+                        <div ref="lineNumbers" class="line-numbers" :style="{ height: splitEditorHeight }"
+                          @scroll="handleLineNumbersScroll">
+                          <div v-for="lineNum in lineCount" :key="lineNum"
+                            :class="['line-number', { 'line-number-error': isErrorLine(lineNum) }]"
+                            :style="{ height: getLineNumberHeight(lineNum) }">
+                            {{ lineNum }}
+                          </div>
+                        </div>
+
+                        <!-- Editor Textarea -->
+                        <textarea ref="editor" v-model="content" @input="handleContentChange" @scroll="handleEditorScroll"
+                          wrap="soft" :style="{ height: splitEditorHeight }"
+                          :class="['technical-editor-with-lines flex-grow-1', validationWarnings.length > 0 ? 'error' : '']"></textarea>
+
+                        <!-- Hidden mirror used to measure wrapped line heights -->
+                        <div ref="mirror" class="editor-mirror" aria-hidden="true"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="split-pane split-pane-preview">
+                    <div class="split-pane-header">
+                      <h6 class="mb-0"><i class="bi bi-eye"></i> Preview</h6>
+                    </div>
+                    <div class="split-pane-content">
+                      <div class="markdown-preview" v-html="renderedContent"></div>
+                    </div>
+                  </div>
+                </div>
+
                 <!-- Simple Editor (Terms Files Only) -->
-                <div v-if="editMode === 'simple'" class="p-3">
+                <div v-else-if="editMode === 'simple'" class="p-3">
                   <SimpleTermsEditor v-model:termType="simpleEditor.termType"
                     v-model:externalRepo="simpleEditor.externalRepo" v-model:mainTerm="simpleEditor.mainTerm"
                     v-model:aliases="simpleEditor.aliases" v-model:definition="simpleEditor.definition"
@@ -276,7 +373,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch, inject } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { addToVisitedRepos } from '../utils/visitedRepos.js'
 import { useGoogleAnalytics } from '../composables/useGoogleAnalytics.js'
@@ -316,6 +413,12 @@ export default {
   setup(props) {
     // Advanced user reactive state
     const { isAdvancedUser } = useAdvancedUser()
+
+    // Inject split view state management from App
+    const splitViewState = inject('splitViewState', {
+      isSplitViewActive: ref(false),
+      setSplitViewActive: () => {}
+    })
 
     const router = useRouter()
     const route = useRoute()
@@ -471,6 +574,7 @@ export default {
     }, 50)
 
     const editorHeight = ref('calc(100vh - 300px)')
+    const splitEditorHeight = ref('calc(100vh - 350px)')
 
     const syncingScroll = ref(false)
 
@@ -912,6 +1016,9 @@ export default {
       await nextTick()
       refreshLayout()
 
+      // Set initial split view state
+      splitViewState.setSplitViewActive(editMode.value === 'split')
+
       // Recalc on resize
       window.addEventListener('resize', refreshLayout)
       // Recalc when fonts load (affects metrics)
@@ -928,6 +1035,9 @@ export default {
         const source = ` (${fileName}) - Unsaved Changes from File Editor`
         addToNotepad(content.value, source) // Message will be shown automatically for script-added content
       }
+
+      // Reset split view state when leaving the file editor
+      splitViewState.setSplitViewActive(false)
 
       if (window.fileEditorBeforeUnload) {
         window.removeEventListener('beforeunload', window.fileEditorBeforeUnload)
@@ -975,6 +1085,9 @@ export default {
     }, { flush: 'post' })
 
     watch(editMode, (newMode, oldMode) => {
+      // Update split view state in parent App component
+      splitViewState.setSplitViewActive(newMode === 'split')
+      
       if (isTermsFileComputed.value && !isSyncing.value) {
         if (newMode === 'simple' && oldMode !== 'simple') {
           syncTechnicalToSimple(content.value)
@@ -1005,6 +1118,7 @@ export default {
       // Line numbers
       lineCount,
       editorHeight,
+      splitEditorHeight,
       handleEditorScroll,
       handleLineNumbersScroll,
       errorLines,
@@ -1379,5 +1493,98 @@ textarea.error {
 
 .editor-mirror .mirror-line {
   display: block;
+}
+
+/* Split View Styles */
+.split-view-container {
+  display: flex;
+  // height: calc(100vh - 250px);
+  min-height: 600px;
+  width: 100% !important;
+}
+
+.split-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #dee2e6;
+  min-width: 0; /* Prevent flex items from overflowing */
+}
+
+.split-pane:last-child {
+  border-right: none;
+}
+
+.split-pane-simple {
+  flex: 0 0 30%;
+  min-width: 300px;
+}
+
+.split-pane-technical {
+  flex: 0 0 40%;
+  min-width: 400px;
+}
+
+.split-pane-preview {
+  flex: 0 0 30%;
+  min-width: 300px;
+}
+
+.split-pane-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  color: #495057;
+  flex-shrink: 0;
+}
+
+.split-pane-content {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+}
+
+.split-pane-simple .split-pane-content {
+  padding: 1rem;
+}
+
+.split-pane-preview .split-pane-content {
+  padding: 1rem;
+}
+
+/* Responsive adjustments for split view */
+@media (max-width: 1200px) {
+  .split-view-container {
+    flex-direction: column;
+    height: auto;
+  }
+  
+  .split-pane {
+    border-right: none;
+    border-bottom: 1px solid #dee2e6;
+    height: 400px;
+  }
+  
+  .split-pane:last-child {
+    border-bottom: none;
+  }
+  
+  .split-pane-simple,
+  .split-pane-technical,
+  .split-pane-preview {
+    flex: none;
+    min-width: auto;
+  }
+}
+
+/* Ensure technical editor toolbar is smaller in split view */
+.split-pane-technical .editor-toolbar .btn-group .btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+.split-pane-technical .editor-toolbar {
+  padding: 0.5rem;
 }
 </style>
