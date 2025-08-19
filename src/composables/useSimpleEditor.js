@@ -86,7 +86,26 @@ export function useSimpleEditor() {
 
   // Sync technical content to simple editor
   const syncTechnicalToSimple = (content) => {
-    if (!content.trim()) {
+    if (isSyncing.value) return
+    
+    isSyncing.value = true
+    
+    try {
+      if (!content.trim()) {
+        simpleEditor.value = {
+          termType: 'local',
+          externalRepo: '',
+          mainTerm: '',
+          aliases: [null],
+          definition: ''
+        }
+        return
+      }
+
+      const lines = content.split('\n')
+      const firstLine = lines[0]?.trim() || ''
+
+      // Reset to defaults
       simpleEditor.value = {
         termType: 'local',
         externalRepo: '',
@@ -94,69 +113,59 @@ export function useSimpleEditor() {
         aliases: [null],
         definition: ''
       }
-      return
-    }
 
-    const lines = content.split('\n')
-    const firstLine = lines[0]?.trim() || ''
-
-    simpleEditor.value = {
-      termType: 'local',
-      externalRepo: '',
-      mainTerm: '',
-      aliases: [null],
-      definition: ''
-    }
-
-    // Parse term line
-    if (firstLine.startsWith('[[def:')) {
-      const match = firstLine.match(/^\[\[def:\s*([^,\]]+)(?:,\s*([^\]]+))?\]\]/)
-      if (match) {
-        simpleEditor.value.mainTerm = match[1].trim()
-        
-        if (match[2]) {
-          const aliases = match[2].split(',').map(a => a.trim()).filter(a => a.length > 0)
-          simpleEditor.value.aliases = aliases.length > 0 ? [...aliases, null] : [null]
+      // Parse term line
+      if (firstLine.startsWith('[[def:')) {
+        const match = firstLine.match(/^\[\[def:\s*([^,\]]+)(?:,\s*([^\]]+))?\]\]/)
+        if (match) {
+          simpleEditor.value.mainTerm = match[1].trim()
+          
+          if (match[2]) {
+            const aliases = match[2].split(',').map(a => a.trim()).filter(a => a.length > 0)
+            simpleEditor.value.aliases = aliases.length > 0 ? [...aliases, null] : [null]
+          }
+        }
+      } else if (firstLine.startsWith('[[tref:')) {
+        const match = firstLine.match(/^\[\[tref:\s*([^,\]]+),\s*([^,\]]+)(?:,\s*([^\]]+))?\]\]/)
+        if (match) {
+          simpleEditor.value.termType = 'external'
+          simpleEditor.value.externalRepo = match[1].trim()
+          simpleEditor.value.mainTerm = match[2].trim()
+          
+          if (match[3]) {
+            const aliases = match[3].split(',').map(a => a.trim()).filter(a => a.length > 0)
+            simpleEditor.value.aliases = aliases.length > 0 ? [...aliases, null] : [null]
+          }
         }
       }
-    } else if (firstLine.startsWith('[[tref:')) {
-      const match = firstLine.match(/^\[\[tref:\s*([^,\]]+),\s*([^,\]]+)(?:,\s*([^\]]+))?\]\]/)
-      if (match) {
-        simpleEditor.value.termType = 'external'
-        simpleEditor.value.externalRepo = match[1].trim()
-        simpleEditor.value.mainTerm = match[2].trim()
-        
-        if (match[3]) {
-          const aliases = match[3].split(',').map(a => a.trim()).filter(a => a.length > 0)
-          simpleEditor.value.aliases = aliases.length > 0 ? [...aliases, null] : [null]
-        }
-      }
-    }
 
-    // Parse definition content
-    const definitionLines = []
-    let foundContent = false
-    
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i]
+      // Parse definition content
+      const definitionLines = []
+      let foundContent = false
       
-      if (line.trim() === '') {
-        if (foundContent) {
-          definitionLines.push('')
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i]
+        
+        if (line.trim() === '') {
+          if (foundContent) {
+            definitionLines.push('')
+          }
+        } else if (line.startsWith('~ ')) {
+          definitionLines.push(line.substring(2))
+          foundContent = true
+        } else if (line.startsWith('~')) {
+          definitionLines.push(line.substring(1).trim())
+          foundContent = true
+        } else if (line.trim()) {
+          definitionLines.push(line)
+          foundContent = true
         }
-      } else if (line.startsWith('~ ')) {
-        definitionLines.push(line.substring(2))
-        foundContent = true
-      } else if (line.startsWith('~')) {
-        definitionLines.push(line.substring(1).trim())
-        foundContent = true
-      } else if (line.trim()) {
-        definitionLines.push(line)
-        foundContent = true
       }
+      
+      simpleEditor.value.definition = definitionLines.join('\n').trim()
+    } finally {
+      isSyncing.value = false
     }
-    
-    simpleEditor.value.definition = definitionLines.join('\n').trim()
   }
 
   // Add alias field

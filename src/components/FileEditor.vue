@@ -672,7 +672,7 @@ export default {
 
     // Debounced sync functions
     const syncSimpleToTechnicalDebounced = debounce(() => {
-      if (!isSyncing.value && editMode.value === 'simple') {
+      if (!isSyncing.value && isTermsFileComputed.value) {
         syncSimpleToTechnical((newContent) => {
           content.value = newContent
         })
@@ -680,7 +680,7 @@ export default {
     }, 200)
 
     const onDefinitionInputDebounced = debounce(() => {
-      if (!isSyncing.value && editMode.value === 'simple') {
+      if (!isSyncing.value && isTermsFileComputed.value) {
         syncSimpleToTechnical((newContent) => {
           content.value = newContent
         })
@@ -978,6 +978,11 @@ export default {
       // Load file content
       await loadFileContent()
 
+      // If this is a terms file, initialize simple editor with the loaded content
+      if (isTermsFileComputed.value && content.value) {
+        syncTechnicalToSimple(content.value)
+      }
+
       // If this is a terms file, parse/load terms only for this file to avoid scanning the whole terms directory
       try {
         if (isTermsFileComputed.value) {
@@ -1070,6 +1075,10 @@ export default {
               termsManagement.loadTermsForFile(decodedPath.value, content.value).catch(err => {
                 console.warn('Failed to load single-file terms on path change:', err)
               })
+              // Sync to simple editor if we have content
+              if (content.value) {
+                syncTechnicalToSimple(content.value)
+              }
             }
           })
         }
@@ -1082,6 +1091,11 @@ export default {
       }
       // Update layout when content changes
       refreshLayout()
+      
+      // Sync to simple editor if we're in simple mode and the content changed from outside the simple editor
+      if (isTermsFileComputed.value && editMode.value === 'simple' && !isSyncing.value) {
+        syncTechnicalToSimple(content.value)
+      }
     }, { flush: 'post' })
 
     watch(editMode, (newMode, oldMode) => {
@@ -1090,8 +1104,10 @@ export default {
       
       if (isTermsFileComputed.value && !isSyncing.value) {
         if (newMode === 'simple' && oldMode !== 'simple') {
+          // Switching to simple mode: sync technical content to simple editor
           syncTechnicalToSimple(content.value)
         } else if (oldMode === 'simple' && newMode !== 'simple') {
+          // Switching from simple mode: sync simple editor to technical content
           syncSimpleToTechnical((newContent) => {
             content.value = newContent
           })
