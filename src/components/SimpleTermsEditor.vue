@@ -6,7 +6,7 @@
         <div class="mb-3 row align-items-center">
           <label for="mainTerm" class="col-sm-3 col-form-label text-dark"><i
               title="The primary name for this term (e.g., “verifiable-credential”)."
-              class="bi bi-question-circle fs-5 text-primary"></i> Term Name</label>
+              class="bi bi-question-circle fs-5 text-primary"></i> Term</label>
           <div class="col-sm-9">
             <input type="text" class="form-control" id="mainTerm" v-model="mainTerm" @input="onFormChange"
               placeholder="Enter the main term">
@@ -17,7 +17,7 @@
         <div class="mb-3 row align-items-start">
           <label class="col-sm-3 col-form-label text-dark"><i
               title="Alternative names for the term (e.g., “VC”, “credential”)."
-              class="bi bi-question-circle fs-5 text-primary"></i> Aliases (Optional)</label>
+              class="bi bi-question-circle fs-5 text-primary"></i> Aliases</label>
           <div class="col-sm-9">
             <div v-for="(alias, index) in aliases" :key="index" class="input-group mb-2">
               <input type="text" class="form-control" :value="alias || ''"
@@ -38,7 +38,7 @@
         <div class="mb-3 row align-items-center">
           <label class="col-sm-3 col-form-label text-dark"><i
               title="Local terms are defined in this repository. External terms reference definitions from other specifications."
-              class="bi bi-question-circle fs-5 text-primary"></i> Term Type</label>
+              class="bi bi-question-circle fs-5 text-primary"></i> Type</label>
           <div class="col-sm-9 d-flex align-items-center">
             <div class="btn-group me-3" role="group">
               <input type="radio" class="btn-check" id="termType-local" v-model="termType" value="local"
@@ -99,14 +99,14 @@
                   @click="$emit('insert-definition-text', '_', '_')" title="Italic">
                   <i class="bi bi-type-italic"></i>
                 </button>
-                <button type="button" class="btn btn-outline-secondary"
+                <!-- <button type="button" class="btn btn-outline-secondary"
                   @click="$emit('insert-definition-text', '`', '`')" title="Code">
                   <i class="bi bi-code"></i>
-                </button>
-                <button type="button" class="btn btn-outline-secondary"
+                </button> -->
+                <!-- <button type="button" class="btn btn-outline-secondary"
                   @click="$emit('insert-definition-text', '[', '](url)')" title="Link">
                   <i class="bi bi-link"></i>
-                </button>
+                </button> -->
               </div>
             </div>
 

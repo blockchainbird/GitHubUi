@@ -155,14 +155,14 @@
                       <!-- Toolbar -->
                       <div class="editor-toolbar p-2 border-bottom flex-shrink-0">
                         <div class="btn-group btn-group-sm me-2" role="group">
-                          <button @click="handleInsertHeading" class="btn btn-outline-secondary btn-sm"
+                          <!-- <button @click="handleInsertHeading" class="btn btn-outline-secondary btn-sm"
                             title="Insert Heading">
                             <i class="bi bi-type-h2"></i>
-                          </button>
-                          <button @click="handleInsertList" class="btn btn-outline-secondary btn-sm"
+                          </button> -->
+                          <!-- <button @click="handleInsertList" class="btn btn-outline-secondary btn-sm"
                             title="Insert List">
                             <i class="bi bi-list-ul"></i>
-                          </button>
+                          </button> -->
                           <button @click="handleInsertBold" class="btn btn-outline-secondary btn-sm" title="Bold">
                             <i class="bi bi-type-bold"></i>
                           </button>
@@ -240,12 +240,12 @@
                   <!-- Toolbar -->
                   <div class="editor-toolbar p-2 border-bottom flex-shrink-0">
                     <div class="btn-group btn-group-sm me-2" role="group">
-                      <button @click="handleInsertHeading" class="btn btn-outline-secondary" title="Insert Heading">
+                      <!-- <button @click="handleInsertHeading" class="btn btn-outline-secondary" title="Insert Heading">
                         <i class="bi bi-type-h2"></i>
-                      </button>
-                      <button @click="handleInsertList" class="btn btn-outline-secondary" title="Insert List">
+                      </button> -->
+                      <!-- <button @click="handleInsertList" class="btn btn-outline-secondary" title="Insert List">
                         <i class="bi bi-list-ul"></i>
-                      </button>
+                      </button> -->
                       <button @click="handleInsertBold" class="btn btn-outline-secondary" title="Bold">
                         <i class="bi bi-type-bold"></i>
                       </button>
