@@ -135,7 +135,7 @@
                 <div v-if="editMode === 'split'" class="split-view-container h-100 d-flex">
                   <div class="split-pane split-pane-simple d-flex flex-column border-end">
                     <div class="split-pane-header bg-light border-bottom p-3 flex-shrink-0">
-                      <h6 class="mb-0"><i class="bi bi-ui-checks"></i> Simple Editor</h6>
+                      <h6 class="mb-0"><i class="bi bi-ui-checks"></i> Simple Terms Editor</h6>
                     </div>
                     <div class="split-pane-content flex-grow-1 p-3 overflow-auto">
                       <SimpleTermsEditor v-model:termType="simpleEditor.termType"

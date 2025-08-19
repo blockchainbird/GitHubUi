@@ -1,12 +1,6 @@
 <template>
   <div class="simple-editor p-0 h-100 d-flex flex-column">
     <div class="card border-0 h-100 d-flex flex-column">
-      <div class="card-header fw-normal flex-shrink-0">
-        <h5 class="m-0 d-flex align-items-center">
-          <i class="bi bi-ui-checks me-2"></i>
-          Simple Terms Editor
-        </h5>
-      </div>
       <div class="card-body flex-grow-1 d-flex flex-column">
         <!-- Main Term -->
         <div class="mb-3 row align-items-center">
