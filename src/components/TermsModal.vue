@@ -21,6 +21,13 @@
                        v-model="searchFilter"
                        @input="$emit('filter-terms')"
                        placeholder="Search terms...">
+                <button class="btn btn-outline-primary" 
+                        @click="$emit('refresh-terms')"
+                        type="button"
+                        title="Refresh terms list">
+                  <i class="bi bi-arrow-clockwise"></i>
+                  Refresh
+                </button>
               </div>
             </div>
             <div class="col-md-3">
@@ -32,17 +39,12 @@
               </select>
             </div>
             <div class="col-md-3">
-              <div class="btn-group w-100">
-                <button class="btn btn-outline-secondary btn-sm" 
-                        @click="$emit('toggle-definitions')"
-                        :class="{ 'active': !definitionsCollapsed }">
-                  <i class="bi" :class="definitionsCollapsed ? 'bi-eye' : 'bi-eye-slash'"></i>
-                  {{ definitionsCollapsed ? 'Show' : 'Hide' }} Definitions
-                </button>
-                <button class="btn btn-outline-info btn-sm" @click="$emit('refresh-terms')">
-                  <i class="bi bi-arrow-clockwise"></i>
-                </button>
-              </div>
+              <button class="btn btn-outline-secondary btn-sm w-100" 
+                      @click="$emit('toggle-definitions')"
+                      :class="{ 'active': !definitionsCollapsed }">
+                <i class="bi" :class="definitionsCollapsed ? 'bi-eye' : 'bi-eye-slash'"></i>
+                {{ definitionsCollapsed ? 'Show' : 'Hide' }} Definitions
+              </button>
             </div>
           </div>
 
