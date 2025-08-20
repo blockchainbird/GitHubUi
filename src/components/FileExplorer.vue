@@ -1,8 +1,8 @@
 <template>
-  <div class="container mt-3">
-    <div class="row justify-content-center">
-      <div class="col-12 col-lg-10">
-        <div class="d-flex justify-content-between align-items-center mb-4">
+  <div :class="isOffcanvasMode ? '' : 'container mt-3'">
+    <div :class="isOffcanvasMode ? '' : 'row justify-content-center'">
+      <div :class="isOffcanvasMode ? '' : 'col-12 col-lg-10'">
+        <div v-if="!isOffcanvasMode" class="d-flex justify-content-between align-items-center mb-4">
           <div>
             <h2 class="mb-0">
               <i class="bi bi-folder"></i>
@@ -35,7 +35,7 @@
                   <i class="bi bi-folder-fill"></i>
                   {{ currentDirectory }}
                 </h5>
-                <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
+                <RepoInfo v-if="!isOffcanvasMode" :owner="owner" :repo="repo" :branch="branch" />
                 <div class="d-flex gap-2">
                   <button @click="showCreateModal" class="btn btn-primary btn-sm" title="Create New File">
                     <i class="bi bi-plus-circle"></i>
@@ -307,8 +307,17 @@ import RepoInfo from './RepoInfo.vue'
 export default {
   name: 'FileExplorer',
   components: { TermsPreview, RepoInfo },
-  props: ['owner', 'repo', 'branch'],
-  setup(props) {
+  props: {
+    owner: String,
+    repo: String,
+    branch: String,
+    isOffcanvasMode: {
+      type: Boolean,
+      default: false
+    }
+  },
+  emits: ['file-selected', 'close-offcanvas'],
+  setup(props, { emit }) {
     const router = useRouter()
     const route = useRoute()
     const loading = ref(true)
@@ -800,6 +809,18 @@ export default {
     const openFile = (file) => {
       // Don't navigate if we're in the middle of a drag operation
       if (isDragging.value) return;
+
+      if (props.isOffcanvasMode) {
+        // In offcanvas mode, emit an event with file info
+        emit('file-selected', {
+          file,
+          owner: props.owner,
+          repo: props.repo,
+          branch: props.branch,
+          directory: currentDirectory.value
+        })
+        return
+      }
 
       const encodedPath = encodeURIComponent(file.path)
       const encodedDir = encodeURIComponent(currentDirectory.value)

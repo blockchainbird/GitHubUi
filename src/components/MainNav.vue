@@ -25,6 +25,14 @@
             </button>
           </li>
 
+          <!-- File Explorer Toggle -->
+          <li v-if="showRepoRelatedButtons" class="nav-item">
+            <button @click="toggleFileExplorerAndClose" class="nav-link btn btn-link" title="Toggle File Explorer">
+              <i class="bi bi-folder2-open"></i>
+              Explorer
+            </button>
+          </li>
+
           <!-- File menu -->
           <li v-if="showRepoRelatedButtons" class="nav-item dropdown" data-menu="file"
             @mouseenter="onHoverMenu('file', true)" @mouseleave="onHoverMenu('file', false)">
@@ -240,7 +248,7 @@ export default {
       default: () => ({})
     }
   },
-  emits: ['logout'],
+  emits: ['logout', 'toggle-file-explorer'],
   setup(props, { emit }) {
     const route = useRoute();
     const router = useRouter();
@@ -342,6 +350,11 @@ export default {
       navigateToActions();
       closeNavbar();
     };
+
+    const toggleFileExplorerAndClose = () => {
+      emit('toggle-file-explorer')
+      closeNavbar()
+    }
 
     const handleLogout = () => {
       console.log('MainNav: Logout clicked');
@@ -601,6 +614,7 @@ export default {
       navigateToFilesAndClose,
       navigateToActions,
       navigateToActionsAndClose,
+      toggleFileExplorerAndClose,
       handleLogout,
       buildInfo,
       isAuthenticated,

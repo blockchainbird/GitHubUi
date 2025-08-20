@@ -1,6 +1,7 @@
 <template>
   <div id="app" class="d-flex flex-column h-100">
-    <MainNav :isAuthenticated="isAuthenticated" :user="user" @logout="handleLogout" class="flex-shrink-0" />
+    <MainNav :isAuthenticated="isAuthenticated" :user="user" @logout="handleLogout"
+      @toggle-file-explorer="toggleFileExplorer" class="flex-shrink-0" />
     <main
       :class="isSplitViewActive ? 'container-fluid mt-3 flex-grow-1 d-flex flex-column' : 'container mt-3 flex-grow-1'">
       <router-view @login="handleLogin" @logout="handleLogout"></router-view>
@@ -8,6 +9,8 @@
     <BackToTop />
     <VersionNotification />
     <Notepad />
+    <OffcanvasFileExplorer :visible="isFileExplorerVisible" @close="closeFileExplorer"
+      @file-selected="onFileSelected" />
   </div>
 </template>
 
@@ -18,13 +21,14 @@ import { useRouter } from 'vue-router'
 import MainNav from './components/MainNav.vue'
 import BackToTop from './components/BackToTop.vue'
 import Notepad from './components/Notepad.vue'
+import OffcanvasFileExplorer from './components/OffcanvasFileExplorer.vue'
 // Choose one of these notification components:
 import VersionNotification from './components/VersionNotification.vue'           // Simple: Auto-reload
 // import EnhancedVersionNotification from './components/EnhancedVersionNotification.vue'  // Enhanced: User choice
 
 export default {
   name: 'App',
-  components: { MainNav, BackToTop, VersionNotification, Notepad },
+  components: { MainNav, BackToTop, VersionNotification, Notepad, OffcanvasFileExplorer },
   // If switching to enhanced, change to: components: { MainNav, BackToTop, EnhancedVersionNotification },
   setup() {
     const router = useRouter()
@@ -96,12 +100,34 @@ export default {
       }
     })
 
+    // File Explorer state management
+    const isFileExplorerVisible = ref(false)
+
+    const toggleFileExplorer = () => {
+      isFileExplorerVisible.value = !isFileExplorerVisible.value
+    }
+
+    const closeFileExplorer = () => {
+      isFileExplorerVisible.value = false
+    }
+
+    const onFileSelected = (fileInfo) => {
+      // Navigate to the selected file
+      const encodedPath = encodeURIComponent(fileInfo.file.path)
+      const encodedDir = encodeURIComponent(fileInfo.directory)
+      router.push(`/editor/${fileInfo.owner}/${fileInfo.repo}/${fileInfo.branch}/${encodedPath}?dir=${encodedDir}`)
+    }
+
     return {
       isAuthenticated,
       user,
       handleLogin,
       handleLogout,
-      isSplitViewActive
+      isSplitViewActive,
+      isFileExplorerVisible,
+      toggleFileExplorer,
+      closeFileExplorer,
+      onFileSelected
     }
   }
 }
@@ -117,18 +143,18 @@ body {
 
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg,
-        #e3ecfa 0%,
-        #c7daf6 25%,
-        #cfdcf4 50%,
-        #c9d2ea 75%,
-        #c5d1ef 100%);
-    min-height: 100vh;
-  
-    /* Make the gradient fixed and cover the viewport */
-    background-attachment: fixed;
-    background-repeat: no-repeat;
-    background-size: cover;
+  background: linear-gradient(135deg,
+      #e3ecfa 0%,
+      #c7daf6 25%,
+      #cfdcf4 50%,
+      #c9d2ea 75%,
+      #c5d1ef 100%);
+  min-height: 100vh;
+
+  /* Make the gradient fixed and cover the viewport */
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
 #app {
