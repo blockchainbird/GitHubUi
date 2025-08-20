@@ -9,6 +9,13 @@
     <BackToTop />
     <VersionNotification />
     <Notepad />
+
+    <!-- Floating File Manager Button -->
+    <button v-if="showRepoRelatedButtons && !isFileExplorerVisible" @click="toggleFileExplorer"
+      class="floating-file-manager-btn btn btn-primary" title="Open File Explorer" aria-label="Open File Explorer">
+      <i class="bi bi-folder2-open"></i>
+    </button>
+
     <OffcanvasFileExplorer :visible="isFileExplorerVisible" @close="closeFileExplorer"
       @file-selected="onFileSelected" />
   </div>
@@ -16,8 +23,8 @@
 
 <script>
 
-import { ref, onMounted, provide } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, provide, computed, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import MainNav from './components/MainNav.vue'
 import BackToTop from './components/BackToTop.vue'
 import Notepad from './components/Notepad.vue'
@@ -32,6 +39,7 @@ export default {
   // If switching to enhanced, change to: components: { MainNav, BackToTop, EnhancedVersionNotification },
   setup() {
     const router = useRouter()
+    const route = useRoute()
     const isAuthenticated = ref(false)
     const user = ref({})
 
@@ -47,6 +55,59 @@ export default {
       isSplitViewActive,
       setSplitViewActive
     })
+
+    // Repository-related UI visibility
+    const showRepoRelatedButtons = computed(() => {
+      const { owner, repo, branch } = route.params
+      return isAuthenticated.value && owner && repo && branch
+    })
+
+    // Dynamic tab title management
+    const updatePageTitle = () => {
+      const { owner, repo, branch, path } = route.params
+      const routePath = route.path
+
+      let title = 'Spec-Up-T Editor'
+
+      if (routePath.includes('/editor/') && path) {
+        // Decode the file path and get just the filename
+        const pathArray = Array.isArray(path) ? path : [path]
+        const fullPath = pathArray.join('/')
+        const decodedPath = decodeURIComponent(fullPath)
+        const fileName = decodedPath.split('/').pop()
+        const fileNameWithoutExt = fileName.replace(/\.[^/.]+$/, '') // Remove extension
+        title = `${fileNameWithoutExt} - Spec-Up-T Editor`
+      } else if (routePath.includes('/terms-preview/') && owner && repo) {
+        title = `Terms Preview - ${repo} - Spec-Up-T Editor`
+      } else if (routePath.includes('/spec/') && owner && repo) {
+        title = `Spec View - ${repo} - Spec-Up-T Editor`
+      } else if (routePath.includes('/files/') && owner && repo) {
+        title = `Files - ${repo} - Spec-Up-T Editor`
+      } else if (routePath.includes('/health-check/') && owner && repo) {
+        title = `Health Check - ${repo} - Spec-Up-T Editor`
+      } else if (routePath.includes('/actions/') && owner && repo) {
+        title = `Actions - ${repo} - Spec-Up-T Editor`
+      } else if (routePath.includes('/settings/') && owner && repo) {
+        title = `Settings - ${repo} - Spec-Up-T Editor`
+      } else if (routePath.includes('/external-specs/') && owner && repo) {
+        title = `External Specs - ${repo} - Spec-Up-T Editor`
+      } else if (routePath.includes('/admin/') && owner && repo) {
+        title = `Admin - ${repo} - Spec-Up-T Editor`
+      } else if (routePath === '/home') {
+        title = `Home - Spec-Up-T Editor`
+      } else if (routePath === '/login') {
+        title = `Login - Spec-Up-T Editor`
+      } else if (routePath === '/create-project') {
+        title = `Create Project - Spec-Up-T Editor`
+      } else if (owner && repo) {
+        title = `${repo} - Spec-Up-T Editor`
+      }
+
+      document.title = title
+    }
+
+    // Watch route changes to update title
+    watch(route, updatePageTitle, { immediate: true })
 
     const handleLogin = (userData) => {
       console.log('App: handleLogin called with:', userData);
@@ -133,6 +194,7 @@ export default {
       handleLogin,
       handleLogout,
       isSplitViewActive,
+      showRepoRelatedButtons,
       isFileExplorerVisible,
       toggleFileExplorer,
       closeFileExplorer,
@@ -190,5 +252,42 @@ body {
   height: calc(100vh - 200px) !important;
   min-height: 400px !important;
   resize: vertical;
+}
+
+/* Floating File Manager Button */
+.floating-file-manager-btn {
+  position: fixed;
+  left: -20px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1040;
+  /* Below modal backdrop (1050) but above most content */
+  width: 48px;
+  height: 148px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: none;
+  transition: all 0.2s ease-in-out;
+  padding-right: 0 !important;
+}
+
+.floating-file-manager-btn:hover {
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.floating-file-manager-btn:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+/* Hide floating button on very small screens to avoid overlap */
+@media (max-width: 576px) {
+  .floating-file-manager-btn {
+    display: none;
+  }
 }
 </style>
