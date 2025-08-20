@@ -127,14 +127,15 @@
                       <span class="drop-text">Drop here</span>
                     </div>
 
-                    <button @click="item.type === 'folder' ? openFolder(item) : openFile(item)"
+                    <button @click="handleItemClick(item, $event)" @contextmenu="handleItemRightClick(item, $event)"
                       class="list-group-item list-group-item-action d-flex align-items-center" :class="{
                         'recently-created': item.type === 'file' && item.name === recentlyCreatedFile,
                         'recently-moved': recentlyMovedItem && recentlyMovedItem.path === item.path,
                         'drag-over': isRootDirectory && isDragging && dragOverIndex === index && dragPosition === 'on',
                         'being-dragged': isRootDirectory && isDragging && draggedIndex === index
                       }" @dragover="onDragOver($event, index, item.type)" @drop="onDrop($event, index, item.type)"
-                      @dragenter="onDragEnter($event, index)" @dragleave="onDragLeave($event)">
+                      @dragenter="onDragEnter($event, index)" @dragleave="onDragLeave($event)"
+                      :title="item.type === 'file' ? 'Click to open, Ctrl+Click or Right-click to open in new tab' : ''">
                       <i v-if="isRootDirectory" class="bi bi-grip-vertical me-2 drag-handle" draggable="true"
                         @dragstart="onDragStart($event, item, item.type, index)" @dragend="onDragEnd" @click.stop></i>
                       <i v-if="item.type === 'folder'" class="bi bi-folder-fill me-3" style="color: #ffc107;"></i>
@@ -825,6 +826,59 @@ export default {
       const encodedPath = encodeURIComponent(file.path)
       const encodedDir = encodeURIComponent(currentDirectory.value)
       router.push(`/editor/${props.owner}/${props.repo}/${props.branch}/${encodedPath}?dir=${encodedDir}`)
+    }
+
+    const openFileInNewTab = (file) => {
+      const encodedPath = encodeURIComponent(file.path)
+      const encodedDir = encodeURIComponent(currentDirectory.value)
+      const url = router.resolve(`/editor/${props.owner}/${props.repo}/${props.branch}/${encodedPath}?dir=${encodedDir}`)
+      window.open(url.href, '_blank')
+    }
+
+    const handleItemClick = (item, event) => {
+      // Check if it's a ctrl+click (or cmd+click on Mac)
+      const isNewTabClick = event.ctrlKey || event.metaKey
+
+      if (item.type === 'folder') {
+        openFolder(item)
+      } else {
+        if (isNewTabClick) {
+          if (props.isOffcanvasMode) {
+            // In offcanvas mode, emit an event for new tab opening
+            emit('file-selected', {
+              file: item,
+              owner: props.owner,
+              repo: props.repo,
+              branch: props.branch,
+              directory: currentDirectory.value,
+              newTab: true
+            })
+          } else {
+            openFileInNewTab(item)
+          }
+        } else {
+          openFile(item)
+        }
+      }
+    }
+
+    const handleItemRightClick = (item, event) => {
+      event.preventDefault()
+      if (item.type === 'file') {
+        if (props.isOffcanvasMode) {
+          // In offcanvas mode, emit an event for new tab opening
+          emit('file-selected', {
+            file: item,
+            owner: props.owner,
+            repo: props.repo,
+            branch: props.branch,
+            directory: currentDirectory.value,
+            newTab: true
+          })
+        } else {
+          openFileInNewTab(item)
+        }
+      }
     }
 
     const openFolder = (folder) => {
@@ -1730,6 +1784,9 @@ export default {
       recentlyCreatedFile,
       openFile,
       openFolder,
+      openFileInNewTab,
+      handleItemClick,
+      handleItemRightClick,
       currentDirectory,
       showCreateFileModal,
       newFileName,

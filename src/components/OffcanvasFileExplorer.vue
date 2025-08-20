@@ -25,7 +25,7 @@
 </template>
 
 <script>
-import { ref, computed, watch, inject } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import FileExplorer from './FileExplorer.vue'
 
@@ -54,25 +54,42 @@ export default {
             return null
         })
 
+        // ESC key handler
+        const handleEscKey = (event) => {
+            if (event.key === 'Escape' && isVisible.value) {
+                close()
+            }
+        }
+
         // Watch for prop changes
         watch(() => props.visible, (newVal) => {
             isVisible.value = newVal
             if (newVal) {
                 document.body.classList.add('offcanvas-open')
+                document.addEventListener('keydown', handleEscKey)
             } else {
                 document.body.classList.remove('offcanvas-open')
+                document.removeEventListener('keydown', handleEscKey)
             }
         }, { immediate: true })
+
+        onUnmounted(() => {
+            document.removeEventListener('keydown', handleEscKey)
+            document.body.classList.remove('offcanvas-open')
+        })
 
         const close = () => {
             isVisible.value = false
             document.body.classList.remove('offcanvas-open')
+            document.removeEventListener('keydown', handleEscKey)
             emit('close')
         }
 
         const onFileSelected = (fileInfo) => {
-            // Close the offcanvas when a file is selected
-            close()
+            // Close the offcanvas when a file is selected (unless opening in new tab)
+            if (!fileInfo.newTab) {
+                close()
+            }
             emit('file-selected', fileInfo)
         }
 

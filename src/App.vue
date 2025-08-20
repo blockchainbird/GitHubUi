@@ -112,10 +112,19 @@ export default {
     }
 
     const onFileSelected = (fileInfo) => {
-      // Navigate to the selected file
+      // Generate the URL for the selected file
       const encodedPath = encodeURIComponent(fileInfo.file.path)
       const encodedDir = encodeURIComponent(fileInfo.directory)
-      router.push(`/editor/${fileInfo.owner}/${fileInfo.repo}/${fileInfo.branch}/${encodedPath}?dir=${encodedDir}`)
+      const fileUrl = `/editor/${fileInfo.owner}/${fileInfo.repo}/${fileInfo.branch}/${encodedPath}?dir=${encodedDir}`
+
+      if (fileInfo.newTab) {
+        // Open in new tab
+        const url = router.resolve(fileUrl)
+        window.open(url.href, '_blank')
+      } else {
+        // Navigate in current tab
+        router.push(fileUrl)
+      }
     }
 
     return {
