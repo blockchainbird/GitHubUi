@@ -99,9 +99,14 @@
             <div class="card h-100 d-flex flex-column">
               <div class="card-header d-flex justify-content-between align-items-center flex-shrink-0">
                 <h5 class="mb-0">
-                  <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
-                </h5>
-                <div class="btn-group" role="group">
+                    <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
+                  </h5>
+                  <div class="d-flex align-items-center">
+                    <span v-if="showUnsavedToNotepadBadge" class="badge bg-warning text-dark me-2 unsaved-badge">
+                      <i class="bi bi-sticky me-1"></i>
+                      Will be saved to Notepad on close
+                    </span>
+                    <div class="btn-group" role="group">
                   <input type="radio" class="btn-check" id="simple-mode" v-model="editMode" value="simple"
                     autocomplete="off" v-if="isTermsFileComputed">
                   <label class="btn btn-outline-success btn-sm" for="simple-mode"
@@ -128,6 +133,7 @@
                     v-if="isTermsFileComputed && isAdvancedUser">
                     <i class="bi bi-layout-three-columns"></i> Split View
                   </label>
+                  </div>
                 </div>
               </div>
               <div class="card-body p-0 flex-grow-1 d-flex flex-column">
@@ -193,9 +199,10 @@
                       </div>
 
                       <!-- Editor with Line Numbers -->
-                      <div class="editor-container flex-grow-1 d-flex">
+                      <div class="editor-container flex-grow-1 d-flex" :class="{ modified: hasChanges }">
                         <!-- Line Numbers -->
                         <div ref="lineNumbers" class="line-numbers" :style="{ height: splitEditorHeight }"
+                          :class="{ modified: hasChanges }"
                           @scroll="handleLineNumbersScroll">
                           <div v-for="lineNum in lineCount" :key="lineNum"
                             :class="['line-number', { 'line-number-error': isErrorLine(lineNum) }]"
@@ -207,7 +214,7 @@
                         <!-- Editor Textarea -->
                         <textarea ref="editor" v-model="content" @input="handleContentChange"
                           @scroll="handleEditorScroll" wrap="soft" :style="{ height: splitEditorHeight }"
-                          :class="['technical-editor-with-lines flex-grow-1', validationWarnings.length > 0 ? 'error' : '']"></textarea>
+                          :class="['technical-editor-with-lines flex-grow-1', validationWarnings.length > 0 ? 'error' : '', hasChanges ? 'modified' : '']"></textarea>
 
                         <!-- Hidden mirror used to measure wrapped line heights -->
                         <div ref="mirror" class="editor-mirror" aria-hidden="true"></div>
@@ -288,9 +295,10 @@
                   </div>
 
                   <!-- Editor with Line Numbers -->
-                  <div class="editor-container flex-grow-1 d-flex">
+                  <div class="editor-container flex-grow-1 d-flex" :class="{ modified: hasChanges }">
                     <!-- Line Numbers -->
                     <div ref="lineNumbers" class="line-numbers" :style="{ height: editorHeight }"
+                      :class="{ modified: hasChanges }"
                       @scroll="handleLineNumbersScroll">
                       <div v-for="lineNum in lineCount" :key="lineNum"
                         :class="['line-number', { 'line-number-error': isErrorLine(lineNum) }]"
@@ -302,7 +310,7 @@
                     <!-- Editor Textarea -->
                     <textarea ref="editor" v-model="content" @input="handleContentChange" @scroll="handleEditorScroll"
                       wrap="soft" :style="{ height: editorHeight }"
-                      :class="['technical-editor-with-lines flex-grow-1', validationWarnings.length > 0 ? 'error' : '']"></textarea>
+                      :class="['technical-editor-with-lines flex-grow-1', validationWarnings.length > 0 ? 'error' : '', hasChanges ? 'modified' : '']"></textarea>
 
                     <!-- Hidden mirror used to measure wrapped line heights -->
                     <div ref="mirror" class="editor-mirror" aria-hidden="true"></div>
@@ -691,6 +699,12 @@ export default {
     const renderedContent = computed(() => {
       if (!isMarkdown.value) return content.value
       return processTermReferences(content.value, terms.value)
+    })
+
+    // Visual cue: show badge when file has unsaved changes that will be saved to notepad
+    const showUnsavedToNotepadBadge = computed(() => {
+      // Re-use existing hasChanges detection. Only show when there are changes and content is non-empty
+      return !!(hasChanges.value && content.value && content.value.trim())
     })
 
     // Help content
@@ -1263,6 +1277,9 @@ export default {
       validationWarnings,
       showValidationWarnings,
 
+  // Visual badge
+  showUnsavedToNotepadBadge,
+
       // Remote monitoring
       remoteChangeDetected,
       remoteChangeMessage,
@@ -1691,5 +1708,25 @@ textarea.error {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Visual indicator when content changed and will be saved to notepad */
+.unsaved-badge {
+  font-size: 0.75rem;
+  padding: 0.35rem 0.5rem;
+}
+
+/* Slightly different background for modified editor to cue user */
+.editor-container.modified {
+  background: #fff7e6; /* pale yellow */
+  border-color: #ffe6a7;
+}
+
+.line-numbers.modified {
+  background: #fff4d9;
+}
+
+.technical-editor-with-lines.modified {
+  background: #fffef8;
 }
 </style>
