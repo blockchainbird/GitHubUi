@@ -302,6 +302,7 @@ import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import { addToVisitedRepos } from '../utils/visitedRepos.js'
 import { getGitHubHeaders, addCacheBusting } from '../utils/apiUtils.js'
+import { decodeBranchName, buildRoutePath } from '../utils/branchUtils.js'
 import TermsPreview from './TermsPreview.vue'
 import RepoInfo from './RepoInfo.vue'
 
@@ -330,6 +331,11 @@ export default {
     const currentDirectory = ref('')
     const specsConfig = ref(null)
     const specTermsDirectory = ref('')
+
+    // Decode branch name to handle URL-encoded characters like slashes
+    const decodedBranch = computed(() => {
+      return decodeBranchName(props.branch)
+    })
 
     // Fragment handling cleanup
     const fragmentCleanup = ref(null)
@@ -515,7 +521,7 @@ export default {
         loadingMessage.value = 'Loading repository configuration...'
         const token = localStorage.getItem('github_token')
         console.log('GitHub token exists:', !!token)
-        console.log('Props:', { owner: props.owner, repo: props.repo, branch: props.branch })
+        console.log('Props:', { owner: props.owner, repo: props.repo, branch: decodedBranch.value })
 
         const config = {
           headers: getGitHubHeaders(token)
@@ -523,7 +529,7 @@ export default {
 
         // Try to get specs.json from repository root, with branch and cache-busting
         const specsUrl = addCacheBusting(
-          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/specs.json?ref=${props.branch}`
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/specs.json?ref=${decodedBranch.value}`
         )
         console.log('Loading specs config from:', specsUrl)
 
@@ -642,7 +648,7 @@ export default {
 
         // Always add cache-busting to ensure fresh data
         const url = addCacheBusting(
-          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${directory}?ref=${props.branch}`
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${directory}?ref=${decodedBranch.value}`
         )
 
         console.log('Making API request to:', url)
@@ -817,7 +823,7 @@ export default {
           file,
           owner: props.owner,
           repo: props.repo,
-          branch: props.branch,
+          branch: decodedBranch.value,
           directory: currentDirectory.value
         })
         return
@@ -825,13 +831,13 @@ export default {
 
       const encodedPath = encodeURIComponent(file.path)
       const encodedDir = encodeURIComponent(currentDirectory.value)
-      router.push(`/editor/${props.owner}/${props.repo}/${props.branch}/${encodedPath}?dir=${encodedDir}`)
+      router.push(buildRoutePath('/editor', props.owner, props.repo, decodedBranch.value, `${encodedPath}?dir=${encodedDir}`))
     }
 
     const openFileInNewTab = (file) => {
       const encodedPath = encodeURIComponent(file.path)
       const encodedDir = encodeURIComponent(currentDirectory.value)
-      const url = router.resolve(`/editor/${props.owner}/${props.repo}/${props.branch}/${encodedPath}?dir=${encodedDir}`)
+      const url = router.resolve(buildRoutePath('/editor', props.owner, props.repo, decodedBranch.value, `${encodedPath}?dir=${encodedDir}`))
       window.open(url.href, '_blank')
     }
 
@@ -849,7 +855,7 @@ export default {
               file: item,
               owner: props.owner,
               repo: props.repo,
-              branch: props.branch,
+              branch: decodedBranch.value,
               directory: currentDirectory.value,
               newTab: true
             })
@@ -871,7 +877,7 @@ export default {
             file: item,
             owner: props.owner,
             repo: props.repo,
-            branch: props.branch,
+            branch: decodedBranch.value,
             directory: currentDirectory.value,
             newTab: true
           })
@@ -896,7 +902,7 @@ export default {
 
       // Update URL with new directory
       const encodedDir = encodeURIComponent(folder.path)
-      router.push(`/files/${props.owner}/${props.repo}/${props.branch}?dir=${encodedDir}`)
+      router.push(buildRoutePath('/files', props.owner, props.repo, decodedBranch.value) + `?dir=${encodedDir}`)
     }
 
     const showCreateModal = async () => {
@@ -963,7 +969,7 @@ export default {
         const encodedContent = encodeURIComponent(contentToPass)
         const encodedCommitMessage = encodeURIComponent(commitMessageToPass)
 
-        const finalUrl = `/editor/${props.owner}/${props.repo}/${props.branch}/${encodedPath}?dir=${encodedDir}&new=true&content=${encodedContent}&commitMessage=${encodedCommitMessage}`
+        const finalUrl = buildRoutePath('/editor', props.owner, props.repo, decodedBranch.value, `${encodedPath}?dir=${encodedDir}&new=true&content=${encodedContent}&commitMessage=${encodedCommitMessage}`)
 
         // Close modal AFTER capturing the values
         closeCreateFileModal()
@@ -1012,14 +1018,14 @@ export default {
 
         // Get the current file to get its SHA with cache-busting
         const fileUrl = addCacheBusting(
-          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${fileInfo.path}?ref=${props.branch}`
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${fileInfo.path}?ref=${decodedBranch.value}`
         )
         const fileResponse = await axios.get(fileUrl, config)
 
         // Delete the file
         const deleteData = {
           message: deleteFileCommitMessage.value || `Delete ${fileInfo.name}`,
-          branch: props.branch,
+          branch: decodedBranch.value,
           sha: fileResponse.data.sha
         }
 
@@ -1164,7 +1170,7 @@ export default {
 
     onMounted(() => {
       // Add this repository to visited history
-      addToVisitedRepos(props.owner, props.repo, props.branch)
+      addToVisitedRepos(props.owner, props.repo, decodedBranch.value)
 
       loadSpecsConfig()
       document.addEventListener('click', handleClickOutside)
@@ -1303,14 +1309,14 @@ export default {
 
           // Update URL with new directory
           const encodedDir = encodeURIComponent(parent)
-          router.push(`/files/${props.owner}/${props.repo}/${props.branch}?dir=${encodedDir}`)
+          router.push(buildRoutePath('/files', props.owner, props.repo, decodedBranch.value) + `?dir=${encodedDir}`)
         } else {
           hasUnsavedChanges.value = false; // Reset unsaved changes when navigating
           draggedItems.value = []; // Reset drag items when navigating
 
           // Update URL with root directory
           const encodedDir = encodeURIComponent(root)
-          router.push(`/files/${props.owner}/${props.repo}/${props.branch}?dir=${encodedDir}`)
+          router.push(buildRoutePath('/files', props.owner, props.repo, decodedBranch.value) + `?dir=${encodedDir}`)
         }
       } else {
         hasUnsavedChanges.value = false; // Reset unsaved changes when navigating
@@ -1318,7 +1324,7 @@ export default {
 
         // Update URL with root directory
         const encodedDir = encodeURIComponent(root)
-        router.push(`/files/${props.owner}/${props.repo}/${props.branch}?dir=${encodedDir}`)
+        router.push(buildRoutePath('/files', props.owner, props.repo, decodedBranch.value) + `?dir=${encodedDir}`)
       }
     };
 
@@ -1643,7 +1649,7 @@ export default {
 
         // Get current specs.json with cache-busting
         const specsUrl = addCacheBusting(
-          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/specs.json?ref=${props.branch}`
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/specs.json?ref=${decodedBranch.value}`
         )
         const response = await axios.get(specsUrl, config)
 
@@ -1681,7 +1687,7 @@ export default {
         const updateData = {
           message: `Update file order in markdown_paths`,
           content: btoa(JSON.stringify(currentContent, null, 2)),
-          branch: props.branch,
+          branch: decodedBranch.value,
           sha: response.data.sha
         };
 

@@ -99,40 +99,40 @@
             <div class="card h-100 d-flex flex-column">
               <div class="card-header d-flex justify-content-between align-items-center flex-shrink-0">
                 <h5 class="mb-0">
-                    <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
-                  </h5>
-                  <div class="d-flex align-items-center">
-                    <span v-if="showUnsavedToNotepadBadge" class="badge bg-warning text-dark me-2 unsaved-badge">
-                      <i class="bi bi-sticky me-1"></i>
-                      Will be saved to Notepad on close
-                    </span>
-                    <div class="btn-group" role="group">
-                  <input type="radio" class="btn-check" id="simple-mode" v-model="editMode" value="simple"
-                    autocomplete="off" v-if="isTermsFileComputed">
-                  <label class="btn btn-outline-success btn-sm" for="simple-mode"
-                    v-if="isTermsFileComputed && isAdvancedUser">
-                    <i class="bi bi-ui-checks"></i> Simple
-                  </label>
+                  <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
+                </h5>
+                <div class="d-flex align-items-center">
+                  <span v-if="showUnsavedToNotepadBadge" class="badge bg-warning text-dark me-2 unsaved-badge">
+                    <i class="bi bi-sticky me-1"></i>
+                    Will be saved to Notepad on close
+                  </span>
+                  <div class="btn-group" role="group">
+                    <input type="radio" class="btn-check" id="simple-mode" v-model="editMode" value="simple"
+                      autocomplete="off" v-if="isTermsFileComputed">
+                    <label class="btn btn-outline-success btn-sm" for="simple-mode"
+                      v-if="isTermsFileComputed && isAdvancedUser">
+                      <i class="bi bi-ui-checks"></i> Simple
+                    </label>
 
-                  <input type="radio" class="btn-check" id="edit-mode" v-model="editMode" value="edit"
-                    autocomplete="off">
-                  <label class="btn btn-outline-primary btn-sm" :class="{ 'rounded-start': !isAdvancedUser }"
-                    for="edit-mode">
-                    <i class="bi bi-pencil"></i> {{ isTermsFileComputed ? 'Technical' : 'Edit' }}
-                  </label>
+                    <input type="radio" class="btn-check" id="edit-mode" v-model="editMode" value="edit"
+                      autocomplete="off">
+                    <label class="btn btn-outline-primary btn-sm" :class="{ 'rounded-start': !isAdvancedUser }"
+                      for="edit-mode">
+                      <i class="bi bi-pencil"></i> {{ isTermsFileComputed ? 'Technical' : 'Edit' }}
+                    </label>
 
-                  <input type="radio" class="btn-check" id="preview-mode" v-model="editMode" value="preview"
-                    autocomplete="off">
-                  <label class="btn btn-outline-primary btn-sm" for="preview-mode">
-                    <i class="bi bi-eye"></i> Preview
-                  </label>
+                    <input type="radio" class="btn-check" id="preview-mode" v-model="editMode" value="preview"
+                      autocomplete="off">
+                    <label class="btn btn-outline-primary btn-sm" for="preview-mode">
+                      <i class="bi bi-eye"></i> Preview
+                    </label>
 
-                  <input type="radio" class="btn-check" id="split-mode" v-model="editMode" value="split"
-                    autocomplete="off" v-if="isTermsFileComputed && isAdvancedUser">
-                  <label class="btn btn-outline-info btn-sm" for="split-mode"
-                    v-if="isTermsFileComputed && isAdvancedUser">
-                    <i class="bi bi-layout-three-columns"></i> Split View
-                  </label>
+                    <input type="radio" class="btn-check" id="split-mode" v-model="editMode" value="split"
+                      autocomplete="off" v-if="isTermsFileComputed && isAdvancedUser">
+                    <label class="btn btn-outline-info btn-sm" for="split-mode"
+                      v-if="isTermsFileComputed && isAdvancedUser">
+                      <i class="bi bi-layout-three-columns"></i> Split View
+                    </label>
                   </div>
                 </div>
               </div>
@@ -202,8 +202,7 @@
                       <div class="editor-container flex-grow-1 d-flex" :class="{ modified: hasChanges }">
                         <!-- Line Numbers -->
                         <div ref="lineNumbers" class="line-numbers" :style="{ height: splitEditorHeight }"
-                          :class="{ modified: hasChanges }"
-                          @scroll="handleLineNumbersScroll">
+                          :class="{ modified: hasChanges }" @scroll="handleLineNumbersScroll">
                           <div v-for="lineNum in lineCount" :key="lineNum"
                             :class="['line-number', { 'line-number-error': isErrorLine(lineNum) }]"
                             :style="{ height: getLineNumberHeight(lineNum) }">
@@ -223,13 +222,12 @@
                   </div>
 
                   <div class="split-pane split-pane-preview d-flex flex-column">
-                    <div class="split-pane-header bg-light border-bottom p-3 flex-shrink-0 d-flex justify-content-between align-items-center">
+                    <div
+                      class="split-pane-header bg-light border-bottom p-3 flex-shrink-0 d-flex justify-content-between align-items-center">
                       <h6 class="mb-0"><i class="bi bi-eye"></i> Preview</h6>
-                      <button v-if="isTermsFileComputed" 
-                              class="btn btn-outline-primary btn-sm" 
-                              @click="refreshTerms"
-                              :disabled="isRefreshing"
-                              title="Refresh terms to resolve 'Definition not found' errors. This can take a moment and use a lot of API tokens">
+                      <button v-if="isTermsFileComputed" class="btn btn-outline-primary btn-sm" @click="refreshTerms"
+                        :disabled="isRefreshing"
+                        title="Refresh terms to resolve 'Definition not found' errors. This can take a moment and use a lot of API tokens">
                         <i class="bi" :class="isRefreshing ? 'bi-arrow-clockwise spin' : 'bi-arrow-clockwise'"></i>
                         <span class="d-none d-md-inline ms-1">
                           {{ refreshFeedback || (isRefreshing ? 'Refreshing...' : 'Refresh Terms') }}
@@ -298,8 +296,7 @@
                   <div class="editor-container flex-grow-1 d-flex" :class="{ modified: hasChanges }">
                     <!-- Line Numbers -->
                     <div ref="lineNumbers" class="line-numbers" :style="{ height: editorHeight }"
-                      :class="{ modified: hasChanges }"
-                      @scroll="handleLineNumbersScroll">
+                      :class="{ modified: hasChanges }" @scroll="handleLineNumbersScroll">
                       <div v-for="lineNum in lineCount" :key="lineNum"
                         :class="['line-number', { 'line-number-error': isErrorLine(lineNum) }]"
                         :style="{ height: getLineNumberHeight(lineNum) }">
@@ -319,12 +316,11 @@
 
                 <!-- Preview Mode -->
                 <div v-else-if="editMode === 'preview'" class="d-flex flex-column h-100">
-                  <div v-if="isTermsFileComputed" class="bg-light border-bottom p-3 flex-shrink-0 d-flex justify-content-between align-items-center">
+                  <div v-if="isTermsFileComputed"
+                    class="bg-light border-bottom p-3 flex-shrink-0 d-flex justify-content-between align-items-center">
                     <h6 class="mb-0"><i class="bi bi-eye"></i> Preview</h6>
-                    <button class="btn btn-outline-primary btn-sm" 
-                            @click="refreshTerms"
-                            :disabled="isRefreshing"
-                            title="Refresh terms to resolve 'Definition not found' errors">
+                    <button class="btn btn-outline-primary btn-sm" @click="refreshTerms" :disabled="isRefreshing"
+                      title="Refresh terms to resolve 'Definition not found' errors">
                       <i class="bi" :class="isRefreshing ? 'bi-arrow-clockwise spin' : 'bi-arrow-clockwise'"></i>
                       <span class="d-none d-md-inline ms-1">
                         {{ refreshFeedback || (isRefreshing ? 'Refreshing...' : 'Refresh Terms') }}
@@ -345,9 +341,9 @@
           v-model:searchFilter="termFilter" v-model:referenceType="referenceType"
           :definitions-collapsed="definitionsCollapsed" :is-definition-visible="isTermDefinitionVisible"
           :is-from-simple-editor="isTermsModalFromSimpleEditor" :refresh-feedback="refreshFeedback"
-          :is-refreshing="isRefreshing" @filter-terms="filterTerms"
-          @toggle-definitions="toggleDefinitionsCollapse" @toggle-individual-term="toggleIndividualTerm"
-          @refresh-terms="refreshTerms" @insert-term="handleInsertTerm" />
+          :is-refreshing="isRefreshing" @filter-terms="filterTerms" @toggle-definitions="toggleDefinitionsCollapse"
+          @toggle-individual-term="toggleIndividualTerm" @refresh-terms="refreshTerms"
+          @insert-term="handleInsertTerm" />
 
         <!-- Commit Modal -->
         <div class="modal fade" id="commitModal" tabindex="-1">
@@ -431,6 +427,7 @@ import {
 } from '../utils/editorUtils.js'
 import { isInTermsDirectory } from '../utils/termsFileDetection.js'
 import { useAdvancedUser } from '../composables/useAdvancedUser.js'
+import { decodeBranchName, buildRoutePath } from '../utils/branchUtils.js'
 
 // Components
 import SimpleTermsEditor from './SimpleTermsEditor.vue'
@@ -451,6 +448,11 @@ export default {
     // Advanced user reactive state
     const { isAdvancedUser } = useAdvancedUser()
 
+    // Decode branch name to handle URL-encoded characters like slashes
+    const decodedBranch = computed(() => {
+      return decodeBranchName(props.branch)
+    })
+
     // Inject split view state management from App
     const splitViewState = inject('splitViewState', {
       isSplitViewActive: ref(false),
@@ -462,7 +464,7 @@ export default {
     const { trackFileOperation } = useGoogleAnalytics()
 
     // File content management
-    const fileContent = useFileContent(props)
+    const fileContent = useFileContent(props, decodedBranch)
     const {
       loading,
       saving,
@@ -556,7 +558,7 @@ export default {
     // Editor state
     const editMode = ref('edit')
     // Local storage key to persist selected editor view. Scoped to owner/repo/branch so different repos can have different prefs.
-    const storageKey = `fileEditor.editMode.${props.owner || 'global'}.${props.repo || 'global'}.${props.branch || 'global'}`
+    const storageKey = `fileEditor.editMode.${props.owner || 'global'}.${props.repo || 'global'}.${decodedBranch.value || 'global'}`
     const editor = ref(null)
     const mirror = ref(null)
     const lineNumbers = ref(null)
@@ -1036,15 +1038,15 @@ export default {
       const sourceDir = route.query.dir;
       if (sourceDir) {
         const encodedDir = encodeURIComponent(sourceDir);
-        router.push(`/files/${props.owner}/${props.repo}/${props.branch}?dir=${encodedDir}`);
+        router.push(buildRoutePath('/files', props.owner, props.repo, decodedBranch.value) + `?dir=${encodedDir}`);
       } else {
-        router.push(`/files/${props.owner}/${props.repo}/${props.branch}`);
+        router.push(buildRoutePath('/files', props.owner, props.repo, decodedBranch.value));
       }
     };
 
     // Lifecycle
     onMounted(async () => {
-      addToVisitedRepos(props.owner, props.repo, props.branch)
+      addToVisitedRepos(props.owner, props.repo, decodedBranch.value)
 
 
 
@@ -1277,8 +1279,8 @@ export default {
       validationWarnings,
       showValidationWarnings,
 
-  // Visual badge
-  showUnsavedToNotepadBadge,
+      // Visual badge
+      showUnsavedToNotepadBadge,
 
       // Remote monitoring
       remoteChangeDetected,
@@ -1338,12 +1340,29 @@ export default {
   font-weight: 600;
 }
 
-.markdown-preview h1 { font-size: 2rem; }
-.markdown-preview h2 { font-size: 1.75rem; }
-.markdown-preview h3 { font-size: 1.5rem; }
-.markdown-preview h4 { font-size: 1.25rem; }
-.markdown-preview h5 { font-size: 1.125rem; }
-.markdown-preview h6 { font-size: 1rem; }
+.markdown-preview h1 {
+  font-size: 2rem;
+}
+
+.markdown-preview h2 {
+  font-size: 1.75rem;
+}
+
+.markdown-preview h3 {
+  font-size: 1.5rem;
+}
+
+.markdown-preview h4 {
+  font-size: 1.25rem;
+}
+
+.markdown-preview h5 {
+  font-size: 1.125rem;
+}
+
+.markdown-preview h6 {
+  font-size: 1rem;
+}
 
 .markdown-preview p {
   margin-bottom: 1rem;
@@ -1705,6 +1724,7 @@ textarea.error {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -1718,7 +1738,8 @@ textarea.error {
 
 /* Slightly different background for modified editor to cue user */
 .editor-container.modified {
-  background: #fff7e6; /* pale yellow */
+  background: #fff7e6;
+  /* pale yellow */
   border-color: #ffe6a7;
 }
 

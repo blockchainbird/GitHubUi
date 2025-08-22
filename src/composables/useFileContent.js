@@ -7,8 +7,9 @@ import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import { getGitHubHeaders, addCacheBusting, cacheBustedRequest } from '../utils/apiUtils.js'
+import { buildRoutePath } from '../utils/branchUtils.js'
 
-export function useFileContent(props) {
+export function useFileContent(props, decodedBranch) {
   const router = useRouter()
   const route = useRoute()
 
@@ -112,7 +113,7 @@ export function useFileContent(props) {
       }
 
       const url = addCacheBusting(
-        `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${decodedPath.value}?ref=${props.branch}`
+        `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${decodedPath.value}?ref=${decodedBranch.value}`
       )
 
       // Always use cache-busting to ensure fresh content from remote
@@ -157,7 +158,7 @@ export function useFileContent(props) {
       // For existing files, get latest SHA with cache-busting to ensure we have the most recent version
       if (!isNewFile.value) {
         const shaUrl = addCacheBusting(
-          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${decodedPath.value}?ref=${props.branch}`
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/${decodedPath.value}?ref=${decodedBranch.value}`
         )
         const shaResponse = await axios.get(shaUrl, config)
         fileSha.value = shaResponse.data.sha
@@ -166,7 +167,7 @@ export function useFileContent(props) {
       const data = {
         message: commitMessage.value,
         content: btoa(new TextEncoder().encode(content.value).reduce((data, byte) => data + String.fromCharCode(byte), '')),
-        branch: props.branch
+        branch: decodedBranch.value
       }
 
       if (!isNewFile.value && fileSha.value) {
@@ -192,7 +193,7 @@ export function useFileContent(props) {
         console.log('Set recentlyCreatedFile in localStorage:', fileName)
 
         // Update the URL to remove new file query parameters
-        const newRoute = `/editor/${props.owner}/${props.repo}/${props.branch}/${encodeURIComponent(decodedPath.value)}`
+        const newRoute = buildRoutePath('/editor', props.owner, props.repo, decodedBranch.value, encodeURIComponent(decodedPath.value))
         const queryParams = new URLSearchParams()
         if (route.query.dir) {
           queryParams.set('dir', route.query.dir)

@@ -75,13 +75,13 @@
               aria-labelledby="viewMenuButton" ref="viewMenuEl" @keydown="handleMenuListKeydown('view', $event)">
               <li>
                 <button class="dropdown-item"
-                  @click="navigateAndClose(`/terms-preview/${route.params.owner}/${route.params.repo}/${route.params.branch}`)">
+                  @click="navigateAndClose(buildRoutePath('/terms-preview', currentOwner, currentRepo, currentBranch))">
                   <i class="bi bi-book-half"></i> Preview
                 </button>
               </li>
               <li>
                 <button class="dropdown-item"
-                  @click="navigateAndClose(`/spec/${route.params.owner}/${route.params.repo}/${route.params.branch}`)">
+                  @click="navigateAndClose(buildRoutePath('/spec', currentOwner, currentRepo, currentBranch))">
                   <i class="bi bi-journal-text"></i> Final view
                 </button>
               </li>
@@ -117,13 +117,13 @@
               </li>
               <li v-if="isAdvancedUser">
                 <button class="dropdown-item"
-                  @click="navigateAndClose(`/external-specs/${route.params.owner}/${route.params.repo}/${route.params.branch}`)">
+                  @click="navigateAndClose(buildRoutePath('/external-specs', currentOwner, currentRepo, currentBranch))">
                   <i class="bi bi-link-45deg"></i> External config
                 </button>
               </li>
               <li>
                 <button class="dropdown-item"
-                  @click="navigateAndClose(`/settings/${route.params.owner}/${route.params.repo}/${route.params.branch}`)"
+                  @click="navigateAndClose(buildRoutePath('/settings', currentOwner, currentRepo, currentBranch))"
                   title="Application Settings">
                   <i class="bi bi-gear"></i> Settings
                 </button>
@@ -234,6 +234,7 @@ import Modal from './Modal.vue';
 import RateLimitIndicator from './RateLimitIndicator.vue';
 import { useSoundSystem } from '../composables/useSoundSystem.js';
 import { useAdvancedUser } from '../composables/useAdvancedUser.js';
+import { buildRoutePath, decodeBranchName } from '../utils/branchUtils.js';
 
 export default {
   name: 'MainNav',
@@ -269,6 +270,13 @@ export default {
 
     // Sound system
     const { isSoundEnabled, toggleSound } = useSoundSystem();
+
+    // Helper computed properties for route-based navigation with URL encoding support
+    const currentOwner = computed(() => route.params.owner)
+    const currentRepo = computed(() => route.params.repo)
+    const currentBranch = computed(() => {
+      return route.params.branch ? decodeBranchName(route.params.branch) : null
+    })
 
     const showRepoRelatedButtons = computed(() => {
       // Show repository-specific buttons only when we have repository context
@@ -308,8 +316,8 @@ export default {
     };
 
     const navigateToHealthCheck = () => {
-      if (route.params.owner && route.params.repo && route.params.branch) {
-        router.push(`/health-check/${route.params.owner}/${route.params.repo}/${route.params.branch}`);
+      if (currentOwner.value && currentRepo.value && currentBranch.value) {
+        router.push(buildRoutePath('/health-check', currentOwner.value, currentRepo.value, currentBranch.value));
       }
     };
 
@@ -617,6 +625,10 @@ export default {
       toggleFileExplorerAndClose,
       handleLogout,
       buildInfo,
+      buildRoutePath,
+      currentOwner,
+      currentRepo,
+      currentBranch,
       isAuthenticated,
       user,
       isActiveRoute,

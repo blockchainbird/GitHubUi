@@ -148,9 +148,10 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import RepoInfo from './RepoInfo.vue'
 import axios from 'axios'
+import { decodeBranchName } from '../utils/branchUtils.js'
 
 export default {
   name: 'AdminScreen',
@@ -170,6 +171,11 @@ export default {
     }
   },
   setup(props) {
+    // Decode branch name to handle URL-encoded characters like slashes
+    const decodedBranch = computed(() => {
+      return decodeBranchName(props.branch)
+    })
+
     const specs = ref([])
     const saving = ref(false)
     const loading = ref(false)
@@ -219,7 +225,7 @@ export default {
 
         // Load specs.json from the repository
         const response = await axios.get(
-          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/specs.json?ref=${props.branch}`,
+          `https://api.github.com/repos/${props.owner}/${props.repo}/contents/specs.json?ref=${decodedBranch.value}`,
           config
         )
 
@@ -266,7 +272,7 @@ export default {
         const updateData = {
           message: `Update specs.json configuration`,
           content: btoa(JSON.stringify(configData, null, 2)),
-          branch: props.branch
+          branch: decodedBranch.value
         }
 
         // Include SHA if we have it (for updates)
@@ -319,7 +325,7 @@ export default {
       removeSpec,
       owner: props.owner,
       repo: props.repo,
-      branch: props.branch
+      branch: decodedBranch.value
     }
   }
 }

@@ -51,10 +51,11 @@
               <template #body>
                 <div style="max-height: 60vh; overflow-y: auto; min-width: 300px;">
                   <div class="mb-3 d-flex align-items-center justify-content-between">
-                    <input type="text" v-model="repoFilter" class="form-control me-2" placeholder="Filter repositories..."
-                      @input="filterRepos" style="flex:1;">
+                    <input type="text" v-model="repoFilter" class="form-control me-2"
+                      placeholder="Filter repositories..." @input="filterRepos" style="flex:1;">
                     <div class="form-check form-switch ms-2">
-                      <input class="form-check-input" type="checkbox" id="showAllReposSwitch" v-model="showAllRepos" @change="fetchRepos">
+                      <input class="form-check-input" type="checkbox" id="showAllReposSwitch" v-model="showAllRepos"
+                        @change="fetchRepos">
                       <label class="form-check-label small" for="showAllReposSwitch">
                         Show all repos
                       </label>
@@ -200,6 +201,7 @@ import {
   clearAllVisitedRepos,
   formatVisitedDate
 } from '../utils/visitedRepos.js'
+import { buildRoutePath } from '../utils/branchUtils.js'
 
 export default {
   name: 'HomePage',
@@ -211,13 +213,13 @@ export default {
     const branch = ref('main')
     const loading = ref(false)
     const error = ref('')
-  // Modal and repo/branch list state
-  const showRepoModal = ref(false)
-  const repoList = ref([])
-  const repoLoading = ref(false)
-  const repoFilter = ref('')
-  const filteredRepoList = ref([])
-  const showAllRepos = ref(false) // Toggle for showing all repos
+    // Modal and repo/branch list state
+    const showRepoModal = ref(false)
+    const repoList = ref([])
+    const repoLoading = ref(false)
+    const repoFilter = ref('')
+    const filteredRepoList = ref([])
+    const showAllRepos = ref(false) // Toggle for showing all repos
     const showBranchModal = ref(false)
     const branchList = ref([])
     const branchLoading = ref(false)
@@ -294,8 +296,8 @@ export default {
       // Update the visited timestamp
       visitedRepos.value = addToVisitedRepos(repo.owner, repo.name, repo.branch)
 
-      // Navigate to the repository files
-      router.push(`/files/${repo.owner}/${repo.name}/${repo.branch}`)
+      // Navigate to the repository files - encode branch name to handle slashes and special characters
+      router.push(buildRoutePath('/files', repo.owner, repo.name, repo.branch))
     }
 
     // Format date for display
@@ -417,8 +419,8 @@ export default {
         // Add to visited repositories
         addToVisitedRepos(owner.value, repo.value, branch.value)
 
-        // Navigate to file explorer with branch
-        router.push(`/files/${owner.value}/${repo.value}/${branch.value}`)
+        // Navigate to file explorer with branch - encode branch name to handle slashes and special characters
+        router.push(buildRoutePath('/files', owner.value, repo.value, branch.value))
 
       } catch (err) {
         console.error('Repository access error:', err)

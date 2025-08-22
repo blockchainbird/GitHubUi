@@ -21,8 +21,10 @@
               <div class="card-header d-flex justify-content-between align-items-center">
                 <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
                 <button type="button" class="btn btn-primary d-flex align-items-center gap-1" @click="refreshPreview"
-                  :disabled="loading || isRefreshing" :title="isRefreshing ? 'Refreshing terms...' : 'Clear cache and reload all terms'">
-                  <i class="bi" :class="(loading || isRefreshing) ? 'bi-arrow-clockwise spin' : 'bi-arrow-clockwise'"></i>
+                  :disabled="loading || isRefreshing"
+                  :title="isRefreshing ? 'Refreshing terms...' : 'Clear cache and reload all terms'">
+                  <i class="bi"
+                    :class="(loading || isRefreshing) ? 'bi-arrow-clockwise spin' : 'bi-arrow-clockwise'"></i>
                   <span class="d-none d-sm-inline">
                     {{ refreshFeedback || (isRefreshing ? 'Refreshing...' : 'Refresh') }}
                   </span>
@@ -341,6 +343,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useTermsManagement } from '../composables/useTermsManagement.js'
 import { getLoadingMessage } from '../utils/loadingMessages.js'
+import { decodeBranchName, buildRoutePath } from '../utils/branchUtils.js'
 import RepoInfo from './RepoInfo.vue'
 
 export default {
@@ -361,13 +364,18 @@ export default {
     }
   },
   setup(props) {
+    // Decode branch name to handle URL-encoded characters like slashes
+    const decodedBranch = computed(() => {
+      return decodeBranchName(props.branch)
+    })
+
     const router = useRouter()
     const route = useRoute()
 
     // Navigation function for standalone view
     const navigateBack = () => {
       // Navigate back to the file explorer for this repository
-      router.push(`/files/${props.owner}/${props.repo}/${props.branch}`)
+      router.push(buildRoutePath('/files', props.owner, props.repo, decodedBranch.value))
     }
 
     // Mock auth function for terms management
