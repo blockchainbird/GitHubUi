@@ -277,6 +277,25 @@ export default {
     }
 
     const createRepository = async (token, username) => {
+      // Check if repository already exists
+      try {
+        const checkResponse = await fetch(`https://api.github.com/repos/${username}/${projectForm.value.name}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        })
+        if (checkResponse.ok) {
+          throw new Error(`Repository '${projectForm.value.name}' already exists in your account. Please choose a different name.`)
+        }
+      } catch (checkError) {
+        // If it's not a "repository exists" error, continue with creation
+        if (checkError.message.includes('already exists')) {
+          throw checkError
+        }
+        // 404 is expected if repository doesn't exist, so continue
+      }
+      
       const response = await fetch('https://api.github.com/user/repos', {
         method: 'POST',
         headers: {
@@ -297,7 +316,20 @@ export default {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.message || `Failed to create repository: ${response.statusText}`)
+        
+        // Extract specific error messages
+        let errorMessage = errorData.message || `Failed to create repository: ${response.statusText}`
+        if (errorData.errors && errorData.errors.length > 0) {
+          const specificErrors = errorData.errors.map(err => {
+            if (err.field && err.code) {
+              return `${err.field}: ${err.code} - ${err.message || ''}`
+            }
+            return err.message || err.code || JSON.stringify(err)
+          }).join('; ')
+          errorMessage += ` (Details: ${specificErrors})`
+        }
+        
+        throw new Error(errorMessage)
       }
 
       const repo = await response.json()
@@ -449,68 +481,57 @@ jobs:
           git push origin main || echo "Nothing to push"
 `
 
+      // Use the login token (which can be either PAT or OAuth)
+      const effectiveToken = token
+      
+      // Detect if we're using a PAT (login token that starts with ghp_)
+      const isUsingPAT = token && token.startsWith('ghp_')
+
       // Upload the workflow file
-      await uploadFile(
-        token,
-        username,
-        repoName,
-        '.github/workflows/initialize-spec-up-t.yml',
-        workflowContent,
-        'Add project initialization workflow'
-      )
+      try {
+        await uploadFile(
+          effectiveToken,
+          username,
+          repoName,
+          '.github/workflows/initialize-spec-up-t.yml',
+          workflowContent,
+          'Add project initialization workflow'
+        )
+      } catch (error) {
+        // Provide helpful error message based on token type and error
+        if (error.message.includes('Not Found') || error.message.includes('insufficient permissions')) {
+          if (isUsingPAT) {
+            throw new Error(`Failed to create GitHub Actions workflow. Please ensure your Personal Access Token has the following scopes enabled:
+• repo (Full control of private repositories)
+• workflow (Update GitHub Action workflows)
 
-      // Wait longer for GitHub to process the workflow file
-      await new Promise(resolve => setTimeout(resolve, 10000))
-
-      // Try to trigger the workflow with retries
-      let workflowTriggered = false
-      const maxRetries = 5
-
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-          const response = await fetch(
-            `https://api.github.com/repos/${username}/${repoName}/actions/workflows/initialize-spec-up-t.yml/dispatches`,
-            {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Accept': 'application/vnd.github.v3+json',
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                ref: 'main'
-              })
-            }
-          )
-
-          if (response.ok) {
-            workflowTriggered = true
-            break
+You can check and update your token scopes at: https://github.com/settings/tokens`)
           } else {
-            const errorData = await response.json()
-            console.warn(`Workflow trigger attempt ${attempt} failed:`, errorData.message)
-
-            if (attempt < maxRetries) {
-              // Wait before retrying (exponential backoff)
-              await new Promise(resolve => setTimeout(resolve, attempt * 3000))
-            } else {
-              throw new Error(`Failed to trigger workflow after ${maxRetries} attempts: ${errorData.message}`)
-            }
-          }
-        } catch (err) {
-          console.warn(`Workflow trigger attempt ${attempt} error:`, err.message)
-
-          if (attempt < maxRetries) {
-            // Wait before retrying
-            await new Promise(resolve => setTimeout(resolve, attempt * 3000))
-          } else {
-            throw err
+            throw new Error(`Failed to create GitHub Actions workflow. OAuth tokens don't have sufficient permissions for workflow creation. Please use a Personal Access Token with 'repo' and 'workflow' scopes instead.`)
           }
         }
+        throw error
       }
 
-      if (!workflowTriggered) {
-        throw new Error('Failed to trigger workflow after multiple attempts')
+      // Trigger the workflow
+      const response = await fetch(
+        `https://api.github.com/repos/${username}/${repoName}/actions/workflows/initialize-spec-up-t.yml/dispatches`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${effectiveToken}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            ref: 'main'
+          })
+        }
+      )
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(`Failed to trigger workflow: ${errorData.message}`)
       }
 
       return true
@@ -592,6 +613,12 @@ jobs:
 
       if (!response.ok) {
         const errorData = await response.json()
+        
+        // Check for permission-related errors
+        if (response.status === 403 || response.status === 404) {
+          throw new Error(`Failed to upload ${filePath}: ${errorData.message}`)
+        }
+        
         throw new Error(`Failed to upload ${filePath}: ${errorData.message}`)
       }
 
@@ -764,23 +791,43 @@ jobs:
         // Fetch menu.yml content from the boilerplate repository
         const menuYmlContent = await fetchMenuYmlFromBoilerplate()
         
-        // Use PAT token for uploading workflow file
-        const patToken = import.meta.env.VITE_GITHUB_PAT || token
+        // Use the login token for uploading workflow file
+        const patToken = token
         
-        // Upload the menu.yml workflow file
-        await uploadFile(
-          patToken,
-          username,
-          repoName,
-          '.github/workflows/menu.yml',
-          menuYmlContent,
-          'Add menu.yml workflow from boilerplate'
-        )
+        // Detect if we're using a PAT (login token that starts with ghp_)
+        const isUsingPAT = token && token.startsWith('ghp_')
         
-        console.log('Successfully uploaded menu.yml workflow file')
+        try {
+          // Upload the menu.yml workflow file
+          await uploadFile(
+            patToken,
+            username,
+            repoName,
+            '.github/workflows/menu.yml',
+            menuYmlContent,
+            'Add menu.yml workflow from boilerplate'
+          )
+          
+        } catch (uploadError) {
+          // If upload fails and we're not using PAT, provide helpful error message
+          if (!isUsingPAT && (uploadError.message.includes('insufficient permissions') || uploadError.message.includes('Not Found'))) {
+            console.warn('Failed to upload menu.yml workflow file due to permissions. This is non-critical.')
+            // Don't throw error for menu.yml - it's not critical for project creation
+            return
+          }
+          throw uploadError
+        }
         
       } catch (error) {
         console.error('Failed to add workflow files:', error.message)
+        
+        // Don't fail the entire project creation if workflow upload fails
+        // Just log the error and continue
+        if (error.message.includes('insufficient permissions') || error.message.includes('Not Found')) {
+          console.warn('Workflow file upload failed - this is non-critical for project setup')
+          return
+        }
+        
         throw new Error(`Failed to add workflow files: ${error.message}`)
       }
     }
@@ -837,7 +884,7 @@ jobs:
         const outputPath = await getSpecsOutputPath(token, user.login, projectForm.value.name)
 
         // Try using PAT if available and token fails
-        const effectiveToken = import.meta.env.VITE_GITHUB_PAT || token
+        const effectiveToken = token
 
         try {
           await configureGitHubPages(effectiveToken, user.login, projectForm.value.name, branch, outputPath)
@@ -870,13 +917,26 @@ jobs:
 
       } catch (err) {
         console.error('Error creating project:', err)
+        console.error('Error details:', { 
+          message: err.message, 
+          stack: err.stack,
+          name: err.name
+        })
         isCreating.value = false
 
         if (checkAuthAndRedirect(err)) {
           return
         }
 
-        error.value = err.message
+        // Provide more specific error messages
+        if (err.message.includes('Failed to create repository')) {
+          error.value = `Repository creation failed: ${err.message}`
+        } else if (err.message.includes('No GitHub authentication')) {
+          error.value = 'Authentication error: Please log in again with your GitHub token.'
+        } else {
+          error.value = `Project creation failed: ${err.message}`
+        }
+        
         creationProgress.value = 0
         currentStep.value = ''
       }
