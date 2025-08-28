@@ -32,12 +32,13 @@ VITE_GITHUB_PAT=ghp_your_personal_access_token_here
 The PAT should have the following scopes:
 
 - `repo` - Full control of private repositories (needed to create/modify workflow files)
+- `workflow` - Update GitHub Action workflows (needed to create workflow files in .github/workflows/)
 
 ### Creating a PAT
 
 1. Go to GitHub Settings → Developer settings → Personal access tokens → Tokens (classic)
 2. Click "Generate new token (classic)"
-3. Select scopes: `repo`
+3. Select scopes: `repo` and `workflow`
 4. Generate and copy the token
 5. Add it to your `.env` file as `VITE_GITHUB_PAT`
 
