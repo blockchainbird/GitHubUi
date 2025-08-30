@@ -305,6 +305,7 @@ import { getGitHubHeaders, addCacheBusting } from '../utils/apiUtils.js'
 import { decodeBranchName, buildRoutePath } from '../utils/branchUtils.js'
 import TermsPreview from './TermsPreview.vue'
 import RepoInfo from './RepoInfo.vue'
+import { secureTokenManager } from '../utils/secureTokenManager.js'
 
 export default {
   name: 'FileExplorer',
@@ -519,7 +520,7 @@ export default {
     const loadSpecsConfig = async () => {
       try {
         loadingMessage.value = 'Loading repository configuration...'
-        const token = localStorage.getItem('github_token')
+        const token = secureTokenManager.getToken()
         console.log('GitHub token exists:', !!token)
         console.log('Props:', { owner: props.owner, repo: props.repo, branch: decodedBranch.value })
 
@@ -641,7 +642,7 @@ export default {
 
         console.log('Loading files from directory:', directory, 'retry count:', retryCount)
 
-        const token = localStorage.getItem('github_token')
+        const token = secureTokenManager.getToken()
         const config = {
           headers: getGitHubHeaders(token)
         }
@@ -1011,7 +1012,7 @@ export default {
         deletingFile.value = true
         deleteFileError.value = ''
 
-        const token = localStorage.getItem('github_token')
+        const token = secureTokenManager.getToken()
         const config = {
           headers: getGitHubHeaders(token)
         }
@@ -1642,7 +1643,7 @@ export default {
 
         console.log('Saving order for items:', draggedItems.value.map(item => `${item.name} (${item.type})`))
 
-        const token = localStorage.getItem('github_token')
+        const token = secureTokenManager.getToken()
         const config = {
           headers: getGitHubHeaders(token)
         }

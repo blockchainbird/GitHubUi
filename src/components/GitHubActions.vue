@@ -218,6 +218,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 import RepoInfo from './RepoInfo.vue'
+import { secureTokenManager } from '../utils/secureTokenManager.js'
 
 export default {
   name: 'GitHubActions',
@@ -256,7 +257,7 @@ export default {
         actionError.value = ''
         successMessage.value = ''
 
-        const token = localStorage.getItem('github_token')
+        const token = secureTokenManager.getToken()
         if (!token) {
           actionError.value = 'GitHub token not found. Please log in again.'
           return

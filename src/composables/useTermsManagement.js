@@ -7,6 +7,7 @@ import { ref, computed } from 'vue'
 import axios from 'axios'
 import { consoleMessages } from '../utils/loadingMessages.js'
 import { getGitHubHeaders, addCacheBusting } from '../utils/apiUtils.js'
+import { secureTokenManager } from '../utils/secureTokenManager.js'
 
 export function useTermsManagement(props, checkAuthAndRedirect) {
   // Terms state
@@ -77,7 +78,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
   // Load specs configuration
   const loadSpecsConfig = async () => {
     try {
-      const token = localStorage.getItem('github_token')
+      const token = secureTokenManager.getToken()
       const config = {
         headers: getGitHubHeaders(token)
       }
@@ -136,7 +137,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
   // Extract terms from a single file
   const extractTermsFromFile = async (filePath) => {
     try {
-      const token = localStorage.getItem('github_token')
+      const token = secureTokenManager.getToken()
       const config = {
         headers: getGitHubHeaders(token)
       }
@@ -453,7 +454,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
       const termsDir = config.spec_terms_directory
       const fullTermsPath = `${specDir}/${termsDir}`
 
-      const token = localStorage.getItem('github_token')
+      const token = secureTokenManager.getToken()
       const requestConfig = {
         headers: getGitHubHeaders(token)
       }

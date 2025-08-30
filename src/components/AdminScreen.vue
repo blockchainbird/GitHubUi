@@ -152,6 +152,7 @@ import { ref, onMounted, computed } from 'vue'
 import RepoInfo from './RepoInfo.vue'
 import axios from 'axios'
 import { decodeBranchName } from '../utils/branchUtils.js'
+import { secureTokenManager } from '../utils/secureTokenManager.js'
 
 export default {
   name: 'AdminScreen',
@@ -212,7 +213,7 @@ export default {
       error.value = ''
 
       try {
-        const token = localStorage.getItem('github_token')
+        const token = secureTokenManager.getToken()
         if (!token) {
           throw new Error('No authentication token found')
         }
@@ -257,7 +258,7 @@ export default {
       error.value = ''
 
       try {
-        const token = localStorage.getItem('github_token')
+        const token = secureTokenManager.getToken()
         if (!token) {
           throw new Error('No authentication token found')
         }

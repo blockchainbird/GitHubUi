@@ -202,6 +202,7 @@ import {
   formatVisitedDate
 } from '../utils/visitedRepos.js'
 import { buildRoutePath } from '../utils/branchUtils.js'
+import { secureTokenManager } from '../utils/secureTokenManager.js'
 
 export default {
   name: 'HomePage',
@@ -231,7 +232,7 @@ export default {
       branchLoading.value = true
       branchList.value = []
       try {
-        const token = localStorage.getItem('github_token')
+        const token = secureTokenManager.getToken()
         const config = token ? {
           headers: {
             'Authorization': `token ${token}`,
@@ -326,7 +327,7 @@ export default {
       repoLoading.value = true
       repoList.value = []
       try {
-        const token = localStorage.getItem('github_token')
+        const token = secureTokenManager.getToken()
         const config = token ? {
           headers: {
             'Authorization': `token ${token}`,
@@ -405,7 +406,7 @@ export default {
       error.value = ''
 
       try {
-        const token = localStorage.getItem('github_token')
+        const token = secureTokenManager.getToken()
         const config = {
           headers: {
             'Authorization': `token ${token}`,

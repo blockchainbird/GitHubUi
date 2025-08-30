@@ -8,6 +8,7 @@ import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import { getGitHubHeaders, addCacheBusting, cacheBustedRequest } from '../utils/apiUtils.js'
 import { buildRoutePath } from '../utils/branchUtils.js'
+import { secureTokenManager } from '../utils/secureTokenManager.js'
 
 export function useFileContent(props, decodedBranch) {
   const router = useRouter()
@@ -107,7 +108,7 @@ export function useFileContent(props, decodedBranch) {
         return
       }
 
-      const token = localStorage.getItem('github_token')
+      const token = secureTokenManager.getToken()
       const config = {
         headers: getGitHubHeaders(token)
       }
@@ -150,7 +151,7 @@ export function useFileContent(props, decodedBranch) {
     success.value = ''
 
     try {
-      const token = localStorage.getItem('github_token')
+      const token = secureTokenManager.getToken()
       const config = {
         headers: getGitHubHeaders(token)
       }

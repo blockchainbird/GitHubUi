@@ -6,6 +6,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import { secureTokenManager } from '../utils/secureTokenManager.js'
 
 export function useHealthCheck(props) {
   const router = useRouter()
@@ -45,7 +46,7 @@ export function useHealthCheck(props) {
   // Helper functions
   const getGitHubConfig = () => ({
     headers: {
-      'Authorization': `token ${localStorage.getItem('github_token')}`,
+      'Authorization': `token ${secureTokenManager.getToken()}`,
       'Accept': 'application/vnd.github.v3+json'
     }
   })

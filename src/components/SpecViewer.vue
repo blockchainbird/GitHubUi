@@ -78,6 +78,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 import RepoInfo from './RepoInfo.vue'
+import { secureTokenManager } from '../utils/secureTokenManager.js'
 
 function setIframeHeight(container, iframe) {
   if (!container || !iframe) return;
@@ -225,7 +226,7 @@ export default {
       baseSpecUrl.value = ''
       try {
         // Requires repo read access; use token if present
-        const token = localStorage.getItem('github_token')
+        const token = secureTokenManager.getToken()
         const headers = token ? { Authorization: `token ${token}` } : {}
         const { data } = await axios.get(`https://api.github.com/repos/${owner.value}/${repo.value}/pages`, { headers })
         // data.html_url typically ends with a trailing slash

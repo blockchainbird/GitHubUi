@@ -200,6 +200,7 @@
 <script>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { secureTokenManager } from '../utils/secureTokenManager.js'
 
 export default {
   name: 'CreateSpecUpProject',
@@ -838,7 +839,7 @@ You can check and update your token scopes at: https://github.com/settings/token
         error.value = ''
         creationProgress.value = 0
 
-        const token = localStorage.getItem('github_token')
+        const token = secureTokenManager.getToken()
         const user = JSON.parse(localStorage.getItem('github_user') || '{}')
 
         if (!token || !user.login) {

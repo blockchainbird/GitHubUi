@@ -6,6 +6,7 @@
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import { getGitHubHeaders, addCacheBusting } from '../utils/apiUtils.js'
+import { secureTokenManager } from '../utils/secureTokenManager.js'
 
 export function usePublishToggle(props, checkAuthAndRedirect) {
   const router = useRouter()
@@ -13,7 +14,7 @@ export function usePublishToggle(props, checkAuthAndRedirect) {
 
   const togglePublishStatus = async (content, fileSha, decodedPath, filename) => {
     try {
-      const token = localStorage.getItem('github_token')
+      const token = secureTokenManager.getToken()
       const config = {
         headers: getGitHubHeaders(token)
       }

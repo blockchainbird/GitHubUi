@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { secureTokenManager } from '../utils/secureTokenManager.js'
 
 export function useSpecsManager() {
   // State
@@ -52,7 +53,7 @@ export function useSpecsManager() {
       loading.value = true
       error.value = ''
 
-      const token = localStorage.getItem('github_token')
+      const token = secureTokenManager.getToken()
       if (!token) {
         throw new Error('No GitHub token found')
       }
@@ -91,7 +92,7 @@ export function useSpecsManager() {
   }
 
   const refreshFileState = async (owner, repo, branch) => {
-    const token = localStorage.getItem('github_token')
+    const token = secureTokenManager.getToken()
     if (!token) {
       throw new Error('No GitHub token found')
     }
@@ -168,7 +169,7 @@ export function useSpecsManager() {
       saving.value = true
       error.value = ''
 
-      const token = localStorage.getItem('github_token')
+      const token = secureTokenManager.getToken()
       if (!token) {
         throw new Error('No GitHub token found')
       }

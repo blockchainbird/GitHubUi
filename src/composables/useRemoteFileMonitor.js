@@ -7,6 +7,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 import { getGitHubHeaders, addCacheBusting } from '../utils/apiUtils.js'
 import { getNotepadInstance } from './useNotepad.js'
+import { secureTokenManager } from '../utils/secureTokenManager.js'
 
 export function useRemoteFileMonitor(props) {
     // State
@@ -47,7 +48,7 @@ export function useRemoteFileMonitor(props) {
         }
 
         try {
-            const token = localStorage.getItem('github_token')
+            const token = secureTokenManager.getToken()
             const config = {
                 headers: getGitHubHeaders(token)
             }
@@ -71,7 +72,7 @@ export function useRemoteFileMonitor(props) {
         }
 
         try {
-            const token = localStorage.getItem('github_token')
+            const token = secureTokenManager.getToken()
             const config = {
                 headers: getGitHubHeaders(token)
             }
