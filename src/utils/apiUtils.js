@@ -4,9 +4,12 @@
  * 
  * Note: GitHub API blocks custom cache-control headers due to CORS policy,
  * so we rely primarily on URL-based cache busting with timestamp parameters.
+ * 
+ * Security Enhancement: Now uses secure token manager for encrypted token storage
  */
 
 import axios from 'axios'
+import { secureTokenManager } from './secureTokenManager.js'
 
 /**
  * Get headers for GitHub API requests (without CORS-blocked cache headers)
@@ -38,7 +41,11 @@ export const addCacheBusting = (url) => {
  * @returns {Promise} Axios response promise
  */
 export const cacheBustedRequest = async (url, options = {}) => {
-  const token = localStorage.getItem('github_token')
+  const token = secureTokenManager.getToken()
+  if (!token) {
+    throw new Error('No authentication token available')
+  }
+  
   const config = {
     ...options,
     headers: {
@@ -59,7 +66,11 @@ export const cacheBustedRequest = async (url, options = {}) => {
  * @returns {Promise} Axios response promise
  */
 export const cacheBustedPutRequest = async (url, data, options = {}) => {
-  const token = localStorage.getItem('github_token')
+  const token = secureTokenManager.getToken()
+  if (!token) {
+    throw new Error('No authentication token available')
+  }
+  
   const config = {
     ...options,
     headers: {

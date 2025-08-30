@@ -29,6 +29,7 @@ import MainNav from './components/MainNav.vue'
 import BackToTop from './components/BackToTop.vue'
 import Notepad from './components/Notepad.vue'
 import OffcanvasFileExplorer from './components/OffcanvasFileExplorer.vue'
+import { secureTokenManager } from './utils/secureTokenManager.js'
 // Choose one of these notification components:
 import VersionNotification from './components/VersionNotification.vue'           // Simple: Auto-reload
 // import EnhancedVersionNotification from './components/EnhancedVersionNotification.vue'  // Enhanced: User choice
@@ -113,8 +114,15 @@ export default {
       console.log('App: handleLogin called with:', userData);
       isAuthenticated.value = true
       user.value = userData
-      localStorage.setItem('github_token', userData.token)
-      localStorage.setItem('github_user', JSON.stringify(userData))
+      
+      // Use secure token manager instead of localStorage
+      if (!secureTokenManager.storeToken(userData.token, userData)) {
+        console.error('Failed to store token securely')
+        // Fallback to show error to user
+        alert('Warning: Failed to store authentication token securely. Please try logging in again.')
+        return
+      }
+      
       console.log('App: Authentication state after login:', {
         isAuthenticated: isAuthenticated.value,
         user: user.value
@@ -125,8 +133,14 @@ export default {
       console.log('App: handleLogout called');
       isAuthenticated.value = false
       user.value = {}
+      
+      // Use secure token manager to clear tokens
+      secureTokenManager.clearToken()
+      
+      // Also clear any remaining localStorage entries for migration cleanup
       localStorage.removeItem('github_token')
       localStorage.removeItem('github_user')
+      
       router.push('/login')
       console.log('App: Authentication state after logout:', {
         isAuthenticated: isAuthenticated.value,
@@ -136,14 +150,16 @@ export default {
 
 
     onMounted(() => {
-      // Check if user is already logged in
-      const token = localStorage.getItem('github_token')
-      const userData = localStorage.getItem('github_user')
+      // Try to migrate from old localStorage first
+      secureTokenManager.migrateFromLocalStorage()
+      
+      // Check if user is already logged in using secure storage
+      const token = secureTokenManager.getToken()
+      const userData = secureTokenManager.getUserData()
 
       if (token && userData) {
         try {
-          const parsedUser = JSON.parse(userData)
-          handleLogin({ ...parsedUser, token })
+          handleLogin({ ...userData, token })
           if (router.currentRoute.value.path === '/login') {
             // Check if there's an intended redirect URL
             const intendedRedirect = localStorage.getItem('intended_redirect')
@@ -155,8 +171,8 @@ export default {
             }
           }
         } catch (error) {
-          localStorage.removeItem('github_token')
-          localStorage.removeItem('github_user')
+          console.error('Failed to restore authentication from secure storage:', error)
+          secureTokenManager.clearToken()
         }
       }
     })

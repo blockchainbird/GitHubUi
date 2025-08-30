@@ -11,7 +11,9 @@ import AdminScreen from './components/AdminScreen.vue'
 import CreateSpecUpProject from './components/CreateSpecUpProject.vue'
 import Settings from './components/Settings.vue'
 import GitHubActions from './components/GitHubActions.vue'
+import SecurityDashboard from './components/SecurityDashboard.vue'
 import { autoEnhanceTooltips } from './directives/tooltip.js'
+import { secureTokenManager } from './utils/secureTokenManager.js'
 
 import * as bootstrap from 'bootstrap/dist/js/bootstrap.bundle.min.js'
 import 'bootstrap-icons/font/bootstrap-icons.css'
@@ -28,6 +30,7 @@ const routes = [
   { path: '/login', component: LoginPage },
   { path: '/home', component: HomePage },
   { path: '/create-project', component: CreateSpecUpProject },
+  { path: '/security', component: SecurityDashboard },
   { path: '/settings/:owner/:repo/:branch', component: Settings, props: true },
 
   { path: '/admin/:owner/:repo/:branch', component: AdminScreen, props: true },
@@ -60,13 +63,15 @@ if (measurementId) {
 
 // Global navigation guard to check authentication
 router.beforeEach((to, from, next) => {
-  const publicPages = ['/login', '/color-demo'];
+  const publicPages = ['/login', '/color-demo', '/security'];
   const authRequired = !publicPages.includes(to.path);
-  const user = localStorage.getItem('github_user');
-  const token = localStorage.getItem('github_token');
+  
+  // Use secure token manager instead of localStorage
+  const token = secureTokenManager.getToken();
+  const userData = secureTokenManager.getUserData();
 
   // Allow authenticated users to access all routes
-  if (authRequired && (!user || !token)) {
+  if (authRequired && (!userData || !token)) {
     // Store the intended destination before redirecting to login
     if (to.path !== '/login') {
       localStorage.setItem('intended_redirect', to.fullPath);
@@ -109,8 +114,18 @@ axios.interceptors.response.use(
 
     if (error.response && (error.response.status === 401 || error.response.status === 403)) {
       // Token is invalid or expired, clear it and redirect to login
+      secureTokenManager.clearToken()
+      
+      // Also clear old localStorage entries for cleanup
       localStorage.removeItem('github_token')
       localStorage.removeItem('github_user')
+      
+      // Log security event
+      secureTokenManager.logSecurityEvent('token_expired_or_invalid', {
+        status: error.response.status,
+        url: error.response.config?.url
+      })
+      
       // Store the current path as intended redirect before redirecting to login
       if (router.currentRoute.value.path !== '/login') {
         localStorage.setItem('intended_redirect', router.currentRoute.value.fullPath);

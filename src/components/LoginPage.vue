@@ -180,6 +180,7 @@ import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { useGoogleAnalytics } from '../composables/useGoogleAnalytics.js'
 import { useSoundSystem } from '../composables/useSoundSystem.js'
+import { secureTokenManager } from '../utils/secureTokenManager.js'
 
 export default {
   name: 'LoginPage',
@@ -202,10 +203,18 @@ export default {
       error.value = ''
 
       try {
+        // Validate token format first using secure token manager
+        const validation = secureTokenManager.validateToken(token.value)
+        if (!validation.isValid) {
+          error.value = `Invalid token format: ${validation.errors.join(', ')}`
+          loading.value = false
+          return
+        }
+
         // Configure axios with the token
         const config = {
           headers: {
-            'Authorization': `token ${token.value}`,
+            'Authorization': `token ${token.value.trim()}`,
             'Accept': 'application/vnd.github.v3+json'
           }
         }
@@ -215,7 +224,9 @@ export default {
 
         const userData = {
           ...response.data,
-          token: token.value
+          token: token.value.trim(),
+          tokenType: validation.tokenType,
+          loginTimestamp: new Date().toISOString()
         }
 
         emit('login', userData)
@@ -223,8 +234,12 @@ export default {
         // Play success sound
         playSuccessSound()
 
-        // Track successful login
+        // Track successful login with token type
         trackLogin('github')
+        trackEvent('secure_login_success', {
+          token_type: validation.tokenType,
+          user_id: response.data.id
+        })
 
         // Check if there's an intended redirect URL
         const intendedRedirect = localStorage.getItem('intended_redirect')
@@ -238,15 +253,24 @@ export default {
       } catch (err) {
         console.error('Login error:', err)
 
-        // Track login failure
+        // Track login failure with more detail
         trackEvent('login_error', {
-          error_type: err.response?.status === 401 ? 'invalid_token' : 'unknown'
+          error_type: err.response?.status === 401 ? 'invalid_token' : 'unknown',
+          error_code: err.response?.status || 'network_error'
+        })
+
+        // Log security event
+        secureTokenManager.logSecurityEvent('login_failed', {
+          error: err.message,
+          status: err.response?.status
         })
 
         if (err.response?.status === 401) {
-          error.value = 'Invalid token. Please check your GitHub Personal Access Token.'
+          error.value = 'Invalid token. Please check your GitHub Personal Access Token and ensure it has the required permissions.'
+        } else if (err.response?.status === 403) {
+          error.value = 'Access forbidden. Your token may lack required permissions or have expired.'
         } else {
-          error.value = 'Failed to authenticate. Please try again.'
+          error.value = 'Failed to authenticate. Please check your internet connection and try again.'
         }
       } finally {
         loading.value = false
