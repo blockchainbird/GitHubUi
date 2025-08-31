@@ -252,7 +252,7 @@ export default {
 
     const openRepository = () => {
       // Navigate to file explorer with the newly created repository
-      const user = JSON.parse(localStorage.getItem('github_user') || '{}')
+      const user = secureTokenManager.getUserData() || {}
       if (user.login && projectForm.value.name) {
         // Go to the correct project files route
         router.push({
@@ -264,8 +264,7 @@ export default {
     // Helper function to check authentication
     const checkAuthAndRedirect = (error) => {
       if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-        localStorage.removeItem('github_token')
-        localStorage.removeItem('github_user')
+        secureTokenManager.clearToken()
         router.push('/login')
         return true
       }
@@ -514,25 +513,44 @@ You can check and update your token scopes at: https://github.com/settings/token
         throw error
       }
 
-      // Trigger the workflow
-      const response = await fetch(
-        `https://api.github.com/repos/${username}/${repoName}/actions/workflows/initialize-spec-up-t.yml/dispatches`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${effectiveToken}`,
-            'Accept': 'application/vnd.github.v3+json',
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            ref: 'main'
-          })
+      // Wait a moment for GitHub to recognize the new workflow file
+      console.log('Waiting for GitHub to recognize the workflow file...')
+      await new Promise(resolve => setTimeout(resolve, 3000))
+
+      // Trigger the workflow with retry logic
+      let retries = 3
+      let response
+      
+      while (retries > 0) {
+        response = await fetch(
+          `https://api.github.com/repos/${username}/${repoName}/actions/workflows/initialize-spec-up-t.yml/dispatches`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${effectiveToken}`,
+              'Accept': 'application/vnd.github.v3+json',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              ref: 'main'
+            })
+          }
+        )
+
+        if (response.ok) {
+          break
         }
-      )
+
+        retries--
+        if (retries > 0) {
+          console.log(`Workflow trigger failed, retrying in 2 seconds... (${retries} retries left)`)
+          await new Promise(resolve => setTimeout(resolve, 2000))
+        }
+      }
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(`Failed to trigger workflow: ${errorData.message}`)
+        throw new Error(`Failed to trigger workflow after multiple attempts: ${errorData.message}`)
       }
 
       return true
@@ -840,10 +858,25 @@ You can check and update your token scopes at: https://github.com/settings/token
         creationProgress.value = 0
 
         const token = secureTokenManager.getToken()
-        const user = JSON.parse(localStorage.getItem('github_user') || '{}')
+        const user = secureTokenManager.getUserData() || {}
+
+        // Debug logging
+        console.log('CreateProject Debug:', {
+          hasToken: !!token,
+          tokenLength: token ? token.length : 0,
+          hasUser: !!user,
+          userLogin: user.login,
+          userKeys: Object.keys(user)
+        })
 
         if (!token || !user.login) {
-          throw new Error('No GitHub authentication found')
+          if (!token) {
+            throw new Error('Authentication error: Please log in again with your GitHub token.')
+          } else if (!user.login) {
+            throw new Error('Authentication error: User information not found. Please log in again.')
+          } else {
+            throw new Error('No GitHub authentication found')
+          }
         }
 
         updateProgress(10, 'Creating GitHub repository...')
