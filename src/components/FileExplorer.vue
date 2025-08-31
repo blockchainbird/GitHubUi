@@ -116,6 +116,13 @@
               </div>
 
               <div v-else class="list-group list-group-flush" @dragover="onListDragOver" @drop="onListDrop">
+                <!-- Drop zone at the very beginning of the list -->
+                <div v-if="isRootDirectory && isDragging && dragOverIndex === -1"
+                  class="drop-zone-indicator drop-zone-before">
+                  <div class="drop-line"></div>
+                  <span class="drop-text">Drop at beginning</span>
+                </div>
+                
                 <!-- Show items in their dragged order with smooth transitions -->
                 <transition-group name="file-list" tag="div" class="file-list-container">
                   <div v-for="(item, index) in orderedItems" :key="item.path"
@@ -1532,41 +1539,82 @@ export default {
       }, 100);
     };
 
-    // Handle dragging over the list container (for dropping at the end)
+    // Handle dragging over the list container (for dropping at the end or beginning)
     const onListDragOver = (event) => {
       if (!isRootDirectory.value || !isDragging.value) return;
 
       event.preventDefault();
       event.dataTransfer.dropEffect = 'move';
 
-      // Check if we're dragging over empty space at the bottom
+      // Check if we're dragging over empty space at the bottom or top
       const rect = event.currentTarget.getBoundingClientRect();
       const y = event.clientY - rect.top;
       const listItems = event.currentTarget.querySelectorAll('.position-relative');
 
       if (listItems.length > 0) {
+        const firstItem = listItems[0];
+        const firstItemRect = firstItem.getBoundingClientRect();
+        const relativeYToFirst = event.clientY - firstItemRect.top;
+
+        // If we're above the first item, show the beginning drop zone
+        if (relativeYToFirst < -10) {
+          dragOverIndex.value = -1; // Special value for beginning of list
+          dragPosition.value = 'beginning';
+          return;
+        }
+
         const lastItem = listItems[listItems.length - 1];
         const lastItemRect = lastItem.getBoundingClientRect();
-        const relativeY = event.clientY - lastItemRect.bottom;
+        const relativeYToLast = event.clientY - lastItemRect.bottom;
 
         // If we're below the last item, show the end drop zone
-        if (relativeY > 10) {
+        if (relativeYToLast > 10) {
           dragOverIndex.value = -2; // Special value for end of list
           dragPosition.value = 'end';
         }
       }
     };
 
-    // Handle dropping at the end of the list
+    // Handle dropping at the beginning or end of the list
     const onListDrop = (event) => {
       if (!isRootDirectory.value || !isDragging.value) return;
 
       event.preventDefault();
 
-      if (dragOverIndex.value === -2) {
+      const dragData = JSON.parse(event.dataTransfer.getData('text/plain'));
+      const originalIndex = dragData.originalIndex;
+
+      if (dragOverIndex.value === -1) {
+        // Drop at the beginning of the list
+        const targetIndex = 0;
+
+        if (originalIndex !== targetIndex) { // Don't move if already at the beginning
+          const newItems = [...draggedItems.value];
+          const [movedItem] = newItems.splice(originalIndex, 1);
+          newItems.unshift(movedItem); // Add to beginning
+
+          draggedItems.value = newItems;
+
+          // Update files and folders arrays to maintain consistency
+          const newFolders = [];
+          const newFiles = [];
+
+          draggedItems.value.forEach(item => {
+            if (item.type === 'folder') {
+              newFolders.push({ name: item.name, path: item.path });
+            } else {
+              const { type, ...fileItem } = item;
+              newFiles.push(fileItem);
+            }
+          });
+
+          folders.value = newFolders;
+          files.value = newFiles;
+
+          hasUnsavedChanges.value = true;
+        }
+      } else if (dragOverIndex.value === -2) {
         // Drop at the end of the list
-        const dragData = JSON.parse(event.dataTransfer.getData('text/plain'));
-        const originalIndex = dragData.originalIndex;
         const targetIndex = draggedItems.value.length; // End of list
 
         if (originalIndex !== targetIndex - 1) { // Don't move if already at the end
