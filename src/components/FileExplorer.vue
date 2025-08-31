@@ -1372,6 +1372,9 @@ export default {
 
       event.preventDefault();
 
+      // More aggressive throttling to prevent oscillation
+      if (dragThrottleTimer) return;
+
       // Avoid unnecessary updates if we're already at this position
       if (dragOverIndex.value === index) return;
 
@@ -1379,29 +1382,54 @@ export default {
       const y = event.clientY - rect.top;
       const height = rect.height;
 
-      // Determine if we're in the top, middle, or bottom third
-      if (y < height * 0.33) {
-        dragPosition.value = 'before';
-      } else if (y > height * 0.67) {
-        dragPosition.value = 'after';
+      // Use larger thresholds to create more stable zones and prevent oscillation
+      let newPosition;
+      if (y < height * 0.25) { // Reduced from 0.33 to 0.25
+        newPosition = 'before';
+      } else if (y > height * 0.75) { // Increased from 0.67 to 0.75
+        newPosition = 'after';
       } else {
-        dragPosition.value = 'on';
+        newPosition = 'on';
       }
 
-      dragOverIndex.value = index;
+      // Only update if we're changing to a significantly different position
+      if (dragOverIndex.value !== index || dragPosition.value !== newPosition) {
+        dragOverIndex.value = index;
+        dragPosition.value = newPosition;
+
+        // Set throttle timer to prevent rapid updates
+        dragThrottleTimer = setTimeout(() => {
+          dragThrottleTimer = null;
+        }, 150);
+      }
     };
 
     const onDragLeave = (event) => {
       if (!isRootDirectory.value || !isDragging.value) return;
+
+      // Add throttling to prevent rapid leave/enter cycles
+      if (dragThrottleTimer) return;
 
       // Only clear if we're really leaving the element (not entering a child)
       const rect = event.currentTarget.getBoundingClientRect();
       const x = event.clientX;
       const y = event.clientY;
 
-      if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
-        dragOverIndex.value = -1;
-        dragPosition.value = '';
+      // Add a buffer zone to prevent oscillation at element boundaries
+      const buffer = 5;
+      if (x < rect.left - buffer || x > rect.right + buffer || 
+          y < rect.top - buffer || y > rect.bottom + buffer) {
+        
+        // Small delay to prevent rapid state changes
+        setTimeout(() => {
+          if (!isDragging.value) return; // Don't clear if drag has ended
+          
+          // Only clear if we haven't moved to another valid drop zone
+          if (dragOverIndex.value >= 0) {
+            dragOverIndex.value = -1;
+            dragPosition.value = '';
+          }
+        }, 50);
       }
     };
 
@@ -1411,36 +1439,64 @@ export default {
       event.preventDefault();
       event.dataTransfer.dropEffect = 'move';
 
-      // Throttle updates to prevent oscillation
+      // Aggressive throttling to prevent oscillation - only update every 100ms
       if (dragThrottleTimer) return;
 
       dragThrottleTimer = setTimeout(() => {
         dragThrottleTimer = null;
-      }, 200);
+      }, 100);
 
-      // Only update position if we're over a different element or need to recalculate position
-      if (dragOverIndex.value !== index) {
-        dragOverIndex.value = index;
+      // Only update position if we're over a different element
+      if (dragOverIndex.value === index) {
+        // If we're already on this element, only update position if it's significantly different
+        const rect = event.currentTarget.getBoundingClientRect();
+        const y = event.clientY - rect.top;
+        const height = rect.height;
+
+        let newPosition;
+        if (y < height * 0.25) { // Reduced threshold for more stable zones
+          newPosition = 'before';
+        } else if (y > height * 0.75) { // Increased threshold for more stable zones
+          newPosition = 'after';
+        } else {
+          newPosition = 'on';
+        }
+
+        // Add hysteresis - only change position if we're significantly in a different zone
+        const currentPos = dragPosition.value;
+        if (currentPos !== newPosition) {
+          // Add a small delay before switching positions to prevent rapid oscillation
+          const switchThreshold = height * 0.1; // 10% buffer zone
+          
+          if ((currentPos === 'before' && newPosition === 'on' && y > height * 0.35) ||
+              (currentPos === 'on' && newPosition === 'before' && y < height * 0.15) ||
+              (currentPos === 'on' && newPosition === 'after' && y > height * 0.85) ||
+              (currentPos === 'after' && newPosition === 'on' && y < height * 0.65)) {
+            dragPosition.value = newPosition;
+          }
+        }
+        
+        return;
       }
 
-      // Update position based on mouse position
+      // Update to new element
+      dragOverIndex.value = index;
+
+      // Calculate position for new element
       const rect = event.currentTarget.getBoundingClientRect();
       const y = event.clientY - rect.top;
       const height = rect.height;
 
       let newPosition;
-      if (y < height * 0.33) {
+      if (y < height * 0.25) {
         newPosition = 'before';
-      } else if (y > height * 0.67) {
+      } else if (y > height * 0.75) {
         newPosition = 'after';
       } else {
         newPosition = 'on';
       }
 
-      // Only update if position actually changed
-      if (dragPosition.value !== newPosition) {
-        dragPosition.value = newPosition;
-      }
+      dragPosition.value = newPosition;
     };
 
     const onDrop = (event, dropIndex, dropType) => {
@@ -1546,6 +1602,13 @@ export default {
       event.preventDefault();
       event.dataTransfer.dropEffect = 'move';
 
+      // Add throttling to prevent excessive updates
+      if (dragThrottleTimer) return;
+
+      dragThrottleTimer = setTimeout(() => {
+        dragThrottleTimer = null;
+      }, 100);
+
       // Check if we're dragging over empty space at the bottom or top
       const rect = event.currentTarget.getBoundingClientRect();
       const y = event.clientY - rect.top;
@@ -1556,10 +1619,13 @@ export default {
         const firstItemRect = firstItem.getBoundingClientRect();
         const relativeYToFirst = event.clientY - firstItemRect.top;
 
-        // If we're above the first item, show the beginning drop zone
-        if (relativeYToFirst < -10) {
-          dragOverIndex.value = -1; // Special value for beginning of list
-          dragPosition.value = 'beginning';
+        // Increase threshold to prevent oscillation between beginning drop zone and first item
+        if (relativeYToFirst < -20) { // Increased from -10 to -20
+          // Only update if we're not already showing the beginning drop zone
+          if (dragOverIndex.value !== -1) {
+            dragOverIndex.value = -1; // Special value for beginning of list
+            dragPosition.value = 'beginning';
+          }
           return;
         }
 
@@ -1567,10 +1633,13 @@ export default {
         const lastItemRect = lastItem.getBoundingClientRect();
         const relativeYToLast = event.clientY - lastItemRect.bottom;
 
-        // If we're below the last item, show the end drop zone
-        if (relativeYToLast > 10) {
-          dragOverIndex.value = -2; // Special value for end of list
-          dragPosition.value = 'end';
+        // Increase threshold to prevent oscillation between end drop zone and last item
+        if (relativeYToLast > 20) { // Increased from 10 to 20
+          // Only update if we're not already showing the end drop zone
+          if (dragOverIndex.value !== -2) {
+            dragOverIndex.value = -2; // Special value for end of list
+            dragPosition.value = 'end';
+          }
         }
       }
     };
