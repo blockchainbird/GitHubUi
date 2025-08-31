@@ -122,8 +122,8 @@
                     class="list-group-item list-group-item-action d-flex align-items-center" :class="{
                       'recently-created': item.type === 'file' && item.name === recentlyCreatedFile
                     }">
-                    <i v-if="isRootDirectory" class="bi bi-grip-vertical me-2 drag-handle" 
-                      title="Drag to reorder" style="cursor: grab;"></i>
+                    <i v-if="isRootDirectory" class="bi bi-grip-vertical me-2 drag-handle" title="Drag to reorder"
+                      style="cursor: grab;"></i>
                     <button @click="handleItemClick(item, $event)" @contextmenu="handleItemRightClick(item, $event)"
                       class="flex-grow-1 btn btn-link text-start p-0 border-0 d-flex align-items-center text-decoration-none"
                       :title="item.type === 'file' ? 'Click to open, Ctrl+Click or Right-click to open in new tab' : ''">
@@ -153,7 +153,7 @@
                     <i v-else class="bi bi-chevron-right"></i>
                   </div>
                 </div>
-                
+
                 <!-- Non-sortable list for non-root directories -->
                 <div v-else>
                   <div v-for="(item, index) in orderedItems" :key="item.path"
@@ -723,6 +723,11 @@ export default {
         }
       } finally {
         loading.value = false
+
+        // Reinitialize Sortable after files are loaded
+        setTimeout(() => {
+          forceReinitializeSortable()
+        }, 100)
       }
     }
 
@@ -1196,24 +1201,26 @@ export default {
           localStorage.removeItem('recentlyRenamedFile')
         }
       }
-      
+
       // Initialize Sortable.js after DOM is ready
       nextTick(() => {
-        if (fileListElement.value) {
+        const sortableContainer = document.querySelector('.sortable-container');
+        if (sortableContainer) {
           initializeSortable()
         }
       })
     })
 
-    // Watch file list for changes and reinitialize sortable
-    watch(() => [files.value, folders.value], () => {
-      nextTick(() => {
-        if (fileListElement.value && sortableInstance.value) {
-          sortableInstance.value.destroy()
-          initializeSortable()
-        }
-      })
-    }, { deep: true })
+    // Watch file list for changes and reinitialize sortable (disabled to prevent conflicts)
+    // watch(() => [files.value, folders.value], () => {
+    //   nextTick(() => {
+    //     const sortableContainer = document.querySelector('.sortable-container');
+    //     if (sortableContainer && sortableInstance.value) {
+    //       sortableInstance.value.destroy()
+    //       initializeSortable()
+    //     }
+    //   })
+    // }, { deep: true })
 
     // Watch for when user navigates back to this component  
     watch(() => route.path, (newPath, oldPath) => {
@@ -1356,18 +1363,27 @@ export default {
 
     // Sortable.js setup for drag and drop
     const initializeSortable = async () => {
-      if (!isRootDirectory.value) return;
-      
+      if (!isRootDirectory.value) {
+        console.log('Skipping sortable initialization - not in root directory');
+        return;
+      }
+
       await nextTick(); // Ensure DOM is updated
-      
+
       const sortableContainer = document.querySelector('.sortable-container');
-      if (!sortableContainer) return;
+      if (!sortableContainer) {
+        console.log('Sortable container not found, skipping initialization');
+        return;
+      }
 
       // Destroy existing instance if it exists
       if (sortableInstance.value) {
+        console.log('Destroying existing sortable instance');
         sortableInstance.value.destroy();
+        sortableInstance.value = null;
       }
 
+      console.log('Initializing new sortable instance');
       sortableInstance.value = Sortable.create(sortableContainer, {
         animation: 150,
         ghostClass: 'sortable-ghost',
@@ -1375,20 +1391,26 @@ export default {
         dragClass: 'sortable-drag',
         handle: '.drag-handle',
         onStart: () => {
+          console.log('Sortable drag started');
           // Store original order for comparison
           originalOrder.value = [...draggedItems.value];
         },
         onEnd: (evt) => {
+          console.log('Sortable drag ended', { oldIndex: evt.oldIndex, newIndex: evt.newIndex });
           const { oldIndex, newIndex } = evt;
-          
+
           if (oldIndex !== newIndex) {
+            console.log('Order changed, reordering items...');
             // Reorder the items
             const newItems = [...draggedItems.value];
             const [movedItem] = newItems.splice(oldIndex, 1);
             newItems.splice(newIndex, 0, movedItem);
-            
+
+            console.log('Old order:', draggedItems.value.map(i => i.name));
+            console.log('New order:', newItems.map(i => i.name));
+
             draggedItems.value = newItems;
-            
+
             // Update files and folders arrays to maintain consistency
             const newFolders = [];
             const newFiles = [];
@@ -1404,11 +1426,23 @@ export default {
 
             folders.value = newFolders;
             files.value = newFiles;
-            
+
             hasUnsavedChanges.value = true;
+            console.log('Unsaved changes flag set to true');
+          } else {
+            console.log('No order change detected');
           }
         }
       });
+
+      console.log('Sortable instance created successfully');
+    };
+
+    // Force reinitialize function that can be called manually
+    const forceReinitializeSortable = async () => {
+      console.log('Force reinitializing Sortable...');
+      await nextTick();
+      await initializeSortable();
     };
 
     // Watch for changes that require re-initializing sortable
@@ -1442,6 +1476,12 @@ export default {
 
           // If we get here without error, break out of retry loop
           console.log(`Order refresh successful on attempt ${attempt + 1}`)
+
+          // Reinitialize Sortable after successful refresh
+          setTimeout(() => {
+            forceReinitializeSortable()
+          }, 100)
+
           return
 
         } catch (refreshErr) {
@@ -1522,6 +1562,11 @@ export default {
 
         // Force refresh with retry logic to ensure we get the updated order
         refreshOrderWithRetry()
+
+        // Also force reinitialize after a short delay to ensure everything is ready
+        setTimeout(() => {
+          forceReinitializeSortable()
+        }, 2000)
 
       } catch (err) {
         console.error('Error saving file order:', err);
@@ -1644,6 +1689,7 @@ export default {
       isRootDirectory,
       hasUnsavedChanges,
       initializeSortable,
+      forceReinitializeSortable,
       saveOrder
     }
   }
