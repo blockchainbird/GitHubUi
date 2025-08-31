@@ -115,36 +115,18 @@
                 </p>
               </div>
 
-              <div v-else class="list-group list-group-flush" @dragover="onListDragOver" @drop="onListDrop">
-                <!-- Drop zone at the very beginning of the list -->
-                <div v-if="isRootDirectory && isDragging && dragOverIndex === -1"
-                  class="drop-zone-indicator drop-zone-before">
-                  <div class="drop-line"></div>
-                  <span class="drop-text">Drop at beginning</span>
-                </div>
-                
+              <div v-else class="list-group list-group-flush">
                 <!-- Show items in their dragged order with smooth transitions -->
-                <transition-group name="file-list" tag="div" class="file-list-container">
+                <div v-if="isRootDirectory" class="sortable-container">
                   <div v-for="(item, index) in orderedItems" :key="item.path"
-                    class="position-relative file-item-wrapper">
-                    <!-- Drop zone indicator at the top -->
-                    <div v-if="isRootDirectory && isDragging && dragOverIndex === index && dragPosition === 'before'"
-                      class="drop-zone-indicator drop-zone-before">
-                      <div class="drop-line"></div>
-                      <span class="drop-text">Drop here</span>
-                    </div>
-
+                    class="list-group-item list-group-item-action d-flex align-items-center" :class="{
+                      'recently-created': item.type === 'file' && item.name === recentlyCreatedFile
+                    }">
+                    <i v-if="isRootDirectory" class="bi bi-grip-vertical me-2 drag-handle" 
+                      title="Drag to reorder" style="cursor: grab;"></i>
                     <button @click="handleItemClick(item, $event)" @contextmenu="handleItemRightClick(item, $event)"
-                      class="list-group-item list-group-item-action d-flex align-items-center" :class="{
-                        'recently-created': item.type === 'file' && item.name === recentlyCreatedFile,
-                        'recently-moved': recentlyMovedItem && recentlyMovedItem.path === item.path,
-                        'drag-over': isRootDirectory && isDragging && dragOverIndex === index && dragPosition === 'on',
-                        'being-dragged': isRootDirectory && isDragging && draggedIndex === index
-                      }" @dragover="onDragOver($event, index, item.type)" @drop="onDrop($event, index, item.type)"
-                      @dragenter="onDragEnter($event, index)" @dragleave="onDragLeave($event)"
+                      class="flex-grow-1 btn btn-link text-start p-0 border-0 d-flex align-items-center text-decoration-none"
                       :title="item.type === 'file' ? 'Click to open, Ctrl+Click or Right-click to open in new tab' : ''">
-                      <i v-if="isRootDirectory" class="bi bi-grip-vertical me-2 drag-handle" draggable="true"
-                        @dragstart="onDragStart($event, item, item.type, index)" @dragend="onDragEnd" @click.stop></i>
                       <i v-if="item.type === 'folder'" class="bi bi-folder-fill me-3" style="color: #ffc107;"></i>
                       <i v-else class="bi bi-file-text me-3" style="color: #0d6efd;"></i>
                       <div class="flex-grow-1">
@@ -160,30 +142,52 @@
                         </div>
                         <small class="text-muted">{{ item.path }}</small>
                       </div>
-                      <div v-if="item.type === 'file'" class="d-flex align-items-center gap-2">
-                        <button @click.stop="showDeleteModal(item)" class="btn btn-outline-danger btn-sm"
-                          title="Delete File">
-                          <i class="bi bi-trash"></i>
-                        </button>
-                        <i class="bi bi-chevron-right"></i>
-                      </div>
-                      <i v-else class="bi bi-chevron-right"></i>
                     </button>
-
-                    <!-- Drop zone indicator at the bottom of last item -->
-                    <div v-if="isRootDirectory && isDragging && dragOverIndex === index && dragPosition === 'after'"
-                      class="drop-zone-indicator drop-zone-after">
-                      <div class="drop-line"></div>
-                      <span class="drop-text">Drop here</span>
+                    <div v-if="item.type === 'file'" class="d-flex align-items-center gap-2">
+                      <button @click.stop="showDeleteModal(item)" class="btn btn-outline-danger btn-sm"
+                        title="Delete File">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                      <i class="bi bi-chevron-right"></i>
                     </div>
+                    <i v-else class="bi bi-chevron-right"></i>
                   </div>
-                </transition-group>
-
-                <!-- Final drop zone at the very end of the list -->
-                <div v-if="isRootDirectory && isDragging && dragOverIndex === -2"
-                  class="drop-zone-indicator drop-zone-after">
-                  <div class="drop-line"></div>
-                  <span class="drop-text">Drop at end</span>
+                </div>
+                
+                <!-- Non-sortable list for non-root directories -->
+                <div v-else>
+                  <div v-for="(item, index) in orderedItems" :key="item.path"
+                    class="list-group-item list-group-item-action d-flex align-items-center" :class="{
+                      'recently-created': item.type === 'file' && item.name === recentlyCreatedFile
+                    }">
+                    <button @click="handleItemClick(item, $event)" @contextmenu="handleItemRightClick(item, $event)"
+                      class="flex-grow-1 btn btn-link text-start p-0 border-0 d-flex align-items-center text-decoration-none"
+                      :title="item.type === 'file' ? 'Click to open, Ctrl+Click or Right-click to open in new tab' : ''">
+                      <i v-if="item.type === 'folder'" class="bi bi-folder-fill me-3" style="color: #ffc107;"></i>
+                      <i v-else class="bi bi-file-text me-3" style="color: #0d6efd;"></i>
+                      <div class="flex-grow-1">
+                        <div class="fw-medium">
+                          {{ item.name }}
+                          <span v-if="item.type === 'file' && item.name === recentlyCreatedFile"
+                            class="badge bg-primary ms-2">New</span>
+                          <span v-if="item.type === 'file' && item.name.startsWith('_')"
+                            title="If a file has an underscore at the beginning of the file name, it is a draft version."
+                            class="badge bg-warning text-dark ms-2">Draft</span>
+                          <span v-if="item.type === 'file' && item.hasExternalRefs"
+                            title="This file has an external reference." class="badge bg-success ms-2">External</span>
+                        </div>
+                        <small class="text-muted">{{ item.path }}</small>
+                      </div>
+                    </button>
+                    <div v-if="item.type === 'file'" class="d-flex align-items-center gap-2">
+                      <button @click.stop="showDeleteModal(item)" class="btn btn-outline-danger btn-sm"
+                        title="Delete File">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                      <i class="bi bi-chevron-right"></i>
+                    </div>
+                    <i v-else class="bi bi-chevron-right"></i>
+                  </div>
                 </div>
               </div>
             </div>
@@ -307,6 +311,7 @@
 import { ref, onMounted, onUnmounted, nextTick, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
+import Sortable from 'sortablejs'
 import { addToVisitedRepos } from '../utils/visitedRepos.js'
 import { getGitHubHeaders, addCacheBusting } from '../utils/apiUtils.js'
 import { decodeBranchName, buildRoutePath } from '../utils/branchUtils.js'
@@ -348,20 +353,11 @@ export default {
     // Fragment handling cleanup
     const fragmentCleanup = ref(null)
 
-    // Drag and drop state
-    const isDragMode = ref(false)
+    // Drag and drop state - simplified for Sortable.js
     const hasUnsavedChanges = ref(false)
     const draggedItems = ref([])
     const originalOrder = ref([])
-    const isDragging = ref(false)
-    const draggedIndex = ref(-1)
-    const dragOverIndex = ref(-1)
-    const dragPosition = ref('') // 'before', 'on', or 'after'
-    const isReordering = ref(false) // Track when items are animating to new positions
-    const recentlyMovedItem = ref(null) // Track which item was just moved
-
-    // Throttle drag events to prevent excessive re-renders
-    let dragThrottleTimer = null
+    const sortableInstance = ref(null)
 
     // Filter state
     const filterText = ref('')
@@ -822,9 +818,6 @@ export default {
     }
 
     const openFile = (file) => {
-      // Don't navigate if we're in the middle of a drag operation
-      if (isDragging.value) return;
-
       if (props.isOffcanvasMode) {
         // In offcanvas mode, emit an event with file info
         emit('file-selected', {
@@ -896,17 +889,10 @@ export default {
     }
 
     const openFolder = (folder) => {
-      // Don't navigate if we're in the middle of a drag operation
-      if (isDragging.value) return;
-
       recentlyCreatedFile.value = '' // Clear when navigating to different folder
       localStorage.removeItem('recentlyCreatedFile') // Also clear from localStorage
       hasUnsavedChanges.value = false // Reset unsaved changes when navigating away from root
       draggedItems.value = [] // Reset drag items when leaving root
-
-      // Clear animation states when navigating away from root
-      isReordering.value = false
-      recentlyMovedItem.value = null
 
       // Update URL with new directory
       const encodedDir = encodeURIComponent(folder.path)
@@ -1184,7 +1170,6 @@ export default {
       document.addEventListener('click', handleClickOutside)
       document.addEventListener('visibilitychange', handleVisibilityChange)
 
-
       // Check if we have a recently created file in localStorage
       const storedRecentFile = localStorage.getItem('recentlyCreatedFile')
       if (storedRecentFile) {
@@ -1211,7 +1196,24 @@ export default {
           localStorage.removeItem('recentlyRenamedFile')
         }
       }
+      
+      // Initialize Sortable.js after DOM is ready
+      nextTick(() => {
+        if (fileListElement.value) {
+          initializeSortable()
+        }
+      })
     })
+
+    // Watch file list for changes and reinitialize sortable
+    watch(() => [files.value, folders.value], () => {
+      nextTick(() => {
+        if (fileListElement.value && sortableInstance.value) {
+          sortableInstance.value.destroy()
+          initializeSortable()
+        }
+      })
+    }, { deep: true })
 
     // Watch for when user navigates back to this component  
     watch(() => route.path, (newPath, oldPath) => {
@@ -1294,10 +1296,10 @@ export default {
         fragmentCleanup.value()
       }
 
-      // Clean up drag throttle timer
-      if (dragThrottleTimer) {
-        clearTimeout(dragThrottleTimer);
-        dragThrottleTimer = null;
+      // Clean up Sortable instance
+      if (sortableInstance.value) {
+        sortableInstance.value.destroy()
+        sortableInstance.value = null
       }
     })
 
@@ -1352,371 +1354,71 @@ export default {
       return normalizeDir(currentDirectory.value) === normalizeDir(specDirectory.value);
     });
 
-    // Drag and drop methods
-    const onDragStart = (event, item, type, index) => {
+    // Sortable.js setup for drag and drop
+    const initializeSortable = async () => {
       if (!isRootDirectory.value) return;
+      
+      await nextTick(); // Ensure DOM is updated
+      
+      const sortableContainer = document.querySelector('.sortable-container');
+      if (!sortableContainer) return;
 
-      isDragging.value = true;
-      draggedIndex.value = index;
-      event.dataTransfer.effectAllowed = 'move';
-      event.dataTransfer.setData('text/plain', JSON.stringify({
-        item,
-        type,
-        originalIndex: index
-      }));
-      event.target.style.opacity = '0.5';
-    };
-
-    const onDragEnter = (event, index) => {
-      if (!isRootDirectory.value || !isDragging.value) return;
-
-      event.preventDefault();
-
-      // More aggressive throttling to prevent oscillation
-      if (dragThrottleTimer) return;
-
-      // Avoid unnecessary updates if we're already at this position
-      if (dragOverIndex.value === index) return;
-
-      const rect = event.currentTarget.getBoundingClientRect();
-      const y = event.clientY - rect.top;
-      const height = rect.height;
-
-      // Use larger thresholds to create more stable zones and prevent oscillation
-      let newPosition;
-      if (y < height * 0.25) { // Reduced from 0.33 to 0.25
-        newPosition = 'before';
-      } else if (y > height * 0.75) { // Increased from 0.67 to 0.75
-        newPosition = 'after';
-      } else {
-        newPosition = 'on';
+      // Destroy existing instance if it exists
+      if (sortableInstance.value) {
+        sortableInstance.value.destroy();
       }
 
-      // Only update if we're changing to a significantly different position
-      if (dragOverIndex.value !== index || dragPosition.value !== newPosition) {
-        dragOverIndex.value = index;
-        dragPosition.value = newPosition;
-
-        // Set throttle timer to prevent rapid updates
-        dragThrottleTimer = setTimeout(() => {
-          dragThrottleTimer = null;
-        }, 150);
-      }
-    };
-
-    const onDragLeave = (event) => {
-      if (!isRootDirectory.value || !isDragging.value) return;
-
-      // Add throttling to prevent rapid leave/enter cycles
-      if (dragThrottleTimer) return;
-
-      // Only clear if we're really leaving the element (not entering a child)
-      const rect = event.currentTarget.getBoundingClientRect();
-      const x = event.clientX;
-      const y = event.clientY;
-
-      // Add a buffer zone to prevent oscillation at element boundaries
-      const buffer = 5;
-      if (x < rect.left - buffer || x > rect.right + buffer || 
-          y < rect.top - buffer || y > rect.bottom + buffer) {
-        
-        // Small delay to prevent rapid state changes
-        setTimeout(() => {
-          if (!isDragging.value) return; // Don't clear if drag has ended
+      sortableInstance.value = Sortable.create(sortableContainer, {
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        dragClass: 'sortable-drag',
+        handle: '.drag-handle',
+        onStart: () => {
+          // Store original order for comparison
+          originalOrder.value = [...draggedItems.value];
+        },
+        onEnd: (evt) => {
+          const { oldIndex, newIndex } = evt;
           
-          // Only clear if we haven't moved to another valid drop zone
-          if (dragOverIndex.value >= 0) {
-            dragOverIndex.value = -1;
-            dragPosition.value = '';
+          if (oldIndex !== newIndex) {
+            // Reorder the items
+            const newItems = [...draggedItems.value];
+            const [movedItem] = newItems.splice(oldIndex, 1);
+            newItems.splice(newIndex, 0, movedItem);
+            
+            draggedItems.value = newItems;
+            
+            // Update files and folders arrays to maintain consistency
+            const newFolders = [];
+            const newFiles = [];
+
+            draggedItems.value.forEach(item => {
+              if (item.type === 'folder') {
+                newFolders.push({ name: item.name, path: item.path });
+              } else {
+                const { type, ...fileItem } = item;
+                newFiles.push(fileItem);
+              }
+            });
+
+            folders.value = newFolders;
+            files.value = newFiles;
+            
+            hasUnsavedChanges.value = true;
           }
-        }, 50);
-      }
+        }
+      });
     };
 
-    const onDragOver = (event, index, type) => {
-      if (!isRootDirectory.value) return;
-
-      event.preventDefault();
-      event.dataTransfer.dropEffect = 'move';
-
-      // Aggressive throttling to prevent oscillation - only update every 100ms
-      if (dragThrottleTimer) return;
-
-      dragThrottleTimer = setTimeout(() => {
-        dragThrottleTimer = null;
-      }, 100);
-
-      // Only update position if we're over a different element
-      if (dragOverIndex.value === index) {
-        // If we're already on this element, only update position if it's significantly different
-        const rect = event.currentTarget.getBoundingClientRect();
-        const y = event.clientY - rect.top;
-        const height = rect.height;
-
-        let newPosition;
-        if (y < height * 0.25) { // Reduced threshold for more stable zones
-          newPosition = 'before';
-        } else if (y > height * 0.75) { // Increased threshold for more stable zones
-          newPosition = 'after';
-        } else {
-          newPosition = 'on';
-        }
-
-        // Add hysteresis - only change position if we're significantly in a different zone
-        const currentPos = dragPosition.value;
-        if (currentPos !== newPosition) {
-          // Add a small delay before switching positions to prevent rapid oscillation
-          const switchThreshold = height * 0.1; // 10% buffer zone
-          
-          if ((currentPos === 'before' && newPosition === 'on' && y > height * 0.35) ||
-              (currentPos === 'on' && newPosition === 'before' && y < height * 0.15) ||
-              (currentPos === 'on' && newPosition === 'after' && y > height * 0.85) ||
-              (currentPos === 'after' && newPosition === 'on' && y < height * 0.65)) {
-            dragPosition.value = newPosition;
-          }
-        }
-        
-        return;
-      }
-
-      // Update to new element
-      dragOverIndex.value = index;
-
-      // Calculate position for new element
-      const rect = event.currentTarget.getBoundingClientRect();
-      const y = event.clientY - rect.top;
-      const height = rect.height;
-
-      let newPosition;
-      if (y < height * 0.25) {
-        newPosition = 'before';
-      } else if (y > height * 0.75) {
-        newPosition = 'after';
-      } else {
-        newPosition = 'on';
-      }
-
-      dragPosition.value = newPosition;
-    };
-
-    const onDrop = (event, dropIndex, dropType) => {
-      if (!isRootDirectory.value) return;
-
-      event.preventDefault();
-
-      const dragData = JSON.parse(event.dataTransfer.getData('text/plain'));
-      const originalIndex = dragData.originalIndex;
-
-      // Calculate the actual target index based on position
-      let targetIndex = dropIndex;
-      if (dragPosition.value === 'after') {
-        targetIndex = dropIndex + 1;
-      } else if (dragPosition.value === 'before') {
-        targetIndex = dropIndex;
-      } else {
-        // 'on' position - place after the target item
-        targetIndex = dropIndex + 1;
-      }
-
-      if (originalIndex !== targetIndex && Math.abs(originalIndex - targetIndex) > 0) {
-        // Set animation state
-        isReordering.value = true;
-
-        // Reorder the items
-        const newItems = [...draggedItems.value];
-        const [movedItem] = newItems.splice(originalIndex, 1);
-
-        // Track which item was moved for highlighting
-        recentlyMovedItem.value = movedItem;
-
-        // Adjust target index if we removed an item before it
-        let adjustedTargetIndex = targetIndex;
-        if (originalIndex < targetIndex) {
-          adjustedTargetIndex--;
-        }
-
-        // Ensure we don't go out of bounds
-        adjustedTargetIndex = Math.max(0, Math.min(adjustedTargetIndex, newItems.length));
-
-        newItems.splice(adjustedTargetIndex, 0, movedItem);
-
-        draggedItems.value = newItems;
-
-        // Update files and folders arrays to maintain consistency
-        const newFolders = [];
-        const newFiles = [];
-
-        draggedItems.value.forEach(item => {
-          if (item.type === 'folder') {
-            newFolders.push({ name: item.name, path: item.path });
-          } else {
-            const { type, ...fileItem } = item;
-            newFiles.push(fileItem);
-          }
-        });
-
-        folders.value = newFolders;
-        files.value = newFiles;
-
-        hasUnsavedChanges.value = true;
-
-        // Clear animation state after a brief delay to show the movement
+    // Watch for changes that require re-initializing sortable
+    watch([isRootDirectory, () => draggedItems.value.length], () => {
+      if (isRootDirectory.value && draggedItems.value.length > 0) {
         setTimeout(() => {
-          isReordering.value = false;
-          // Clear the recently moved item highlight after animation completes
-          setTimeout(() => {
-            recentlyMovedItem.value = null;
-          }, 500);
-        }, 200);
+          initializeSortable();
+        }, 100);
       }
-
-      // Clear drag state
-      dragOverIndex.value = -1;
-      dragPosition.value = '';
-    };
-
-    const onDragEnd = (event) => {
-      event.target.style.opacity = '1';
-
-      // Clear throttle timer
-      if (dragThrottleTimer) {
-        clearTimeout(dragThrottleTimer);
-        dragThrottleTimer = null;
-      }
-
-      // Clear all drag state
-      draggedIndex.value = -1;
-      dragOverIndex.value = -1;
-      dragPosition.value = '';
-
-      // Small delay to prevent click event from firing immediately after drag
-      setTimeout(() => {
-        isDragging.value = false;
-      }, 100);
-    };
-
-    // Handle dragging over the list container (for dropping at the end or beginning)
-    const onListDragOver = (event) => {
-      if (!isRootDirectory.value || !isDragging.value) return;
-
-      event.preventDefault();
-      event.dataTransfer.dropEffect = 'move';
-
-      // Add throttling to prevent excessive updates
-      if (dragThrottleTimer) return;
-
-      dragThrottleTimer = setTimeout(() => {
-        dragThrottleTimer = null;
-      }, 100);
-
-      // Check if we're dragging over empty space at the bottom or top
-      const rect = event.currentTarget.getBoundingClientRect();
-      const y = event.clientY - rect.top;
-      const listItems = event.currentTarget.querySelectorAll('.position-relative');
-
-      if (listItems.length > 0) {
-        const firstItem = listItems[0];
-        const firstItemRect = firstItem.getBoundingClientRect();
-        const relativeYToFirst = event.clientY - firstItemRect.top;
-
-        // Increase threshold to prevent oscillation between beginning drop zone and first item
-        if (relativeYToFirst < -20) { // Increased from -10 to -20
-          // Only update if we're not already showing the beginning drop zone
-          if (dragOverIndex.value !== -1) {
-            dragOverIndex.value = -1; // Special value for beginning of list
-            dragPosition.value = 'beginning';
-          }
-          return;
-        }
-
-        const lastItem = listItems[listItems.length - 1];
-        const lastItemRect = lastItem.getBoundingClientRect();
-        const relativeYToLast = event.clientY - lastItemRect.bottom;
-
-        // Increase threshold to prevent oscillation between end drop zone and last item
-        if (relativeYToLast > 20) { // Increased from 10 to 20
-          // Only update if we're not already showing the end drop zone
-          if (dragOverIndex.value !== -2) {
-            dragOverIndex.value = -2; // Special value for end of list
-            dragPosition.value = 'end';
-          }
-        }
-      }
-    };
-
-    // Handle dropping at the beginning or end of the list
-    const onListDrop = (event) => {
-      if (!isRootDirectory.value || !isDragging.value) return;
-
-      event.preventDefault();
-
-      const dragData = JSON.parse(event.dataTransfer.getData('text/plain'));
-      const originalIndex = dragData.originalIndex;
-
-      if (dragOverIndex.value === -1) {
-        // Drop at the beginning of the list
-        const targetIndex = 0;
-
-        if (originalIndex !== targetIndex) { // Don't move if already at the beginning
-          const newItems = [...draggedItems.value];
-          const [movedItem] = newItems.splice(originalIndex, 1);
-          newItems.unshift(movedItem); // Add to beginning
-
-          draggedItems.value = newItems;
-
-          // Update files and folders arrays to maintain consistency
-          const newFolders = [];
-          const newFiles = [];
-
-          draggedItems.value.forEach(item => {
-            if (item.type === 'folder') {
-              newFolders.push({ name: item.name, path: item.path });
-            } else {
-              const { type, ...fileItem } = item;
-              newFiles.push(fileItem);
-            }
-          });
-
-          folders.value = newFolders;
-          files.value = newFiles;
-
-          hasUnsavedChanges.value = true;
-        }
-      } else if (dragOverIndex.value === -2) {
-        // Drop at the end of the list
-        const targetIndex = draggedItems.value.length; // End of list
-
-        if (originalIndex !== targetIndex - 1) { // Don't move if already at the end
-          const newItems = [...draggedItems.value];
-          const [movedItem] = newItems.splice(originalIndex, 1);
-          newItems.push(movedItem); // Add to end
-
-          draggedItems.value = newItems;
-
-          // Update files and folders arrays to maintain consistency
-          const newFolders = [];
-          const newFiles = [];
-
-          draggedItems.value.forEach(item => {
-            if (item.type === 'folder') {
-              newFolders.push({ name: item.name, path: item.path });
-            } else {
-              const { type, ...fileItem } = item;
-              newFiles.push(fileItem);
-            }
-          });
-
-          folders.value = newFolders;
-          files.value = newFiles;
-
-          hasUnsavedChanges.value = true;
-        }
-      }
-
-      // Clear drag state
-      dragOverIndex.value = -1;
-      dragPosition.value = '';
-    };
+    }, { immediate: false });
 
     // Refresh order with retry logic after saving
     const refreshOrderWithRetry = async (maxRetries = 3) => {
@@ -1941,20 +1643,7 @@ export default {
       showGoUpButton,
       isRootDirectory,
       hasUnsavedChanges,
-      isDragging,
-      draggedIndex,
-      dragOverIndex,
-      dragPosition,
-      isReordering,
-      recentlyMovedItem,
-      onDragStart,
-      onDragEnter,
-      onDragLeave,
-      onDragOver,
-      onDrop,
-      onDragEnd,
-      onListDragOver,
-      onListDrop,
+      initializeSortable,
       saveOrder
     }
   }
@@ -2025,7 +1714,7 @@ export default {
   font-size: 0.7em;
 }
 
-/* Drag and drop styles */
+/* Drag and drop styles - Sortable.js */
 .drag-handle {
   color: #6c757d;
   cursor: grab;
@@ -2053,63 +1742,22 @@ export default {
   opacity: 1;
 }
 
-/* File list container for smooth transitions */
-.file-list-container {
-  position: relative;
-}
-
-.file-item-wrapper {
-  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-/* Vue transition-group animations */
-.file-list-move {
-  transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-.file-list-enter-active {
-  transition: all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-.file-list-leave-active {
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  position: absolute;
-}
-
-.file-list-enter-from {
-  opacity: 0;
-  transform: translateY(-20px) scale(0.9);
-}
-
-.file-list-leave-to {
-  opacity: 0;
-  transform: translateY(20px) scale(0.9);
-}
-
-/* Enhanced drag visual feedback */
-.list-group-item.being-dragged {
+/* Sortable.js default classes */
+.sortable-ghost {
   opacity: 0.6;
-  transform: scale(0.95) rotate(2deg);
-  transition: all 0.2s ease;
+  background-color: #f8f9fa;
+  border: 2px dashed #6c757d;
+}
+
+.sortable-chosen {
+  cursor: grabbing;
+}
+
+.sortable-drag {
+  opacity: 0.8;
+  transform: rotate(2deg);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
   z-index: 1000;
-  position: relative;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-}
-
-.list-group-item.drag-over {
-  background-color: #e3f2fd !important;
-  border-color: #2196f3 !important;
-  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.3);
-  transform: scale(1.02);
-  transition: all 0.2s ease;
-}
-
-/* Recently moved item highlight */
-.list-group-item.recently-moved {
-  background-color: #f0f9ff !important;
-  border-color: #0ea5e9 !important;
-  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.4);
-  animation: moved-item-highlight 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 @keyframes moved-item-highlight {
