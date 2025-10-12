@@ -27,6 +27,13 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       open: true
     },
+    // Optimize dependency handling for spec-up-t-healthcheck
+    optimizeDeps: {
+      include: ['spec-up-t-healthcheck/web', 'axios']
+    },
+    resolve: {
+      dedupe: ['axios'] // Prevent duplicate axios instances between packages
+    },
     // sets the Rollup output option manualChunks to undefined during the build process. This disables code splitting for dynamic imports, so all code will be bundled into a single output file instead of splitting into multiple chunks. This can be useful if you want a single JavaScript file for deployment, but it may increase the bundle size and affect loading performance for larger apps.
     build: {
       rollupOptions: {
