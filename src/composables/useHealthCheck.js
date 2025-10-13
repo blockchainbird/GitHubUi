@@ -68,6 +68,25 @@ export function useHealthCheck(props) {
         }
       },
 
+      async directoryExists(dirPath) {
+        try {
+          const url = 'https://api.github.com/repos/' + owner + '/' + repo + '/contents/' + dirPath + '?ref=' + branch;
+          const response = await axios.get(url, {
+            headers: {
+              'Authorization': 'token ' + secureTokenManager.getToken(),
+              'Accept': 'application/vnd.github.v3+json'
+            }
+          });
+          // Check if it's an array (directory) or if the type indicates a directory
+          return Array.isArray(response.data) || (response.data && response.data.type === 'dir');
+        } catch (error) {
+          if (checkAuthAndRedirect(error)) {
+            throw new Error('Authentication required - redirecting to login');
+          }
+          return false;
+        }
+      },
+
       async listFiles(dirPath = '') {
         try {
           const url = 'https://api.github.com/repos/' + owner + '/' + repo + '/contents/' + dirPath + '?ref=' + branch;
