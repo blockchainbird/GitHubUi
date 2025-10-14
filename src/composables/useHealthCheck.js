@@ -8,6 +8,7 @@ import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { secureTokenManager } from '../utils/secureTokenManager.js'
 import { runHealthChecks } from 'spec-up-t-healthcheck/web'
+import { formatResultDetails } from 'spec-up-t-healthcheck/lib/formatters/result-details-formatter.js'
 
 export function useHealthCheck(props) {
   const router = useRouter()
@@ -168,11 +169,18 @@ export function useHealthCheck(props) {
           checkGroups[groupName] = []
         }
         
+        // Format the details using the shared formatter
+        // This creates an HTML string with errors, warnings, and success lists
+        let formattedDetails = result.message || ''
+        if (result.details && Object.keys(result.details).length > 0) {
+          formattedDetails += formatResultDetails(result.details)
+        }
+        
         // Convert the result format
         checkGroups[groupName].push({
           name: result.check || 'Unknown Check',
           success: result.status === 'pass',
-          details: result.message || '',
+          details: formattedDetails,
           status: result.status === 'warn' ? 'warning' : undefined
         })
       })
@@ -215,7 +223,7 @@ export function useHealthCheck(props) {
       // Run health checks using the spec-up-t-healthcheck package
       console.log('Running health checks...')
       const healthCheckResults = await runHealthChecks(provider, {
-        checks: ['package-json', 'spec-files', 'specs-json', 'gitignore', 'spec-directory-and-files']
+        checks: ['package-json', 'spec-files', 'specs-json', 'gitignore', 'spec-directory-and-files', 'external-specs-urls']
       })
       console.log('Health check results:', healthCheckResults)
 
