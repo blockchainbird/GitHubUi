@@ -215,7 +215,7 @@ export function useHealthCheck(props) {
       // Run health checks using the spec-up-t-healthcheck package
       console.log('Running health checks...')
       const healthCheckResults = await runHealthChecks(provider, {
-        checks: ['package-json', 'spec-files', 'specs-json', 'gitignore']
+        checks: ['package-json', 'spec-files', 'specs-json', 'gitignore', 'spec-directory-and-files']
       })
       console.log('Health check results:', healthCheckResults)
 
