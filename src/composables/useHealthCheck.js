@@ -18,7 +18,7 @@ export function useHealthCheck(props) {
   const error = ref('')
   const results = ref([])
   const timestamp = ref('')
-  const showPassing = ref(true)
+  const showPassing = ref(false)
 
   /**
    * Creates a GitHub provider that implements the spec-up-t-healthcheck provider interface
