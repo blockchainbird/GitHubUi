@@ -9,6 +9,7 @@ import axios from 'axios'
 import { secureTokenManager } from '../utils/secureTokenManager.js'
 import { runHealthChecks } from 'spec-up-t-healthcheck/web'
 import { formatResultDetails } from 'spec-up-t-healthcheck/lib/formatters/result-details-formatter.js'
+import { checkPublishedPage } from '../utils/webLinkChecker.js'
 
 export function useHealthCheck(props) {
   const router = useRouter()
@@ -19,6 +20,11 @@ export function useHealthCheck(props) {
   const results = ref([])
   const timestamp = ref('')
   const showPassing = ref(false)
+  
+  // Link checker state
+  const linkCheckResults = ref(null)
+  const isCheckingLinks = ref(false)
+  const linkCheckProgress = ref('')
 
   /**
    * Creates a GitHub provider that implements the spec-up-t-healthcheck provider interface
@@ -241,6 +247,57 @@ export function useHealthCheck(props) {
     }
   }
 
+  /**
+   * Run link check on published GitHub Pages URL
+   * This checks all links on the published HTML page
+   * 
+   * @param {string} ghPageUrl - The GitHub Pages URL to check
+   */
+  const runLinkCheck = async (ghPageUrl) => {
+    // Validate URL
+    if (!ghPageUrl) {
+      error.value = 'No GitHub Pages URL configured. Please add gh_page to your specs.json file.'
+      return
+    }
+    
+    isCheckingLinks.value = true
+    error.value = ''
+    linkCheckProgress.value = 'Starting link check...'
+    linkCheckResults.value = null
+    
+    try {
+      console.log('Checking links on:', ghPageUrl)
+      
+      // Run the web-based link checker
+      const results = await checkPublishedPage(ghPageUrl, {
+        onProgress: (progress) => {
+          console.log(progress.message)
+          linkCheckProgress.value = progress.message
+        },
+        timeout: 10000,
+        maxLinks: 100
+      })
+      
+      console.log('Link check results:', results)
+      
+      // Store results with timestamp
+      linkCheckResults.value = {
+        timestamp: new Date().toLocaleString(),
+        url: ghPageUrl,
+        ...results
+      }
+      
+      linkCheckProgress.value = results.summary
+      
+    } catch (err) {
+      console.error('Link check failed:', err)
+      error.value = err.message || 'Link check failed unexpectedly'
+      linkCheckProgress.value = ''
+    } finally {
+      isCheckingLinks.value = false
+    }
+  }
+
   return {
     isRunning,
     error,
@@ -248,6 +305,11 @@ export function useHealthCheck(props) {
     timestamp,
     showPassing,
     filteredResults,
-    runHealthCheck
+    runHealthCheck,
+    // Link checker
+    linkCheckResults,
+    isCheckingLinks,
+    linkCheckProgress,
+    runLinkCheck
   }
 }
