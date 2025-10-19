@@ -10,9 +10,12 @@ import { secureTokenManager } from '../utils/secureTokenManager.js'
 import { runHealthChecks } from 'spec-up-t-healthcheck/web'
 import { formatResultDetails } from 'spec-up-t-healthcheck/lib/formatters/result-details-formatter.js'
 import { checkPublishedPage } from '../utils/webLinkChecker.js'
+import { useSoundSystem } from '../composables/useSoundSystem.js'
+
 
 export function useHealthCheck(props) {
   const router = useRouter()
+  const { playSuccessSound } = useSoundSystem()
   
   // State
   const isRunning = ref(false)
@@ -239,6 +242,9 @@ export function useHealthCheck(props) {
       
       console.log('Converted results:', results.value)
 
+      // Play success sound
+      playSuccessSound()
+
     } catch (err) {
       console.error('Health check failed:', err)
       error.value = err.message || 'Health check failed unexpectedly'
@@ -295,6 +301,9 @@ export function useHealthCheck(props) {
       linkCheckProgress.value = ''
     } finally {
       isCheckingLinks.value = false
+      // Play success sound
+      playSuccessSound()
+
     }
   }
 
