@@ -32,6 +32,38 @@
               {{ successMessage }}
             </div>
 
+            <!-- Workflow Status -->
+            <div v-if="workflowStatus" class="alert" :class="{
+              'alert-info': workflowStatus.status === 'queued' || workflowStatus.status === 'in_progress',
+              'alert-success': workflowStatus.conclusion === 'success',
+              'alert-danger': workflowStatus.conclusion === 'failure' || workflowStatus.conclusion === 'cancelled',
+              'alert-warning': workflowStatus.conclusion === 'timed_out' || workflowStatus.conclusion === 'action_required'
+            }" role="alert">
+              <div class="d-flex align-items-start">
+                <div v-if="workflowStatus.status !== 'completed'" class="spinner-border spinner-border-sm me-3 mt-1" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                <i v-else-if="workflowStatus.conclusion === 'success'" class="bi bi-check-circle-fill me-2"></i>
+                <i v-else-if="workflowStatus.conclusion === 'failure'" class="bi bi-x-circle-fill me-2"></i>
+                <i v-else class="bi bi-exclamation-triangle-fill me-2"></i>
+                <div class="flex-grow-1">
+                  <strong>Workflow Status: {{ formatStatus(workflowStatus.status) }}</strong>
+                  <div v-if="workflowStatus.conclusion" class="small">
+                    Result: {{ formatConclusion(workflowStatus.conclusion) }}
+                  </div>
+                  <div class="small text-muted">
+                    {{ workflowStatus.name || 'menu.yml' }}
+                  </div>
+                  <div v-if="workflowStatus.html_url" class="mt-2">
+                    <a :href="workflowStatus.html_url" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">
+                      <i class="bi bi-box-arrow-up-right me-1"></i>
+                      View Workflow Run
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Loading State -->
             <div v-if="triggeringWorkflow" class="alert alert-info" role="alert">
               <div class="d-flex align-items-center">
@@ -214,7 +246,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 import RepoInfo from './RepoInfo.vue'
@@ -233,6 +265,8 @@ export default {
     const successMessage = ref('')
     const selectedWorkflow = ref('')
     const triggeringWorkflow = ref(false)
+    const workflowStatus = ref(null)
+    const pollingInterval = ref(null)
 
     // Helper function to check authentication and redirect if needed
     const checkAuthAndRedirect = (error) => {
@@ -248,6 +282,196 @@ export default {
     // Set the workflow to always use menu.yml
     const loadWorkflows = async () => {
       selectedWorkflow.value = 'menu.yml'
+    }
+
+    /**
+     * Formats workflow status for display
+     *
+     * 1. Real-time Status Updates
+     * - After triggering a workflow, the app automatically finds and tracks it
+     * - Polls the GitHub API every 5 seconds to check status
+     * - Displays current status: Queued → In Progress → Completed
+     *
+     * 2. Visual Feedback
+     *
+     * - Info alert (blue) for queued/in-progress workflows with spinner
+     * - Success alert (green) for successful completion
+     * - Danger alert (red) for failures
+     * - Warning alert (yellow) for timeouts or action required
+     *
+     * 3. Smart Workflow Detection
+     *
+     * - Records exact trigger time when workflow is dispatched
+     * - Retries up to 6 times with 3-second delays to find new runs
+     * - Only tracks runs created after the trigger time (prevents false positives)
+     *
+     * 4. Safety Features
+     *
+     * - Auto-stop: Polling stops when workflow completes
+     * - Timeout: Maximum 10 minutes of polling (120 polls × 5 seconds)
+     * - Cleanup: Automatically stops polling when component unmounts
+     * - Error handling: Gracefully handles API errors
+     *
+     * 5. User Experience
+     *
+     * - Shows workflow name and status
+     * - Displays final result (Success/Failed/Cancelled, etc.)
+     * - Provides "View Workflow Run" button linking to GitHub
+     *
+     * 🎯 How It Works:
+     * - User triggers workflow → Records trigger time
+     * - Retries finding new runs → Starts polling once found
+     * - Every 5 seconds → Checks and updates status
+     * - On completion → Shows final result with link to GitHub
+     *
+     * @param {string} status - The workflow status
+     * @returns {string} Formatted status string
+     */
+    const formatStatus = (status) => {
+      const statusMap = {
+        'queued': 'Queued',
+        'in_progress': 'In Progress',
+        'completed': 'Completed',
+        'waiting': 'Waiting'
+      }
+      return statusMap[status] || status
+    }
+
+    /**
+     * Formats workflow conclusion for display
+     * @param {string} conclusion - The workflow conclusion
+     * @returns {string} Formatted conclusion string
+     */
+    const formatConclusion = (conclusion) => {
+      const conclusionMap = {
+        'success': 'Success',
+        'failure': 'Failed',
+        'cancelled': 'Cancelled',
+        'timed_out': 'Timed Out',
+        'action_required': 'Action Required',
+        'neutral': 'Neutral',
+        'skipped': 'Skipped'
+      }
+      return conclusionMap[conclusion] || conclusion
+    }
+
+    /**
+     * Finds the most recent workflow run for the current branch
+     * Retries multiple times to find a newly created run
+     * @param {object} config - Axios config with auth headers
+     * @param {Date} triggerTime - When the workflow was triggered
+     * @returns {object|null} The workflow run object or null
+     */
+    const findRecentWorkflowRun = async (config, triggerTime) => {
+      const maxAttempts = 6 // Try 6 times
+      const delayBetweenAttempts = 3000 // 3 seconds between attempts
+      
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          console.log(`🔍 Attempt ${attempt}/${maxAttempts} to find workflow run...`)
+          
+          // Get recent workflow runs for menu.yml
+          const response = await axios.get(
+            `https://api.github.com/repos/${props.owner}/${props.repo}/actions/workflows/menu.yml/runs`,
+            {
+              ...config,
+              params: {
+                branch: props.branch,
+                per_page: 10
+              }
+            }
+          )
+
+          const runs = response.data.workflow_runs
+          if (runs && runs.length > 0) {
+            // Find runs created after we triggered the workflow
+            const newRuns = runs.filter(run => {
+              const createdAt = new Date(run.created_at)
+              return createdAt >= triggerTime
+            })
+            
+            if (newRuns.length > 0) {
+              console.log(`✅ Found new workflow run #${newRuns[0].id}`)
+              return newRuns[0]
+            }
+          }
+          
+          // If not the last attempt, wait before trying again
+          if (attempt < maxAttempts) {
+            console.log(`⏳ No new run found yet, waiting ${delayBetweenAttempts}ms...`)
+            await new Promise(resolve => setTimeout(resolve, delayBetweenAttempts))
+          }
+        } catch (err) {
+          console.error(`Error finding workflow run (attempt ${attempt}):`, err)
+        }
+      }
+      
+      console.warn('⚠️ Could not find new workflow run after all attempts')
+      return null
+    }
+
+    /**
+     * Polls the workflow status until completion or timeout
+     * @param {number} runId - The workflow run ID
+     * @param {object} config - Axios config with auth headers
+     */
+    const pollWorkflowStatus = async (runId, config) => {
+      let pollCount = 0
+      const maxPolls = 120 // Poll for up to 10 minutes (120 * 5 seconds)
+      
+      const poll = async () => {
+        try {
+          pollCount++
+          
+          const response = await axios.get(
+            `https://api.github.com/repos/${props.owner}/${props.repo}/actions/runs/${runId}`,
+            config
+          )
+
+          const run = response.data
+          workflowStatus.value = {
+            status: run.status,
+            conclusion: run.conclusion,
+            name: run.name,
+            html_url: run.html_url
+          }
+
+          console.log(`📊 Workflow status: ${run.status}, conclusion: ${run.conclusion}`)
+
+          // Stop polling if workflow is completed or max polls reached
+          if (run.status === 'completed' || pollCount >= maxPolls) {
+            if (pollingInterval.value) {
+              clearInterval(pollingInterval.value)
+              pollingInterval.value = null
+            }
+            
+            if (pollCount >= maxPolls && run.status !== 'completed') {
+              console.warn('⚠️ Polling timeout reached')
+            }
+          }
+        } catch (err) {
+          console.error('Error polling workflow status:', err)
+          // Stop polling on error
+          if (pollingInterval.value) {
+            clearInterval(pollingInterval.value)
+            pollingInterval.value = null
+          }
+        }
+      }
+
+      // Start polling every 5 seconds
+      await poll() // Poll immediately
+      pollingInterval.value = setInterval(poll, 5000)
+    }
+
+    /**
+     * Stops polling when component is unmounted
+     */
+    const stopPolling = () => {
+      if (pollingInterval.value) {
+        clearInterval(pollingInterval.value)
+        pollingInterval.value = null
+      }
     }
 
     // Trigger workflow function - always uses menu.yml
@@ -293,9 +517,22 @@ export default {
           config
         )
 
+        // Record when we triggered the workflow
+        const triggerTime = new Date()
+        
         // Show success message
         successMessage.value = `Successfully triggered "${selectedAction.value}" action using menu.yml workflow`
         console.log(`✅ Successfully triggered menu.yml workflow with action "${selectedAction.value}" on branch ${props.branch}`)
+
+        // Find and poll the workflow run (this will retry internally)
+        const run = await findRecentWorkflowRun(config, triggerTime)
+        if (run) {
+          console.log(`🔍 Found workflow run #${run.id}, starting status polling...`)
+          await pollWorkflowStatus(run.id, config)
+        } else {
+          console.warn('⚠️ Could not find the workflow run to track')
+          successMessage.value = `Workflow triggered successfully. Visit GitHub Actions to see the status.`
+        }
 
       } catch (err) {
         console.error('❌ Error triggering workflow:', err)
@@ -357,13 +594,21 @@ on:
       loadWorkflows()
     })
 
+    // Cleanup polling on component unmount
+    onUnmounted(() => {
+      stopPolling()
+    })
+
     return {
       selectedAction,
       actionError,
       successMessage,
       selectedWorkflow,
       triggeringWorkflow,
-      triggerWorkflow
+      workflowStatus,
+      triggerWorkflow,
+      formatStatus,
+      formatConclusion
     }
   }
 }
