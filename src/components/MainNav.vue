@@ -118,7 +118,7 @@
               <li v-if="isAdvancedUser">
                 <button class="dropdown-item"
                   @click="navigateAndClose(buildRoutePath('/external-specs', currentOwner, currentRepo, currentBranch))">
-                  <i class="bi bi-link-45deg"></i> External config
+                  <i class="bi bi-link-45deg"></i> External repo's
                 </button>
               </li>
               <li>
