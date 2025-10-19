@@ -251,6 +251,7 @@ import { useRoute } from 'vue-router'
 import axios from 'axios'
 import RepoInfo from './RepoInfo.vue'
 import { secureTokenManager } from '../utils/secureTokenManager.js'
+import { useSoundSystem } from '../composables/useSoundSystem.js'
 
 export default {
   name: 'GitHubActions',
@@ -258,6 +259,9 @@ export default {
   props: ['owner', 'repo', 'branch'],
   setup(props) {
     const route = useRoute()
+
+    // Sound system
+    const { playSuccessSound, playErrorSound } = useSoundSystem()
 
     // State
     const selectedAction = ref('render')
@@ -438,6 +442,15 @@ export default {
 
           console.log(`📊 Workflow status: ${run.status}, conclusion: ${run.conclusion}`)
 
+          // Play sound when workflow completes
+          if (run.status === 'completed') {
+            if (run.conclusion === 'success') {
+              playSuccessSound()
+            } else if (run.conclusion === 'failure' || run.conclusion === 'cancelled' || run.conclusion === 'timed_out') {
+              playErrorSound()
+            }
+          }
+
           // Stop polling if workflow is completed or max polls reached
           if (run.status === 'completed' || pollCount >= maxPolls) {
             if (pollingInterval.value) {
@@ -481,9 +494,11 @@ export default {
         actionError.value = ''
         successMessage.value = ''
 
+
         const token = secureTokenManager.getToken()
         if (!token) {
           actionError.value = 'GitHub token not found. Please log in again.'
+          playErrorSound()
           return
         }
 
@@ -532,6 +547,7 @@ export default {
         } else {
           console.warn('⚠️ Could not find the workflow run to track')
           successMessage.value = `Workflow triggered successfully. Visit GitHub Actions to see the status.`
+          playErrorSound()
         }
 
       } catch (err) {
@@ -585,6 +601,7 @@ on:
         } else {
           actionError.value = 'Failed to trigger menu.yml workflow: ' + (err.response?.data?.message || err.message)
         }
+        playErrorSound()
       } finally {
         triggeringWorkflow.value = false
       }
