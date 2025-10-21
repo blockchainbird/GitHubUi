@@ -287,7 +287,40 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
             const dtElements = termsList.querySelectorAll('dt')
 
             dtElements.forEach(dt => {
-              const termId = dt.textContent?.trim()
+              // Extract term ID using the same strategy as spec-up-t's extractTermsFromHtml
+              // The structure has changed - dt.textContent now includes aliases and parenthetical content
+              // We need to extract the canonical term ID from the nested span structure
+
+              let termId = null;
+              let termClasses = [];
+
+              // Strategy 1: Look for span with data-original-term attribute (most reliable)
+              const spanWithOriginal = dt.querySelector('span[data-original-term]');
+              if (spanWithOriginal) {
+                termId = spanWithOriginal.dataset.originalTerm;
+                termClasses = Array.from(spanWithOriginal.classList);
+              } else {
+                // Strategy 2: Look for span.term-external-original-term or span.term-local-original-term
+                const originalTermSpan = dt.querySelector('span.term-external-original-term, span.term-local-original-term');
+                if (originalTermSpan) {
+                  termId = originalTermSpan.textContent?.trim();
+                  // Get classes from parent span
+                  const parentSpan = dt.querySelector('span.term-external, span.term-local');
+                  if (parentSpan) {
+                    termClasses = Array.from(parentSpan.classList);
+                  }
+                } else {
+                  // Strategy 3: Fallback - look for any span with id starting with "term:"
+                  const termSpan = dt.querySelector('span[id^="term:"]');
+                  if (termSpan) {
+                    const spanId = termSpan.getAttribute('id');
+                    if (spanId) {
+                      termId = spanId.replace('term:', '');
+                    }
+                  }
+                }
+              }
+
               if (termId) {
                 // Collect all dd elements that follow this dt until the next dt
                 const ddElements = []
@@ -317,7 +350,8 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
                     definitionText: definitionText,
                     external: true,
                     externalSpec: spec.external_spec,
-                    source: `External: ${spec.external_spec}`
+                    source: `External: ${spec.external_spec}`,
+                    classes: termClasses
                   })
                 }
               }
@@ -392,7 +426,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
     try {
       let localTerms = []
       let extracted = null
-      
+
       if (fileContent) {
         extracted = parseTermsFromContent(fileContent, filePath)
       } else {
@@ -407,7 +441,7 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
       const storageKey = `terms_${props.owner}_${props.repo}_${props.branch}`
       const stored = localStorage.getItem(storageKey)
       let externalTerms = []
-      
+
       if (stored) {
         try {
           const parsed = JSON.parse(stored)
@@ -598,39 +632,39 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
   // Refresh terms (clear cache and reload)
   const refreshTerms = async () => {
     console.log(consoleMessages.refreshingTerms())
-    
+
     // Set initial feedback
     isRefreshing.value = true
     refreshFeedback.value = 'Clearing cache...'
-    
+
     try {
       const storageKey = `terms_${props.owner}_${props.repo}_${props.branch}`
       localStorage.removeItem(storageKey)
       // Clear proxy info when starting refresh
       proxyInfo.value = ''
       console.log(consoleMessages.cacheCleared())
-      
+
       refreshFeedback.value = 'Reloading terms...'
-      
+
       await loadTermsFromRepository()
       filterTerms()
-      
+
       const count = terms.value.length
       console.log(consoleMessages.refreshComplete(count))
-      
+
       // Show success feedback
       refreshFeedback.value = `✅ ${count} terms loaded`
-      
+
       // Clear feedback after 3 seconds
       setTimeout(() => {
         refreshFeedback.value = ''
         isRefreshing.value = false
       }, 3000)
-      
+
     } catch (error) {
       console.error('Refresh failed:', error)
       refreshFeedback.value = '❌ Refresh failed'
-      
+
       // Clear error feedback after 5 seconds
       setTimeout(() => {
         refreshFeedback.value = ''
