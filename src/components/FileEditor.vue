@@ -855,7 +855,7 @@ export default {
         case 'auto':
         default:
           if (term.external) {
-            refText = `[[xref: ${term.externalSpec}, ${term.id}]]`
+            refText = `[[tref: ${term.externalSpec}, ${term.id}]]`
           } else {
             refText = `[[ref: ${term.id}]]`
           }
