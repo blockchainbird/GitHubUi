@@ -287,73 +287,63 @@ export function useTermsManagement(props, checkAuthAndRedirect) {
             const dtElements = termsList.querySelectorAll('dt')
 
             dtElements.forEach(dt => {
-              // Extract term ID using the same strategy as spec-up-t's extractTermsFromHtml
-              // The structure has changed - dt.textContent now includes aliases and parenthetical content
-              // We need to extract the canonical term ID from the nested span structure
-
-              let termId = null;
-              let termClasses = [];
-
-              // Strategy 1: Look for span with data-original-term attribute (most reliable)
-              const spanWithOriginal = dt.querySelector('span[data-original-term]');
-              if (spanWithOriginal) {
-                termId = spanWithOriginal.dataset.originalTerm;
-                termClasses = Array.from(spanWithOriginal.classList);
-              } else {
-                // Strategy 2: Look for span.term-external-original-term or span.term-local-original-term
-                const originalTermSpan = dt.querySelector('span.term-external-original-term, span.term-local-original-term');
-                if (originalTermSpan) {
-                  termId = originalTermSpan.textContent?.trim();
-                  // Get classes from parent span
-                  const parentSpan = dt.querySelector('span.term-external, span.term-local');
-                  if (parentSpan) {
-                    termClasses = Array.from(parentSpan.classList);
-                  }
-                } else {
-                  // Strategy 3: Fallback - look for any span with id starting with "term:"
-                  const termSpan = dt.querySelector('span[id^="term:"]');
-                  if (termSpan) {
-                    const spanId = termSpan.getAttribute('id');
-                    if (spanId) {
-                      termId = spanId.replace('term:', '');
-                    }
-                  }
-                }
+              // Follow spec-up-t's fetch-terms-from-index.js logic exactly
+              // This requires span.term-local-original-term to exist (no backward compatibility)
+              
+              // First check if there's any term span
+              const termSpan = dt.querySelector('span[id^="term:"]')
+              if (!termSpan) {
+                return
               }
 
-              if (termId) {
-                // Collect all dd elements that follow this dt until the next dt
-                const ddElements = []
-                let nextElement = dt.nextElementSibling
+              // Extract the canonical term identifier from the term-local-original-term span
+              // This contains the original term identifier as used in tref/xref references
+              // If this span doesn't exist, skip the term entirely (no backward compatibility)
+              const originalTermSpan = dt.querySelector('span.term-local-original-term')
+              if (!originalTermSpan) {
+                return
+              }
 
-                while (nextElement && nextElement.tagName.toLowerCase() === 'dd') {
-                  ddElements.push(nextElement.outerHTML)
-                  nextElement = nextElement.nextElementSibling
-                }
+              const termId = originalTermSpan.textContent?.trim()
+              if (!termId) {
+                return
+              }
 
-                if (ddElements.length > 0) {
-                  const definitionHtml = `<dl>${ddElements.join('')}</dl>`
-                  const definitionText = ddElements
-                    .map(dd => {
-                      const tempDiv = document.createElement('div')
-                      tempDiv.innerHTML = dd
-                      return tempDiv.textContent || tempDiv.innerText || ''
-                    })
-                    .join(' ')
-                    .trim()
+              // Extract classes from the <dt> element to determine if it's a local or external term
+              const dtClasses = dt.className ? dt.className.split(/\s+/).filter(Boolean) : []
+              const termClasses = dtClasses.filter(cls => cls === 'term-local' || cls === 'term-external')
 
-                  externalTerms.push({
-                    id: termId,
-                    aliases: [],
-                    file: spec.gh_page,
-                    definition: definitionHtml,
-                    definitionText: definitionText,
-                    external: true,
-                    externalSpec: spec.external_spec,
-                    source: `External: ${spec.external_spec}`,
-                    classes: termClasses
+              // Collect all dd elements that follow this dt until the next dt
+              const ddElements = []
+              let nextElement = dt.nextElementSibling
+
+              while (nextElement && nextElement.tagName.toLowerCase() === 'dd') {
+                ddElements.push(nextElement.outerHTML)
+                nextElement = nextElement.nextElementSibling
+              }
+
+              if (ddElements.length > 0) {
+                const definitionHtml = `<dl>${ddElements.join('')}</dl>`
+                const definitionText = ddElements
+                  .map(dd => {
+                    const tempDiv = document.createElement('div')
+                    tempDiv.innerHTML = dd
+                    return tempDiv.textContent || tempDiv.innerText || ''
                   })
-                }
+                  .join(' ')
+                  .trim()
+
+                externalTerms.push({
+                  id: termId,
+                  aliases: [],
+                  file: spec.gh_page,
+                  definition: definitionHtml,
+                  definitionText: definitionText,
+                  external: true,
+                  externalSpec: spec.external_spec,
+                  source: `External: ${spec.external_spec}`,
+                  classes: termClasses
+                })
               }
             })
 
