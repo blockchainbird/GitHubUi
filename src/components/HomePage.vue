@@ -336,19 +336,89 @@ export default {
         } : { headers: { 'Accept': 'application/vnd.github.v3+json' } }
 
         if (!showAllRepos.value) {
-          // Only spec-up-t repos
-          const searchQuery = `"spec-up-t" in:file filename:package.json user:${owner.value.trim()}`
-          const searchRes = await axios.get(`https://api.github.com/search/code?q=${encodeURIComponent(searchQuery)}&per_page=100`, config)
+          // Hybrid approach: Code Search + package.json verification
+          // Step 1: Try Code Search API first (fast but may miss some repos)
+          const searchQuery = `spec-up-t in:file filename:package.json user:${owner.value.trim()}`
+          console.log("🔍 Search Query:", searchQuery)
+          
           const uniqueRepos = new Map()
-          if (searchRes.data && searchRes.data.items) {
-            for (const item of searchRes.data.items) {
-              const repo = item.repository
-              if (!uniqueRepos.has(repo.id)) {
-                uniqueRepos.set(repo.id, repo)
+          
+          try {
+            const searchRes = await axios.get(`https://api.github.com/search/code?q=${encodeURIComponent(searchQuery)}&per_page=100`, config)
+            console.log("🚀 Code Search found:", searchRes.data?.total_count, "repos")
+            
+            if (searchRes.data && searchRes.data.items) {
+              for (const item of searchRes.data.items) {
+                const repo = item.repository
+                if (!uniqueRepos.has(repo.id)) {
+                  uniqueRepos.set(repo.id, repo)
+                }
               }
             }
+          } catch (err) {
+            console.warn("⚠️ Code search failed, will use fallback method:", err.message)
           }
+          
+          // Step 2: Fetch all repos and check their package.json (more reliable but slower)
+          console.log("� Fetching all repos to verify package.json contents...")
+          let allRepos = []
+          let page = 1
+          let hasMore = true
+          
+          while (hasMore && page <= 5) {
+            const res = await axios.get(`https://api.github.com/users/${owner.value.trim()}/repos?per_page=100&page=${page}`, config)
+            if (res.data && res.data.length > 0) {
+              allRepos = allRepos.concat(res.data)
+              page++
+            } else {
+              hasMore = false
+            }
+          }
+          
+          console.log("🔍 Checking", allRepos.length, "repositories for spec-up-t...")
+          
+          // Check each repo's package.json for spec-up-t using GitHub Contents API
+          const checkPromises = allRepos.map(async (repo) => {
+            try {
+              // Use GitHub API instead of raw URLs to avoid CORS issues
+              const pkgRes = await axios.get(
+                `https://api.github.com/repos/${owner.value.trim()}/${repo.name}/contents/package.json`,
+                { 
+                  ...config, 
+                  timeout: 5000,
+                  params: { ref: repo.default_branch },
+                  validateStatus: (status) => status === 200 // Only accept 200, treat others as errors silently
+                }
+              )
+              
+              // GitHub API returns base64 encoded content
+              if (pkgRes.data && pkgRes.data.content) {
+                const decodedContent = atob(pkgRes.data.content.replace(/\n/g, ''))
+                
+                if (decodedContent.includes('spec-up-t')) {
+                  return repo
+                }
+              }
+            } catch (err) {
+              // Silently ignore repos without package.json (404) or other access issues
+              // This is expected for most repos that aren't Node.js projects
+              return null
+            }
+            return null
+          })
+          
+          const verifiedRepos = (await Promise.all(checkPromises)).filter(r => r !== null)
+          console.log("✅ Verified", verifiedRepos.length, "repos contain spec-up-t")
+          
+          // Merge results: add verified repos that weren't found by code search
+          for (const repo of verifiedRepos) {
+            if (!uniqueRepos.has(repo.id)) {
+              uniqueRepos.set(repo.id, repo)
+            }
+          }
+          
           const specUpRepos = Array.from(uniqueRepos.values())
+          console.log("🚀 Total unique spec-up-t repos:", specUpRepos.map(r => r.name))
           repoList.value = specUpRepos
           filteredRepoList.value = [...specUpRepos]
         } else {
