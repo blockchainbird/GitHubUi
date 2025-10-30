@@ -35,16 +35,16 @@ if ($wantStatus) {
     exit;
 }
 
-// Forward the request
+// Forward the request and capture headers
 $ch = curl_init($url);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-curl_setopt($ch, CURLOPT_HEADER, false);
+curl_setopt($ch, CURLOPT_HEADER, true);
 curl_setopt($ch, CURLOPT_TIMEOUT, 15);
 
 $response = curl_exec($ch);
 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-$contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+$headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
 curl_close($ch);
 
 if ($response === false) {
@@ -53,12 +53,23 @@ if ($response === false) {
     exit;
 }
 
-// Pass through the content type
-if ($contentType) {
-    header('Content-Type: ' . $contentType);
-} else {
-    header('Content-Type: text/html');
+// Split headers and body
+$headers = substr($response, 0, $headerSize);
+$body = substr($response, $headerSize);
+
+// Parse and forward relevant headers
+$headerLines = explode("\r\n", $headers);
+foreach ($headerLines as $line) {
+    if (stripos($line, 'Content-Type:') === 0) {
+        header($line);
+    } elseif (stripos($line, 'Last-Modified:') === 0) {
+        header($line);
+    } elseif (stripos($line, 'ETag:') === 0) {
+        header($line);
+    } elseif (stripos($line, 'Cache-Control:') === 0) {
+        header($line);
+    }
 }
 
 http_response_code($httpCode);
-echo $response;
+echo $body;
