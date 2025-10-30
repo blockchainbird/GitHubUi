@@ -44,13 +44,13 @@
               <input type="radio" class="btn-check" id="termType-local" v-model="termType" value="local"
                 @change="onFormChange">
               <label class="btn btn-outline-primary" for="termType-local">
-                <i class="bi bi-house"></i> Local
+                <i class="bi bi-house"></i> Local (def)
               </label>
 
               <input type="radio" class="btn-check" id="termType-external" v-model="termType" value="external"
                 @change="onFormChange">
               <label class="btn btn-outline-success" for="termType-external">
-                <i class="bi bi-link-45deg"></i> External
+                <i class="bi bi-link-45deg"></i> External (tref)
               </label>
             </div>
 
