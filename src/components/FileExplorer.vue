@@ -35,7 +35,12 @@
                   <i class="bi bi-folder-fill"></i>
                   {{ currentDirectory }}
                 </h5>
-                <RepoInfo v-if="!isOffcanvasMode" :owner="owner" :repo="repo" :branch="branch" />
+                <RepoInfo 
+                  v-if="!isOffcanvasMode" 
+                  :owner="owner" 
+                  :repo="repo" 
+                  :branch="branch" 
+                  @branch-click="showBranchSelector = true" />
                 <div class="d-flex gap-2">
                   <button @click="showCreateModal" class="btn btn-primary btn-sm" title="Create New File">
                     <i class="bi bi-plus-circle"></i>
@@ -302,6 +307,15 @@
             </div>
           </div>
         </div>
+
+        <!-- Branch Selector Modal -->
+        <BranchSelector
+          :is-open="showBranchSelector"
+          :owner="owner"
+          :repo="repo"
+          :current-branch="decodedBranch"
+          @close="showBranchSelector = false"
+          @branch-selected="handleBranchChange" />
       </div>
     </div>
   </div>
@@ -314,14 +328,15 @@ import axios from 'axios'
 import Sortable from 'sortablejs'
 import { addToVisitedRepos } from '../utils/visitedRepos.js'
 import { getGitHubHeaders, addCacheBusting } from '../utils/apiUtils.js'
-import { decodeBranchName, buildRoutePath } from '../utils/branchUtils.js'
+import { decodeBranchName, buildRoutePath, encodeBranchName } from '../utils/branchUtils.js'
 import TermsPreview from './TermsPreview.vue'
 import RepoInfo from './RepoInfo.vue'
+import BranchSelector from './BranchSelector.vue'
 import { secureTokenManager } from '../utils/secureTokenManager.js'
 
 export default {
   name: 'FileExplorer',
-  components: { TermsPreview, RepoInfo },
+  components: { TermsPreview, RepoInfo, BranchSelector },
   props: {
     owner: String,
     repo: String,
@@ -344,6 +359,9 @@ export default {
     const currentDirectory = ref('')
     const specsConfig = ref(null)
     const specTermsDirectory = ref('')
+
+    // Branch selector state
+    const showBranchSelector = ref(false)
 
     // Decode branch name to handle URL-encoded characters like slashes
     const decodedBranch = computed(() => {
@@ -1293,6 +1311,30 @@ export default {
       }
     })
 
+    /**
+     * Watch for branch changes from the branch selector
+     * Reloads the entire component state when branch changes
+     */
+    watch(() => props.branch, (newBranch, oldBranch) => {
+      if (newBranch && oldBranch && newBranch !== oldBranch) {
+        console.log('Branch changed from', oldBranch, 'to', newBranch, '- reloading data')
+        // Reset state
+        error.value = ''
+        loading.value = true
+        currentDirectory.value = ''
+        files.value = []
+        folders.value = []
+        draggedItems.value = []
+        hasUnsavedChanges.value = false
+        
+        // Update visited repos with new branch
+        addToVisitedRepos(props.owner, props.repo, decodedBranch.value)
+        
+        // Reload specs config and files
+        loadSpecsConfig()
+      }
+    })
+
     // Clean up event listener
     onUnmounted(() => {
       document.removeEventListener('click', handleClickOutside)
@@ -1637,6 +1679,16 @@ export default {
       }
     };
 
+    /**
+     * Handles branch change from the branch selector
+     * Navigates to the same route with the new branch
+     */
+    const handleBranchChange = (newBranch) => {
+      const encodedBranch = encodeBranchName(newBranch)
+      const newPath = buildRoutePath('/files', props.owner, props.repo, encodedBranch)
+      router.push(newPath)
+    }
+
     return {
       loading,
       loadingMessage,
@@ -1690,7 +1742,10 @@ export default {
       hasUnsavedChanges,
       initializeSortable,
       forceReinitializeSortable,
-      saveOrder
+      saveOrder,
+      showBranchSelector,
+      handleBranchChange,
+      decodedBranch
     }
   }
 }

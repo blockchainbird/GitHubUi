@@ -8,7 +8,7 @@
             <i class="bi bi-heart-pulse"></i>
             Health Check
           </h2>
-          <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
+          <RepoInfo :owner="owner" :repo="repo" :branch="branch" @branch-click="showBranchSelector = true" />
           <div>
             <button @click="runHealthCheck" class="btn btn-primary me-2" :disabled="isRunning">
               <span v-if="isRunning" class="spinner-border spinner-border-sm me-2" role="status">
@@ -186,19 +186,39 @@
       </div>
       </div>
       </div>
+
+      <!-- Branch Selector Modal -->
+      <BranchSelector
+        :is-open="showBranchSelector"
+        :owner="owner"
+        :repo="repo"
+        :current-branch="decodedBranch"
+        @close="showBranchSelector = false"
+        @branch-selected="handleBranchChange" />
 </template>
 
 <script>
-import { onMounted } from 'vue'
+import { onMounted, ref, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useHealthCheck } from '../composables/useHealthCheck.js'
 import { addToVisitedRepos } from '../utils/visitedRepos.js'
+import { decodeBranchName, encodeBranchName, buildRoutePath } from '../utils/branchUtils.js'
 import RepoInfo from './RepoInfo.vue'
+import BranchSelector from './BranchSelector.vue'
 
 export default {
   name: 'HealthCheck',
-  components: { RepoInfo },
+  components: { RepoInfo, BranchSelector },
   props: ['owner', 'repo', 'branch'],
   setup(props) {
+    const router = useRouter()
+    
+    // Branch selector state
+    const showBranchSelector = ref(false)
+
+    // Decoded branch for display
+    const decodedBranch = computed(() => decodeBranchName(props.branch))
+
     const {
       isRunning,
       error,
@@ -278,6 +298,28 @@ export default {
       addToVisitedRepos(props.owner, props.repo, props.branch)
     })
 
+    /**
+     * Handles branch change from the branch selector
+     * Navigates to the same route with the new branch
+     */
+    const handleBranchChange = (newBranch) => {
+      const encodedBranch = encodeBranchName(newBranch)
+      const newPath = buildRoutePath('/health-check', props.owner, props.repo, encodedBranch)
+      router.push(newPath)
+    }
+
+    /**
+     * Watch for branch changes and reload data
+     */
+    watch(() => props.branch, (newBranch, oldBranch) => {
+      if (newBranch && oldBranch && newBranch !== oldBranch) {
+        console.log('Branch changed from', oldBranch, 'to', newBranch, '- health check needs to be rerun')
+        // Clear results when branch changes
+        results.value = []
+        timestamp.value = null
+      }
+    })
+
     return {
       isRunning,
       error,
@@ -296,7 +338,10 @@ export default {
       getStatusText,
       getRowClass,
       getSectionHeaderClass,
-      getLinkCheckHeaderClass
+      getLinkCheckHeaderClass,
+      showBranchSelector,
+      handleBranchChange,
+      decodedBranch
     }
   }
 }

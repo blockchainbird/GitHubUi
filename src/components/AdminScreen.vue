@@ -26,7 +26,7 @@
 
         <div v-if="!loading" class="card">
           <div class="card-header">
-            <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
+            <RepoInfo :owner="owner" :repo="repo" :branch="decodedBranch" @branch-click="showBranchSelector = true" />
           </div>
           <div class="card-body">
             <form @submit.prevent="saveConfiguration">
@@ -142,21 +142,32 @@
             </div>
           </div>
         </div> -->
+
+        <!-- Branch Selector Modal -->
+        <BranchSelector
+          :is-open="showBranchSelector"
+          :owner="owner"
+          :repo="repo"
+          :current-branch="decodedBranch"
+          @close="showBranchSelector = false"
+          @branch-selected="handleBranchChange" />
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import RepoInfo from './RepoInfo.vue'
+import BranchSelector from './BranchSelector.vue'
 import axios from 'axios'
-import { decodeBranchName } from '../utils/branchUtils.js'
+import { decodeBranchName, encodeBranchName, buildRoutePath } from '../utils/branchUtils.js'
 import { secureTokenManager } from '../utils/secureTokenManager.js'
 
 export default {
   name: 'AdminScreen',
-  components: { RepoInfo },
+  components: { RepoInfo, BranchSelector },
   props: {
     owner: {
       type: String,
@@ -172,6 +183,11 @@ export default {
     }
   },
   setup(props) {
+    const router = useRouter()
+    
+    // Branch selector state
+    const showBranchSelector = ref(false)
+
     // Decode branch name to handle URL-encoded characters like slashes
     const decodedBranch = computed(() => {
       return decodeBranchName(props.branch)
@@ -315,6 +331,28 @@ export default {
       loadConfiguration()
     })
 
+    /**
+     * Handles branch change from the branch selector
+     * Navigates to the same route with the new branch
+     */
+    const handleBranchChange = (newBranch) => {
+      const encodedBranch = encodeBranchName(newBranch)
+      const newPath = buildRoutePath('/admin', props.owner, props.repo, encodedBranch)
+      router.push(newPath)
+    }
+
+    /**
+     * Watch for branch changes and reload data
+     */
+    watch(() => props.branch, (newBranch, oldBranch) => {
+      if (newBranch && oldBranch && newBranch !== oldBranch) {
+        console.log('Branch changed from', oldBranch, 'to', newBranch, '- reloading configuration')
+        loading.value = true
+        error.value = ''
+        loadConfiguration()
+      }
+    })
+
     return {
       specs,
       saving,
@@ -326,7 +364,9 @@ export default {
       removeSpec,
       owner: props.owner,
       repo: props.repo,
-      branch: decodedBranch.value
+      showBranchSelector,
+      handleBranchChange,
+      decodedBranch
     }
   }
 }

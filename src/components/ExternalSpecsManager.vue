@@ -24,7 +24,7 @@
 
         <div v-if="!loading" class="card">
           <div class="card-header d-flex justify-content-between align-items-center">
-            <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
+            <RepoInfo :owner="owner" :repo="repo" :branch="branch" @branch-click="showBranchSelector = true" />
           </div>
           <div class="card-body">
             <!-- External Specs List -->
@@ -448,11 +448,20 @@
         </div>
       </div>
     </div>
+
+    <!-- Branch Selector Modal -->
+    <BranchSelector
+      :is-open="showBranchSelector"
+      :owner="owner"
+      :repo="repo"
+      :current-branch="branch"
+      @close="showBranchSelector = false"
+      @branch-selected="handleBranchChange" />
   </div>
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { addToVisitedRepos } from '../utils/visitedRepos.js'
 import { useSpecsManager } from '../composables/useSpecsManager.js'
@@ -460,19 +469,27 @@ import { useSpecsValidation } from '../composables/useSpecsValidation.js'
 import { useBulkImport } from '../composables/useBulkImport.js'
 import { useReferenceSets } from '../composables/useReferenceSets.js'
 import { useNotifications } from '../composables/useNotifications.js'
+import { encodeBranchName, buildRoutePath, decodeBranchName } from '../utils/branchUtils.js'
 import RepoInfo from './RepoInfo.vue'
+import BranchSelector from './BranchSelector.vue'
 
 export default {
   name: 'ExternalSpecsManager',
-  components: { RepoInfo },
+  components: { RepoInfo, BranchSelector },
   setup() {
     const router = useRouter()
     const route = useRoute()
+
+    // Branch selector state
+    const showBranchSelector = ref(false)
 
     // Route parameters
     const owner = ref(route.params.owner)
     const repo = ref(route.params.repo)
     const branch = ref(route.params.branch)
+
+    // Decoded branch for display
+    const decodedBranch = computed(() => decodeBranchName(branch.value))
 
     // Composables
     const specsManager = useSpecsManager()
@@ -662,6 +679,27 @@ export default {
       referenceSets.loadReferenceSets()
     })
 
+    /**
+     * Handles branch change from the branch selector
+     * Navigates to the same route with the new branch
+     */
+    const handleBranchChange = (newBranch) => {
+      const encodedBranch = encodeBranchName(newBranch)
+      const newPath = buildRoutePath('/external-specs', owner.value, repo.value, encodedBranch)
+      router.push(newPath)
+    }
+
+    /**
+     * Watch for branch changes and reload data
+     */
+    watch(() => route.params.branch, (newBranch, oldBranch) => {
+      if (newBranch && oldBranch && newBranch !== oldBranch) {
+        console.log('Branch changed from', oldBranch, 'to', newBranch, '- reloading specs')
+        branch.value = newBranch
+        specsManager.loadSpecs(owner.value, repo.value, newBranch, router)
+      }
+    })
+
     return {
       // Route parameters
       owner,
@@ -714,7 +752,10 @@ export default {
       selectReferenceSet: referenceSets.selectReferenceSet,
       importReferenceSet: handleImportReferenceSet,
       saveSpecs: handleSaveSpecs,
-      goBack: handleGoBack
+      goBack: handleGoBack,
+      showBranchSelector,
+      handleBranchChange,
+      decodedBranch
     }
   }
 }

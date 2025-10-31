@@ -1194,6 +1194,20 @@ export default {
       refreshLayout()
     }, { flush: 'post' })
 
+    /**
+     * Watch for branch changes from the branch selector
+     * Reloads file content when branch changes
+     */
+    watch(() => props.branch, (newBranch, oldBranch) => {
+      if (newBranch && oldBranch && newBranch !== oldBranch) {
+        console.log('Branch changed from', oldBranch, 'to', newBranch, '- reloading file')
+        loading.value = true
+        error.value = ''
+        success.value = ''
+        loadFileContent()
+      }
+    })
+
     watch(editMode, (newMode, oldMode) => {
       // Update split view state in parent App component
       splitViewState.setSplitViewActive(newMode === 'split')
