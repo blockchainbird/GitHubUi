@@ -25,31 +25,22 @@
             </button>
           </li>
 
-          <!-- File Explorer Toggle -->
-          <li v-if="showRepoRelatedButtons" class="nav-item">
+          <!-- File Explorer Toggle - Hidden since accessible via side tab -->
+          <!-- <li v-if="showRepoRelatedButtons" class="nav-item">
             <button @click="toggleFileExplorerAndClose" class="nav-link btn btn-link" title="Toggle File Explorer">
               <i class="bi bi-folder2-open"></i>
               Explorer
             </button>
-          </li>
+          </li> -->
 
-          <!-- File menu -->
-          <li v-if="showRepoRelatedButtons" class="nav-item dropdown" data-menu="file"
-            @mouseenter="onHoverMenu('file', true)" @mouseleave="onHoverMenu('file', false)">
-            <button :class="['nav-link', 'btn', 'btn-link', 'dropdown-toggle', { active: isFileSectionActive }]"
-              id="fileMenuButton" aria-haspopup="true" :aria-expanded="isFileOpen.toString()"
-              aria-controls="fileMenuDropdown" @click="toggleMenu('file')" @keydown="handleMenuKeydown('file', $event)"
-              ref="fileToggle">
-              File
+          <!-- Explorer menu (formerly File menu) -->
+          <li v-if="showRepoRelatedButtons" class="nav-item">
+            <button @click="navigateToFilesAndClose"
+              :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/files') }]"
+              title="Navigate to Files">
+              <i class="bi bi-folder"></i>
+              Explorer
             </button>
-            <ul id="fileMenuDropdown" class="dropdown-menu" :class="{ show: isFileOpen }"
-              aria-labelledby="fileMenuButton" ref="fileMenuEl" @keydown="handleMenuListKeydown('file', $event)">
-              <li>
-                <button class="dropdown-item" @click="navigateToFilesAndClose">
-                  <i class="bi bi-folder"></i> Files
-                </button>
-              </li>
-            </ul>
           </li>
 
           <!-- Render (single item) -->
