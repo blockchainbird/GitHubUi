@@ -545,8 +545,10 @@ export default {
       window.removeEventListener('keydown', onGlobalKeydown);
     });
 
-    // Get build info from Vite's define
-    const buildInfo = __BUILD_INFO__;
+    // Build info - simplified without version checking
+    const buildInfo = {
+      buildDate: 'Production Build'
+    };
 
     // Function to check if a route is active
     const isActiveRoute = (routePath) => {
