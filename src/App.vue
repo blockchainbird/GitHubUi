@@ -7,7 +7,6 @@
       <router-view @login="handleLogin" @logout="handleLogout"></router-view>
     </main>
     <BackToTop />
-    <VersionNotification />
     <Notepad />
 
     <!-- Floating File Manager Button -->
@@ -30,14 +29,10 @@ import BackToTop from './components/BackToTop.vue'
 import Notepad from './components/Notepad.vue'
 import OffcanvasFileExplorer from './components/OffcanvasFileExplorer.vue'
 import { secureTokenManager } from './utils/secureTokenManager.js'
-// Choose one of these notification components:
-import VersionNotification from './components/VersionNotification.vue'           // Simple: Auto-reload
-// import EnhancedVersionNotification from './components/EnhancedVersionNotification.vue'  // Enhanced: User choice
 
 export default {
   name: 'App',
-  components: { MainNav, BackToTop, VersionNotification, Notepad, OffcanvasFileExplorer },
-  // If switching to enhanced, change to: components: { MainNav, BackToTop, EnhancedVersionNotification },
+  components: { MainNav, BackToTop, Notepad, OffcanvasFileExplorer },
   setup() {
     const router = useRouter()
     const route = useRoute()

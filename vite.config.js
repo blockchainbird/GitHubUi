@@ -4,25 +4,9 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   
-  // Generate build timestamp
-  const buildInfo = {
-    timestamp: new Date().toISOString(),
-    buildDate: new Date().toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      timeZoneName: 'short'
-    })
-  }
-  
   return {
     base: env.VITE_BASE_PATH || '/',
     plugins: [vue()],
-    define: {
-      __BUILD_INFO__: JSON.stringify(buildInfo)
-    },
     server: {
       port: 3000,
       open: true
@@ -44,6 +28,10 @@ export default defineConfig(({ mode }) => {
     build: {
       rollupOptions: {
         output: {
+          // Cache busting: Include hash in filenames to prevent stale caches
+          entryFileNames: 'assets/[name].[hash].js',
+          chunkFileNames: 'assets/[name].[hash].js',
+          assetFileNames: 'assets/[name].[hash].[ext]',
           manualChunks: undefined
         },
         // Mark Node.js-only modules and their dependencies as external
