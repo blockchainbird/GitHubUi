@@ -14,6 +14,7 @@
       {{ branch }}
       <i class="bi bi-chevron-down ms-1"></i>
     </span>
+    <span v-if="defaultBranch && branch === defaultBranch" class="badge rounded-pill bg-success ms-2">default</span>
   </div>
 </template>
 
@@ -32,6 +33,10 @@ export default {
     branch: {
       type: String,
       required: true
+    },
+    defaultBranch: {
+      type: String,
+      default: ''
     }
   },
   emits: ['branch-click']

@@ -24,7 +24,7 @@
 
         <div v-if="!loading" class="card">
           <div class="card-header d-flex justify-content-between align-items-center">
-            <RepoInfo :owner="owner" :repo="repo" :branch="branch" @branch-click="showBranchSelector = true" />
+            <RepoInfo :owner="owner" :repo="repo" :branch="branch" :default-branch="defaultBranch" @branch-click="showBranchSelector = true" />
           </div>
           <div class="card-body">
             <!-- External Specs List -->
@@ -472,6 +472,7 @@ import { useNotifications } from '../composables/useNotifications.js'
 import { encodeBranchName, buildRoutePath, decodeBranchName } from '../utils/branchUtils.js'
 import RepoInfo from './RepoInfo.vue'
 import BranchSelector from './BranchSelector.vue'
+import { useDefaultBranch } from '../composables/useDefaultBranch.js'
 
 export default {
   name: 'ExternalSpecsManager',
@@ -490,6 +491,9 @@ export default {
 
     // Decoded branch for display
     const decodedBranch = computed(() => decodeBranchName(branch.value))
+
+    // Fetch default branch
+    const { defaultBranch } = useDefaultBranch({ owner: owner.value, repo: repo.value })
 
     // Composables
     const specsManager = useSpecsManager()
@@ -674,7 +678,7 @@ export default {
     }
 
     onMounted(() => {
-      addToVisitedRepos(owner.value, repo.value, branch.value)
+      addToVisitedRepos(owner.value, repo.value, branch.value, defaultBranch.value)
       specsManager.loadSpecs(owner.value, repo.value, branch.value, router)
       referenceSets.loadReferenceSets()
     })
@@ -755,7 +759,8 @@ export default {
       goBack: handleGoBack,
       showBranchSelector,
       handleBranchChange,
-      decodedBranch
+      decodedBranch,
+      defaultBranch
     }
   }
 }

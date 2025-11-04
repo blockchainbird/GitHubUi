@@ -29,8 +29,9 @@ export const loadVisitedRepos = () => {
  * @param {string} owner - Repository owner
  * @param {string} name - Repository name
  * @param {string} branch - Repository branch
+ * @param {string} defaultBranch - Repository default branch (optional)
  */
-export const addToVisitedRepos = (owner, name, branch) => {
+export const addToVisitedRepos = (owner, name, branch, defaultBranch = '') => {
   const repos = loadVisitedRepos()
   const repoKey = `${owner}/${name}/${branch}`
 
@@ -44,6 +45,7 @@ export const addToVisitedRepos = (owner, name, branch) => {
     owner,
     name,
     branch,
+    defaultBranch,
     lastVisited: new Date().toISOString()
   }
 

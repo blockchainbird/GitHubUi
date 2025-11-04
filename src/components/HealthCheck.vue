@@ -8,7 +8,7 @@
             <i class="bi bi-heart-pulse"></i>
             Health Check
           </h2>
-          <RepoInfo :owner="owner" :repo="repo" :branch="branch" @branch-click="showBranchSelector = true" />
+          <RepoInfo :owner="owner" :repo="repo" :branch="branch" :default-branch="defaultBranch" @branch-click="showBranchSelector = true" />
           <div>
             <button @click="runHealthCheck" class="btn btn-primary me-2" :disabled="isRunning">
               <span v-if="isRunning" class="spinner-border spinner-border-sm me-2" role="status">
@@ -205,6 +205,7 @@ import { addToVisitedRepos } from '../utils/visitedRepos.js'
 import { decodeBranchName, encodeBranchName, buildRoutePath } from '../utils/branchUtils.js'
 import RepoInfo from './RepoInfo.vue'
 import BranchSelector from './BranchSelector.vue'
+import { useDefaultBranch } from '../composables/useDefaultBranch.js'
 
 export default {
   name: 'HealthCheck',
@@ -218,6 +219,9 @@ export default {
 
     // Decoded branch for display
     const decodedBranch = computed(() => decodeBranchName(props.branch))
+
+    // Fetch default branch
+    const { defaultBranch } = useDefaultBranch(props)
 
     const {
       isRunning,
@@ -295,7 +299,7 @@ export default {
 
     onMounted(() => {
       // Add this repository to visited history
-      addToVisitedRepos(props.owner, props.repo, props.branch)
+      addToVisitedRepos(props.owner, props.repo, props.branch, defaultBranch.value)
     })
 
     /**
@@ -341,7 +345,8 @@ export default {
       getLinkCheckHeaderClass,
       showBranchSelector,
       handleBranchChange,
-      decodedBranch
+      decodedBranch,
+      defaultBranch
     }
   }
 }

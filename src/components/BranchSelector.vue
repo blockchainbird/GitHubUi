@@ -62,6 +62,7 @@
                 <i class="bi bi-git me-2"></i>
                 {{ branch.name }}
                 <span v-if="branch.name === currentBranch" class="badge bg-primary ms-2">Current</span>
+                <span v-if="branch.name === defaultBranch" class="badge rounded-pill bg-success ms-2">default</span>
               </li>
             </ul>
           </div>
@@ -83,6 +84,7 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import axios from 'axios'
 import { secureTokenManager } from '../utils/secureTokenManager.js'
+import { useDefaultBranch } from '../composables/useDefaultBranch.js'
 
 export default {
   name: 'BranchSelector',
@@ -124,6 +126,9 @@ export default {
     const loading = ref(false)
     const error = ref('')
     const filterInput = ref(null)
+
+    // Use composable to fetch default branch
+    const { defaultBranch, fetchDefaultBranch } = useDefaultBranch(props, { immediate: false })
 
     /**
      * Fetches branches from GitHub API
@@ -206,7 +211,7 @@ export default {
      */
     watch(() => props.isOpen, async (newValue) => {
       if (newValue) {
-        await fetchBranches()
+        await Promise.all([fetchDefaultBranch(), fetchBranches()])
         // Focus the filter input after modal is rendered
         await nextTick()
         filterInput.value?.focus()
@@ -222,7 +227,8 @@ export default {
       filterInput,
       filterBranches,
       selectBranch,
-      close
+      close,
+      defaultBranch
     }
   }
 }

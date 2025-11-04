@@ -1046,7 +1046,7 @@ export default {
 
     // Lifecycle
     onMounted(async () => {
-      addToVisitedRepos(props.owner, props.repo, decodedBranch.value)
+      addToVisitedRepos(props.owner, props.repo, decodedBranch.value, '')
 
 
 

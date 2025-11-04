@@ -39,7 +39,8 @@
                   v-if="!isOffcanvasMode" 
                   :owner="owner" 
                   :repo="repo" 
-                  :branch="branch" 
+                  :branch="branch"
+                  :default-branch="defaultBranch"
                   @branch-click="showBranchSelector = true" />
                 <div class="d-flex gap-2">
                   <button @click="showCreateModal" class="btn btn-primary btn-sm" title="Create New File">
@@ -333,6 +334,7 @@ import TermsPreview from './TermsPreview.vue'
 import RepoInfo from './RepoInfo.vue'
 import BranchSelector from './BranchSelector.vue'
 import { secureTokenManager } from '../utils/secureTokenManager.js'
+import { useDefaultBranch } from '../composables/useDefaultBranch.js'
 
 export default {
   name: 'FileExplorer',
@@ -362,6 +364,9 @@ export default {
 
     // Branch selector state
     const showBranchSelector = ref(false)
+
+    // Fetch default branch
+    const { defaultBranch } = useDefaultBranch(props)
 
     // Decode branch name to handle URL-encoded characters like slashes
     const decodedBranch = computed(() => {
@@ -1187,7 +1192,7 @@ export default {
 
     onMounted(() => {
       // Add this repository to visited history
-      addToVisitedRepos(props.owner, props.repo, decodedBranch.value)
+      addToVisitedRepos(props.owner, props.repo, decodedBranch.value, defaultBranch.value)
 
       loadSpecsConfig()
       document.addEventListener('click', handleClickOutside)
@@ -1328,7 +1333,7 @@ export default {
         hasUnsavedChanges.value = false
         
         // Update visited repos with new branch
-        addToVisitedRepos(props.owner, props.repo, decodedBranch.value)
+        addToVisitedRepos(props.owner, props.repo, decodedBranch.value, defaultBranch.value)
         
         // Reload specs config and files
         loadSpecsConfig()
@@ -1745,7 +1750,8 @@ export default {
       saveOrder,
       showBranchSelector,
       handleBranchChange,
-      decodedBranch
+      decodedBranch,
+      defaultBranch
     }
   }
 }

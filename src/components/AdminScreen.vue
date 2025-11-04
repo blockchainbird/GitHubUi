@@ -26,7 +26,7 @@
 
         <div v-if="!loading" class="card">
           <div class="card-header">
-            <RepoInfo :owner="owner" :repo="repo" :branch="decodedBranch" @branch-click="showBranchSelector = true" />
+            <RepoInfo :owner="owner" :repo="repo" :branch="decodedBranch" :default-branch="defaultBranch" @branch-click="showBranchSelector = true" />
           </div>
           <div class="card-body">
             <form @submit.prevent="saveConfiguration">
@@ -164,6 +164,7 @@ import BranchSelector from './BranchSelector.vue'
 import axios from 'axios'
 import { decodeBranchName, encodeBranchName, buildRoutePath } from '../utils/branchUtils.js'
 import { secureTokenManager } from '../utils/secureTokenManager.js'
+import { useDefaultBranch } from '../composables/useDefaultBranch.js'
 
 export default {
   name: 'AdminScreen',
@@ -192,6 +193,9 @@ export default {
     const decodedBranch = computed(() => {
       return decodeBranchName(props.branch)
     })
+
+    // Fetch default branch
+    const { defaultBranch } = useDefaultBranch(props)
 
     const specs = ref([])
     const saving = ref(false)
@@ -366,7 +370,8 @@ export default {
       repo: props.repo,
       showBranchSelector,
       handleBranchChange,
-      decodedBranch
+      decodedBranch,
+      defaultBranch
     }
   }
 }

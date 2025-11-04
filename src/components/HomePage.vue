@@ -103,6 +103,7 @@
                       class="list-group-item list-group-item-action" style="cursor:pointer"
                       @click="selectBranch(item.name)">
                       <i class="bi bi-git"></i> {{ item.name }}
+                      <span v-if="item.name === defaultBranch" class="badge rounded-pill bg-success ms-2">default</span>
                     </li>
                   </ul>
                 </div>
@@ -164,6 +165,7 @@
               <p class="card-text text-muted small mb-2">
                 <i class="bi bi-git"></i>
                 {{ repo.branch }}
+                <span v-if="repo.defaultBranch && repo.branch === repo.defaultBranch" class="badge rounded-pill bg-success ms-2">default</span>
               </p>
 
               <div class="mt-auto">
@@ -203,6 +205,7 @@ import {
 } from '../utils/visitedRepos.js'
 import { buildRoutePath } from '../utils/branchUtils.js'
 import { secureTokenManager } from '../utils/secureTokenManager.js'
+import { useDefaultBranch } from '../composables/useDefaultBranch.js'
 
 export default {
   name: 'HomePage',
@@ -226,6 +229,13 @@ export default {
     const branchLoading = ref(false)
     const branchFilter = ref('')
     const filteredBranchList = ref([])
+
+    // Use composable to fetch default branch
+    const { defaultBranch, fetchDefaultBranch } = useDefaultBranch(
+      { owner, repo }, 
+      { immediate: false }
+    )
+
     // Fetch branches for the selected repo
     const fetchBranches = async () => {
       if (!owner.value.trim() || !repo.value.trim()) return
@@ -295,7 +305,7 @@ export default {
     // Navigate to a repository
     const navigateToRepo = (repo) => {
       // Update the visited timestamp
-      visitedRepos.value = addToVisitedRepos(repo.owner, repo.name, repo.branch)
+      visitedRepos.value = addToVisitedRepos(repo.owner, repo.name, repo.branch, repo.defaultBranch)
 
       // Navigate to the repository files - encode branch name to handle slashes and special characters
       router.push(buildRoutePath('/files', repo.owner, repo.name, repo.branch))
@@ -311,7 +321,7 @@ export default {
       if (!owner.value.trim() || !repo.value.trim()) return
       branchFilter.value = ''
       showBranchModal.value = true
-      await fetchBranches()
+      await Promise.all([fetchDefaultBranch(), fetchBranches()])
     }
 
     // Select branch from modal
@@ -488,7 +498,7 @@ export default {
         await axios.get(`https://api.github.com/repos/${owner.value}/${repo.value}`, config)
 
         // Add to visited repositories
-        addToVisitedRepos(owner.value, repo.value, branch.value)
+        addToVisitedRepos(owner.value, repo.value, branch.value, defaultBranch.value)
 
         // Navigate to file explorer with branch - encode branch name to handle slashes and special characters
         router.push(buildRoutePath('/files', owner.value, repo.value, branch.value))
