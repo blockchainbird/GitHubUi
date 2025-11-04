@@ -61,14 +61,6 @@
                 </button>
               </div>
             </form>
-
-            <!-- <div class="mt-4">
-              <h6>Required Token Permissions:</h6>
-              <ul class="text-muted small">
-                <li>repo (Full control of private repositories)</li>
-                <li>Contents (Read and write repository contents)</li>
-              </ul>
-            </div> -->
           </div>
         </div>
       </div>
@@ -80,6 +72,34 @@
         <i class="bi bi-shield-lock"></i>
         How To Create a GitHub Token
       </h2>
+      <div class="row g-4 mb-5 video-container-wrapper">
+        <div class="col-12">
+          <div class="card d-flex flex-column h-100">
+            <div
+              class="card-header bg-primary text-white text-center d-flex justify-content-between align-items-center">
+              <div class="flex-grow-1">
+                <p class="card-text text-info bg-dark p-3 rounded mt-3 mb-0">Go to GitHub.com and log in, and then do
+                  the
+                  following:
+                  <button @click="toggleFullscreen" class="btn btn-sm btn-outline-light ms-3" title="Toggle Fullscreen"
+                    aria-label="Toggle video fullscreen">
+                    <i class="bi bi-arrows-fullscreen"></i>
+                  </button>
+                </p>
+              </div>
+            </div>
+            <div class="card-body p-0 flex-grow-1 d-flex justify-content-center align-items-center">
+              <video ref="videoElement" muted autoplay loop controls class="video-player">
+                <source src="/create-token.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+              </video>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p>The same, but in images:</p>
+
       <div class="row g-4 instructions">
         <div class="col-12 col-sm-6 col-lg-4">
           <div class="card h-100">
@@ -192,7 +212,26 @@ export default {
     const loading = ref(false)
     const error = ref('')
     const { playSuccessSound } = useSoundSystem()
-    
+    const videoElement = ref(null)
+
+    /**
+     * Toggles fullscreen mode for the video element.
+     * Uses the Fullscreen API to request or exit fullscreen.
+     */
+    const toggleFullscreen = () => {
+      if (!videoElement.value) return
+
+      if (!document.fullscreenElement) {
+        // Request fullscreen
+        videoElement.value.requestFullscreen().catch(err => {
+          console.error('Error attempting to enable fullscreen:', err)
+        })
+      } else {
+        // Exit fullscreen
+        document.exitFullscreen()
+      }
+    }
+
     const handleLogin = async () => {
       if (!token.value.trim()) {
         error.value = 'Please enter your GitHub token'
@@ -281,8 +320,9 @@ export default {
       token,
       loading,
       error,
-      handleLogin
-
+      handleLogin,
+      videoElement,
+      toggleFullscreen
     }
   }
 }
