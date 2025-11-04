@@ -54,7 +54,6 @@ export function useSoundSystem() {
     };
     const playSuccessSound = () => {
         if (soundEnabled.value && successSound) {
-            console.log("KORKOR")
             // Debug: log Howler state and sound properties
             console.log('Howler state:', successSound.state());
             console.log('successSound loaded:', successSound._loaded);
