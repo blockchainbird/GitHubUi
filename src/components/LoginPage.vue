@@ -35,23 +35,6 @@
                 <label for="token" class="form-label">GitHub Personal Access Token</label>
                 <input type="password" id="token" v-model="token" class="form-control"
                   placeholder="Enter your GitHub token" required autocomplete="new-password">
-                <div class="form-text">
-                  <small>
-                    <a href="https://github.com/settings/tokens" target="_blank" class="text-decoration-none">
-                      <i class="bi bi-box-arrow-up-right"></i>
-                      Generate a new token
-                    </a>
-                    with repo permissions
-                  </small>
-                  –
-                  <small>
-                    <a href="https://blockchainbird.github.io/spec-up-t-website/docs/getting-started/github-token/#get-the-token"
-                      target="_blank" class="text-decoration-none">
-                      <i class="bi bi-box-arrow-up-right"></i>
-                      Instructions
-                    </a>
-                  </small>
-                </div>
               </div>
 
               <div class="d-grid">
@@ -78,9 +61,9 @@
             <div
               class="card-header bg-primary text-white text-center d-flex justify-content-between align-items-center">
               <div class="flex-grow-1">
-                <p class="card-text text-info bg-dark p-3 rounded mt-3 mb-0">Go to GitHub.com and log in, and then do
-                  the
-                  following:
+                <p class="card-text text-info bg-dark p-3 rounded mt-3 mb-0"><a
+                    href="https://github.com/settings/tokens" target="_blank" class="text-white text-decoration-none">
+                    Go to GitHub.com <i class="bi bi-box-arrow-up-right"></i>, log in</a> and then do the following:
                   <button @click="toggleFullscreen" class="btn btn-sm btn-outline-light ms-3" title="Toggle Fullscreen"
                     aria-label="Toggle video fullscreen">
                     <i class="bi bi-arrows-fullscreen"></i>
