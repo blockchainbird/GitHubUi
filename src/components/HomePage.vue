@@ -574,7 +574,8 @@ export default {
       navigateToRepo,
       formatDate,
       showAllRepos,
-      fetchRepos
+      fetchRepos,
+      defaultBranch
     }
   },
   components: {

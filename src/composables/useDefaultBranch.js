@@ -7,7 +7,7 @@
  * @module composables/useDefaultBranch
  */
 
-import { ref, watch } from 'vue'
+import { ref, watch, unref } from 'vue'
 import axios from 'axios'
 import { secureTokenManager } from '../utils/secureTokenManager.js'
 
@@ -47,7 +47,10 @@ export function useDefaultBranch(props, options = {}) {
    * Uses authentication token if available for higher rate limits
    */
   const fetchDefaultBranch = async () => {
-    if (!props.owner || !props.repo) {
+    const owner = unref(props.owner)
+    const repo = unref(props.repo)
+
+    if (!owner || !repo) {
       defaultBranch.value = ''
       return
     }
@@ -69,7 +72,7 @@ export function useDefaultBranch(props, options = {}) {
       }
 
       const response = await axios.get(
-        `https://api.github.com/repos/${props.owner}/${props.repo}`,
+        `https://api.github.com/repos/${owner}/${repo}`,
         config
       )
 
@@ -88,10 +91,12 @@ export function useDefaultBranch(props, options = {}) {
    * Watch for owner/repo changes and refetch
    */
   watch(
-    () => [props.owner, props.repo],
-    () => {
-      if (props.owner && props.repo) {
+    () => [unref(props.owner), unref(props.repo)],
+    ([ownerVal, repoVal]) => {
+      if (ownerVal && repoVal) {
         fetchDefaultBranch()
+      } else {
+        defaultBranch.value = ''
       }
     },
     { immediate }
