@@ -245,15 +245,6 @@ export default {
 }
 
 /**
- * Active branch item styling
- * Highlights the currently selected branch
- */
-.branch-item.active {
-  background-color: #e7f3ff !important;
-  border-color: #0d6efd !important;
-}
-
-/**
  * Hover state for branch items
  * Provides visual feedback on hover
  */
