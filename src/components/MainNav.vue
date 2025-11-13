@@ -4,7 +4,8 @@
       <!-- Brand/Logo -->
       <span class="navbar-brand mb-0 h1 d-flex align-items-center">
         <img src="/assets/logo.svg" alt="Spec-Up-T Logo" style="height: 2rem; width: auto; margin-right: 0.5rem;" />
-        Spec-Up-T Editor <i role="button" @click="showModalAndClose" class="ms-3 bi bi-info-circle"></i>
+        Spec-Up-T Editor
+        <!-- <i role="button" @click="showModalAndClose" class="ms-3 bi bi-info-circle"></i> -->
       </span>
 
       <!-- Hamburger button for mobile -->
