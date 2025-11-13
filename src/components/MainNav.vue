@@ -125,7 +125,7 @@
 
           <!-- Sound Toggle Button -->
           <li class="nav-item d-flex align-items-center me-2">
-            <button :title="isSoundEnabled ? 'Turn sound off' : 'Turn sound on'" @click="toggleSound"
+            <button v-tooltip :title="isSoundEnabled ? 'Turn sound off' : 'Turn sound on'" @click="toggleSound"
               class="btn btn-outline-secondary btn-sm">
               <i :class="isSoundEnabled ? 'bi bi-volume-up' : 'bi bi-volume-mute'"></i>
             </button>
