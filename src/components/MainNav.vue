@@ -132,7 +132,7 @@
           </li>
 
           <!-- Authentication UI -->
-          <li class="nav-item d-flex align-items-center ms-2">
+          <li v-if="isAuthenticated" class="nav-item d-flex align-items-center ms-2">
             <div v-if="isAuthenticated" class="d-flex align-items-center">
               <span class="visually-hidden">{{ user.login }}</span>
               <button :title="user.login" @click="handleLogout" class="btn btn-outline-primary btn-sm">
