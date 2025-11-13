@@ -7,10 +7,12 @@
             <img src="/assets/logo.svg" alt="Logo"
               style="max-width: 120px; width: 60%; height: auto; margin-bottom: 0.5rem;" />
           </div>
-          <h2 class="card-title text-center mb-4">
-            <i class="bi bi-github"></i>
-            Login to GitHub
-          </h2>
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="card-title text-center flex-grow-1 mb-0">
+              <i class="bi bi-github"></i>
+              Login to GitHub
+            </h2>
+          </div>
 
           <div v-if="error" class="alert alert-danger" role="alert">
             {{ error }}
@@ -30,152 +32,27 @@
           </div>
 
           <div v-else>
-            <div class="mb-4 text-center">
-              <p class="text-muted">
-                Authenticate with GitHub to access and edit repository files.
-              </p>
-            </div>
-
             <form @submit.prevent="handleLogin">
               <div class="mb-3">
-                <label for="token" class="form-label">GitHub Personal Access Token</label>
-                <input type="password" id="token" v-model="token" class="form-control"
+                <label for="token" class="form-label">Authenticate with GitHub to access and edit repository
+                  files.</label>
+
+                <input type="password" id="token" v-model="token" class="form-control mt-3"
                   placeholder="Enter your GitHub token" required>
               </div>
 
-              <div class="d-grid">
-                <button type="submit" class="btn btn-dark" :disabled="!token">
+              <div class="d-flex gap-2">
+                <button @click="openTokenHelp" class="btn btn-sm btn-outline-secondary" title="Open token help"
+                  aria-label="Open token help" style="flex-shrink: 0;">
+                  <i class="bi bi-question-circle"></i>
+                </button>
+
+                <button type="submit" class="btn btn-dark flex-grow-1" :disabled="!token">
                   <i class="bi bi-box-arrow-in-right"></i>
-                  Login with GitHub
+                  Login with GitHub token
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="container mt-5 mb-5">
-    <div class="container">
-      <h2 class="text-center mb-5">
-        <i class="bi bi-shield-lock"></i>
-        How To Create a GitHub Token
-      </h2>
-      <div class="row g-4 mb-5 video-container-wrapper">
-        <div class="col-12">
-          <div class="card d-flex flex-column h-100">
-            <div
-              class="card-header bg-primary text-white text-center d-flex justify-content-between align-items-center">
-              <div class="flex-grow-1">
-                <p class="card-text text-info bg-dark p-3 rounded mt-3 mb-0"><a
-                    href="https://github.com/settings/tokens" target="_blank" class="text-white text-decoration-none">
-                    Go to GitHub.com <i class="bi bi-box-arrow-up-right"></i>, log in</a> and then do the following:
-                  <button @click="toggleFullscreen" class="btn btn-sm btn-outline-light ms-3" title="Toggle Fullscreen"
-                    aria-label="Toggle video fullscreen">
-                    <i class="bi bi-arrows-fullscreen"></i>
-                  </button>
-                </p>
-              </div>
-            </div>
-            <div class="card-body p-0 flex-grow-1 d-flex justify-content-center align-items-center">
-              <video ref="videoElement" muted autoplay loop controls class="video-player">
-                <source src="/create-token.mp4" type="video/mp4">
-                Your browser does not support the video tag.
-              </video>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <p>The same, but in images:</p>
-
-      <div class="row g-4 instructions">
-        <div class="col-12 col-sm-6 col-lg-4">
-          <div class="card h-100">
-            <div class="card-header bg-primary text-white text-center">
-              <h5 class="card-title mb-0">Step 1</h5>
-              <p class="card-text text-info bg-dark p-3 rounded mt-3">Go to GitHub and log in.</p>
-            </div>
-            <div class="card-body">
-              <img src="/assets/token-creation/create-token-instructions-1.jpg" class="card-img-top" alt="Step 1">
-            </div>
-          </div>
-        </div>
-        <div class="col-12 col-sm-6 col-lg-4">
-          <div class="card h-100">
-            <div class="card-header bg-primary text-white text-center">
-              <h5 class="card-title mb-0">Step 2</h5>
-              <p class="card-text text-info bg-dark p-3 rounded mt-3">Choose “Settings”.</p>
-            </div>
-            <div class="card-body">
-              <img src="/assets/token-creation/create-token-instructions-2.jpg" class="card-img-top" alt="Step 2">
-            </div>
-          </div>
-        </div>
-        <div class="col-12 col-sm-6 col-lg-4">
-          <div class="card h-100">
-            <div class="card-header bg-primary text-white text-center">
-              <h5 class="card-title mb-0">Step 3</h5>
-              <p class="card-text text-info bg-dark p-3 rounded mt-3">Choose “Developer settings”.</p>
-            </div>
-            <div class="card-body">
-              <img src="/assets/token-creation/create-token-instructions-3.jpg" class="card-img-top" alt="Step 3">
-            </div>
-          </div>
-        </div>
-        <div class="col-12 col-sm-6 col-lg-4">
-          <div class="card h-100">
-            <div class="card-header bg-primary text-white text-center">
-              <h5 class="card-title mb-0">Step 4</h5>
-              <p class="card-text text-info bg-dark p-3 rounded mt-3">Choose “Personal access tokens”.</p>
-            </div>
-            <div class="card-body">
-              <img src="/assets/token-creation/create-token-instructions-4.jpg" class="card-img-top" alt="Step 4">
-            </div>
-          </div>
-        </div>
-        <div class="col-12 col-sm-6 col-lg-4">
-          <div class="card h-100">
-            <div class="card-header bg-primary text-white text-center">
-              <h5 class="card-title mb-0">Step 5</h5>
-              <p class="card-text text-info bg-dark p-3 rounded mt-3">Choose “Tokens (classic)”.</p>
-            </div>
-            <div class="card-body">
-              <img src="/assets/token-creation/create-token-instructions-5.jpg" class="card-img-top" alt="Step 5">
-            </div>
-          </div>
-        </div>
-        <div class="col-12 col-sm-6 col-lg-4">
-          <div class="card h-100">
-            <div class="card-header bg-primary text-white text-center">
-              <h5 class="card-title mb-0">Step 6</h5>
-              <p class="card-text text-info bg-dark p-3 rounded mt-3">Choose “Tokens (classic)”.</p>
-            </div>
-            <div class="card-body">
-              <img src="/assets/token-creation/create-token-instructions-6.jpg" class="card-img-top" alt="Step 6">
-            </div>
-          </div>
-        </div>
-        <div class="col-12 col-sm-6 col-lg-4">
-          <div class="card h-100">
-            <div class="card-header bg-primary text-white text-center">
-              <h5 class="card-title mb-0">Step 7</h5>
-              <p class="card-text text-info bg-dark p-3 rounded mt-3">Choose “Generate new token (classic)”.</p>
-            </div>
-            <div class="card-body">
-              <img src="/assets/token-creation/create-token-instructions-7.jpg" class="card-img-top" alt="Step 7">
-            </div>
-          </div>
-        </div>
-        <div class="col-12 col-sm-6 col-lg-4">
-          <div class="card h-100">
-            <div class="card-header bg-primary text-white text-center">
-              <h5 class="card-title mb-0">Step 8</h5>
-              <p class="card-text text-info bg-dark p-3 rounded mt-3">Check “repo”</p>
-            </div>
-            <div class="card-body">
-              <img src="/assets/token-creation/create-token-instructions-8.jpg" class="card-img-top" alt="Step 8">
-            </div>
           </div>
         </div>
       </div>
@@ -223,6 +100,14 @@ export default {
       }
     }
 
+    /**
+     * Opens the token help page in a new tab.
+     * Provides users with detailed instructions on creating a GitHub token.
+     */
+    const openTokenHelp = () => {
+      window.open('/token-instructions.html', 'token_help', 'width=900,height=1000,resizable=yes,scrollbars=yes')
+    }
+
     const handleLogin = async () => {
       if (!token.value.trim()) {
         error.value = 'Please enter your GitHub token'
@@ -255,10 +140,10 @@ export default {
         // VALIDATE TOKEN PERMISSIONS - Check for required scopes
         // Clear cache before checking new token permissions to avoid stale data
         tokenPermissionChecker.clearCache()
-        
+
         console.log('🔍 Checking token permissions...')
         const permissions = await tokenPermissionChecker.validateTokenPermissions(token.value.trim())
-        
+
         // Debug: Log what scopes were detected
         console.log('📋 Detected scopes:', permissions.scopes)
         console.log('📋 Permission details:', {
@@ -267,11 +152,11 @@ export default {
           operations: permissions.operations,
           missingScopes: permissions.missingScopes
         })
-        
+
         // Check if token has ALL required scopes (repo, workflow)
         if (!permissions.valid) {
           console.error('❌ Token has insufficient permissions:', permissions)
-          
+
           // Build detailed error message
           const missingScopes = permissions.missingScopes.join(', ')
           error.value = `Token has insufficient permissions. 
@@ -283,17 +168,17 @@ REQUIRED SCOPES: Personal Access Token (classic) must have:
 Your token is missing: ${missingScopes}
 
 Please create a new token with all required scopes checked.`
-          
+
           // Log the recommendations
           const recommendations = tokenPermissionChecker.generateRecommendations(permissions)
           recommendations.forEach(rec => console.warn(rec))
-          
+
           // Track permission failure
           trackEvent('login_permission_error', {
             missing_scopes: missingScopes,
             user_id: response.data.id
           })
-          
+
           loading.value = false
           return
         }
@@ -370,7 +255,8 @@ Please create a new token with all required scopes checked.`
       successMessage,
       handleLogin,
       videoElement,
-      toggleFullscreen
+      toggleFullscreen,
+      openTokenHelp
     }
   }
 }
