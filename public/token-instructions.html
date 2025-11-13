@@ -2,16 +2,16 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <!-- Cache Control: Prevent stale cached versions -->
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-  
-  <!-- Security Headers -->
-  <meta http-equiv="Content-Security-Policy" content="
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Cache Control: Prevent stale cached versions -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
+    <!-- Security Headers -->
+    <meta http-equiv="Content-Security-Policy" content="
     default-src 'self';
     script-src 'self' 'unsafe-inline' 'unsafe-eval';
     style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com;
@@ -23,319 +23,331 @@
     form-action 'self';
     upgrade-insecure-requests;
   ">
-  
-  <!-- Additional Security Headers -->
-  <meta http-equiv="X-Content-Type-Options" content="nosniff">
-  <meta http-equiv="X-XSS-Protection" content="1; mode=block">
-  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
-  
-  <title>How To Create a GitHub Token</title>
-  <link rel="icon" href="./assets/favicon.ico">
 
-  <!-- Bootstrap CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Bootstrap Icons -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Additional Security Headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
 
-  <style>
-    * {
-      font-family: 'Roboto', sans-serif;
-    }
+    <title>How To Create a GitHub Token</title>
+    <link rel="icon" href="./assets/favicon.ico">
 
-    body {
-      background-color: #f8f9fa;
-      padding-top: 2rem;
-      padding-bottom: 2rem;
-    }
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 
-    .page-header {
-      text-align: center;
-      margin-bottom: 3rem;
-    }
+    <style>
+        * {
+            font-family: 'Roboto', sans-serif;
+        }
 
-    .page-header h1 {
-      color: #212529;
-      font-weight: 500;
-      margin-bottom: 0.5rem;
-    }
+        body {
+            background-color: #f8f9fa;
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
 
-    .page-header i {
-      color: #0d6efd;
-      margin-right: 0.5rem;
-    }
+        .page-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
 
-    .card {
-      border: none;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      transition: box-shadow 0.3s ease;
-    }
+        .page-header h1 {
+            color: #212529;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
 
-    .card:hover {
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
+        .page-header i {
+            color: #0d6efd;
+            margin-right: 0.5rem;
+        }
 
-    .card-header {
-      border-radius: 8px 8px 0 0 !important;
-      padding: 1rem;
-    }
+        .card {
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.3s ease;
+        }
 
-    .card-title {
-      font-weight: 500;
-      color: #212529;
-    }
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
 
-    .card-text {
-      font-size: 0.95rem;
-      line-height: 1.5;
-    }
+        .card-header {
+            border-radius: 8px 8px 0 0 !important;
+            padding: 1rem;
+        }
 
-    .video-container-wrapper {
-      margin-bottom: 3rem;
-    }
+        .card-title {
+            font-weight: 500;
+            color: #212529;
+        }
 
-    .video-player {
-      max-width: 100%;
-      max-height: 600px;
-      border-radius: 4px;
-    }
+        .card-text {
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
 
-    .instructions {
-      filter: brightness(0.7) contrast(1.2);
-      transition: filter 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
+        .video-container-wrapper {
+            margin-bottom: 3rem;
+        }
 
-    .instructions:hover {
-      filter: brightness(1) contrast(1.2);
-    }
+        .video-player {
+            max-width: 100%;
+            max-height: 600px;
+            border-radius: 4px;
+        }
 
-    .instructions .card-body img {
-      max-width: 100%;
-      height: auto;
-      border-radius: 4px;
-    }
+        .instructions {
+            filter: brightness(0.7) contrast(1.2);
+            transition: filter 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
-    .back-button {
-      margin-bottom: 2rem;
-    }
+        .instructions:hover {
+            filter: brightness(1) contrast(1.2);
+        }
 
-    .back-button a {
-      color: #0d6efd;
-      text-decoration: none;
-      font-size: 1rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
+        .instructions .card-body img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
 
-    .back-button a:hover {
-      color: #0b5ed7;
-      text-decoration: underline;
-    }
+        .back-button {
+            margin-bottom: 2rem;
+        }
 
-    @media (max-width: 768px) {
-      body {
-        padding-top: 1rem;
-        padding-bottom: 1rem;
-      }
+        .back-button a {
+            color: #0d6efd;
+            text-decoration: none;
+            font-size: 1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
 
-      .page-header {
-        margin-bottom: 2rem;
-      }
+        .back-button a:hover {
+            color: #0b5ed7;
+            text-decoration: underline;
+        }
 
-      .page-header h1 {
-        font-size: 1.75rem;
-      }
+        @media (max-width: 768px) {
+            body {
+                padding-top: 1rem;
+                padding-bottom: 1rem;
+            }
 
-      .video-player {
-        max-height: 400px;
-      }
-    }
-  </style>
+            .page-header {
+                margin-bottom: 2rem;
+            }
+
+            .page-header h1 {
+                font-size: 1.75rem;
+            }
+
+            .video-player {
+                max-height: 400px;
+            }
+        }
+    </style>
 </head>
 
 <body>
-  <div class="container">
-    <!-- Back Button -->
-    <div class="back-button">
-      <a href="javascript:window.close()">
-        <i class="bi bi-arrow-left"></i>
-        Close this window
-      </a>
-    </div>
+    <div class="container">
+        <!-- Back Button -->
+        <div class="back-button">
+            <a href="javascript:window.close()">
+                <i class="bi bi-arrow-left"></i>
+                Close this window
+            </a>
+        </div>
 
-    <!-- Page Header -->
-    <div class="page-header">
-      <h1>
-        <i class="bi bi-shield-lock"></i>
-        How To Create a GitHub Token
-      </h1>
-    </div>
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>
+                <i class="bi bi-shield-lock"></i>
+                How To Create a GitHub Token
+            </h1>
+        </div>
 
-    <!-- Video Section -->
-    <div class="row g-4 mb-5 video-container-wrapper">
-      <div class="col-12">
-        <div class="card d-flex flex-column h-100">
-          <div class="card-header bg-primary text-white text-center d-flex justify-content-between align-items-center">
-            <div class="flex-grow-1">
-              <p class="card-text text-info bg-dark p-3 rounded mt-3 mb-0">
-                <a href="https://github.com/settings/tokens" target="_blank" class="text-white text-decoration-none">
-                  Go to GitHub.com <i class="bi bi-box-arrow-up-right"></i>, log in
-                </a>
-                and then do the following:
-                <button onclick="toggleFullscreen()" class="btn btn-sm btn-outline-light ms-3" title="Toggle Fullscreen" aria-label="Toggle video fullscreen">
-                  <i class="bi bi-arrows-fullscreen"></i>
-                </button>
-              </p>
+        <!-- Video Section -->
+        <div class="row g-4 mb-5 video-container-wrapper">
+            <div class="col-12">
+                <div class="card d-flex flex-column h-100">
+                    <div
+                        class="card-header bg-primary text-white text-center d-flex justify-content-between align-items-center">
+                        <div class="flex-grow-1">
+                            <p class="card-text text-info bg-dark p-3 rounded mt-3 mb-0">
+                                <a href="https://github.com/settings/tokens" target="_blank"
+                                    class="text-white text-decoration-none">
+                                    Go to GitHub.com <i class="bi bi-box-arrow-up-right"></i>, log in
+                                </a>
+                                and then do the following:
+                                <button onclick="toggleFullscreen()" class="btn btn-sm btn-outline-light ms-3"
+                                    title="Toggle Fullscreen" aria-label="Toggle video fullscreen">
+                                    <i class="bi bi-arrows-fullscreen"></i>
+                                </button>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="card-body p-0 flex-grow-1 d-flex justify-content-center align-items-center">
+                        <video id="videoElement" muted autoplay loop controls class="video-player">
+                            <source src="create-token.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
             </div>
-          </div>
-          <div class="card-body p-0 flex-grow-1 d-flex justify-content-center align-items-center">
-            <video id="videoElement" muted autoplay loop controls class="video-player">
-              <source src="/create-token.mp4" type="video/mp4">
-              Your browser does not support the video tag.
-            </video>
-          </div>
         </div>
-      </div>
+
+        <!-- Instructions Title -->
+        <p class="mb-4" style="font-size: 1.1rem; color: #495057;">The same, but in images:</p>
+
+        <!-- Instructions Grid -->
+        <div class="row g-4 instructions mb-5">
+            <!-- Step 1 -->
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h5 class="card-title mb-0">Step 1</h5>
+                        <p class="card-text text-info bg-dark p-3 rounded mt-3">Go to GitHub and log in.</p>
+                    </div>
+                    <div class="card-body">
+                        <img src="/assets/token-creation/create-token-instructions-1.jpg" class="card-img-top"
+                            alt="Step 1">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h5 class="card-title mb-0">Step 2</h5>
+                        <p class="card-text text-info bg-dark p-3 rounded mt-3">Choose "Settings".</p>
+                    </div>
+                    <div class="card-body">
+                        <img src="/assets/token-creation/create-token-instructions-2.jpg" class="card-img-top"
+                            alt="Step 2">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h5 class="card-title mb-0">Step 3</h5>
+                        <p class="card-text text-info bg-dark p-3 rounded mt-3">Choose "Developer settings".</p>
+                    </div>
+                    <div class="card-body">
+                        <img src="/assets/token-creation/create-token-instructions-3.jpg" class="card-img-top"
+                            alt="Step 3">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h5 class="card-title mb-0">Step 4</h5>
+                        <p class="card-text text-info bg-dark p-3 rounded mt-3">Choose "Personal access tokens".</p>
+                    </div>
+                    <div class="card-body">
+                        <img src="/assets/token-creation/create-token-instructions-4.jpg" class="card-img-top"
+                            alt="Step 4">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5 -->
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h5 class="card-title mb-0">Step 5</h5>
+                        <p class="card-text text-info bg-dark p-3 rounded mt-3">Choose "Tokens (classic)".</p>
+                    </div>
+                    <div class="card-body">
+                        <img src="/assets/token-creation/create-token-instructions-5.jpg" class="card-img-top"
+                            alt="Step 5">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 6 -->
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h5 class="card-title mb-0">Step 6</h5>
+                        <p class="card-text text-info bg-dark p-3 rounded mt-3">Choose "Tokens (classic)".</p>
+                    </div>
+                    <div class="card-body">
+                        <img src="/assets/token-creation/create-token-instructions-6.jpg" class="card-img-top"
+                            alt="Step 6">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 7 -->
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h5 class="card-title mb-0">Step 7</h5>
+                        <p class="card-text text-info bg-dark p-3 rounded mt-3">Choose "Generate new token (classic)".
+                        </p>
+                    </div>
+                    <div class="card-body">
+                        <img src="/assets/token-creation/create-token-instructions-7.jpg" class="card-img-top"
+                            alt="Step 7">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 8 -->
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h5 class="card-title mb-0">Step 8</h5>
+                        <p class="card-text text-info bg-dark p-3 rounded mt-3">Check "repo"</p>
+                    </div>
+                    <div class="card-body">
+                        <img src="/assets/token-creation/create-token-instructions-8.jpg" class="card-img-top"
+                            alt="Step 8">
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Instructions Title -->
-    <p class="mb-4" style="font-size: 1.1rem; color: #495057;">The same, but in images:</p>
+    <!-- JavaScript for fullscreen functionality -->
+    <script>
+        /**
+         * Toggles fullscreen mode for the video element.
+         * Uses the Fullscreen API to request or exit fullscreen.
+         */
+        function toggleFullscreen() {
+            const videoElement = document.getElementById('videoElement');
+            if (!videoElement) return;
 
-    <!-- Instructions Grid -->
-    <div class="row g-4 instructions mb-5">
-      <!-- Step 1 -->
-      <div class="col-12 col-sm-6 col-lg-4">
-        <div class="card h-100">
-          <div class="card-header bg-primary text-white text-center">
-            <h5 class="card-title mb-0">Step 1</h5>
-            <p class="card-text text-info bg-dark p-3 rounded mt-3">Go to GitHub and log in.</p>
-          </div>
-          <div class="card-body">
-            <img src="/assets/token-creation/create-token-instructions-1.jpg" class="card-img-top" alt="Step 1">
-          </div>
-        </div>
-      </div>
+            if (!document.fullscreenElement) {
+                // Request fullscreen
+                videoElement.requestFullscreen().catch(err => {
+                    console.error('Error attempting to enable fullscreen:', err);
+                });
+            } else {
+                // Exit fullscreen
+                document.exitFullscreen();
+            }
+        }
+    </script>
 
-      <!-- Step 2 -->
-      <div class="col-12 col-sm-6 col-lg-4">
-        <div class="card h-100">
-          <div class="card-header bg-primary text-white text-center">
-            <h5 class="card-title mb-0">Step 2</h5>
-            <p class="card-text text-info bg-dark p-3 rounded mt-3">Choose "Settings".</p>
-          </div>
-          <div class="card-body">
-            <img src="/assets/token-creation/create-token-instructions-2.jpg" class="card-img-top" alt="Step 2">
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 3 -->
-      <div class="col-12 col-sm-6 col-lg-4">
-        <div class="card h-100">
-          <div class="card-header bg-primary text-white text-center">
-            <h5 class="card-title mb-0">Step 3</h5>
-            <p class="card-text text-info bg-dark p-3 rounded mt-3">Choose "Developer settings".</p>
-          </div>
-          <div class="card-body">
-            <img src="/assets/token-creation/create-token-instructions-3.jpg" class="card-img-top" alt="Step 3">
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 4 -->
-      <div class="col-12 col-sm-6 col-lg-4">
-        <div class="card h-100">
-          <div class="card-header bg-primary text-white text-center">
-            <h5 class="card-title mb-0">Step 4</h5>
-            <p class="card-text text-info bg-dark p-3 rounded mt-3">Choose "Personal access tokens".</p>
-          </div>
-          <div class="card-body">
-            <img src="/assets/token-creation/create-token-instructions-4.jpg" class="card-img-top" alt="Step 4">
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 5 -->
-      <div class="col-12 col-sm-6 col-lg-4">
-        <div class="card h-100">
-          <div class="card-header bg-primary text-white text-center">
-            <h5 class="card-title mb-0">Step 5</h5>
-            <p class="card-text text-info bg-dark p-3 rounded mt-3">Choose "Tokens (classic)".</p>
-          </div>
-          <div class="card-body">
-            <img src="/assets/token-creation/create-token-instructions-5.jpg" class="card-img-top" alt="Step 5">
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 6 -->
-      <div class="col-12 col-sm-6 col-lg-4">
-        <div class="card h-100">
-          <div class="card-header bg-primary text-white text-center">
-            <h5 class="card-title mb-0">Step 6</h5>
-            <p class="card-text text-info bg-dark p-3 rounded mt-3">Choose "Tokens (classic)".</p>
-          </div>
-          <div class="card-body">
-            <img src="/assets/token-creation/create-token-instructions-6.jpg" class="card-img-top" alt="Step 6">
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 7 -->
-      <div class="col-12 col-sm-6 col-lg-4">
-        <div class="card h-100">
-          <div class="card-header bg-primary text-white text-center">
-            <h5 class="card-title mb-0">Step 7</h5>
-            <p class="card-text text-info bg-dark p-3 rounded mt-3">Choose "Generate new token (classic)".</p>
-          </div>
-          <div class="card-body">
-            <img src="/assets/token-creation/create-token-instructions-7.jpg" class="card-img-top" alt="Step 7">
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 8 -->
-      <div class="col-12 col-sm-6 col-lg-4">
-        <div class="card h-100">
-          <div class="card-header bg-primary text-white text-center">
-            <h5 class="card-title mb-0">Step 8</h5>
-            <p class="card-text text-info bg-dark p-3 rounded mt-3">Check "repo"</p>
-          </div>
-          <div class="card-body">
-            <img src="/assets/token-creation/create-token-instructions-8.jpg" class="card-img-top" alt="Step 8">
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- JavaScript for fullscreen functionality -->
-  <script>
-    /**
-     * Toggles fullscreen mode for the video element.
-     * Uses the Fullscreen API to request or exit fullscreen.
-     */
-    function toggleFullscreen() {
-      const videoElement = document.getElementById('videoElement');
-      if (!videoElement) return;
-
-      if (!document.fullscreenElement) {
-        // Request fullscreen
-        videoElement.requestFullscreen().catch(err => {
-          console.error('Error attempting to enable fullscreen:', err);
-        });
-      } else {
-        // Exit fullscreen
-        document.exitFullscreen();
-      }
-    }
-  </script>
-
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>
