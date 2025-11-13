@@ -247,7 +247,7 @@
 
 <script>
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import RepoInfo from './RepoInfo.vue'
 import { secureTokenManager } from '../utils/secureTokenManager.js'
@@ -275,8 +275,20 @@ export default {
     // Helper function to check authentication and redirect if needed
     const checkAuthAndRedirect = (error) => {
       if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+        // Don't just silently redirect - show an error message first
+        const errorMsg = error.response.status === 401 
+          ? 'Authentication expired. Please log in again.'
+          : 'Access forbidden. Your token may lack required permissions (repo + workflow scopes required).'
+        
+        alert(errorMsg)
+        
+        // Clear token and redirect to login
+        secureTokenManager.clearToken()
         localStorage.removeItem('github_token')
         localStorage.removeItem('github_user')
+        
+        // Use router from Vue Router
+        const router = useRouter()
         router.push('/login')
         return true
       }

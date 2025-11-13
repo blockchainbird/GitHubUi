@@ -16,6 +16,12 @@
             {{ error }}
           </div>
 
+          <div v-if="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            {{ successMessage }}
+            <button type="button" class="btn-close" @click="successMessage = ''" aria-label="Close"></button>
+          </div>
+
           <div v-if="loading" class="text-center">
             <div class="spinner-border" role="status">
               <span class="visually-hidden">Loading...</span>
@@ -34,7 +40,7 @@
               <div class="mb-3">
                 <label for="token" class="form-label">GitHub Personal Access Token</label>
                 <input type="password" id="token" v-model="token" class="form-control"
-                  placeholder="Enter your GitHub token" required autocomplete="new-password">
+                  placeholder="Enter your GitHub token" required>
               </div>
 
               <div class="d-grid">
@@ -184,6 +190,7 @@ import axios from 'axios'
 import { useGoogleAnalytics } from '../composables/useGoogleAnalytics.js'
 import { useSoundSystem } from '../composables/useSoundSystem.js'
 import { secureTokenManager } from '../utils/secureTokenManager.js'
+import { tokenPermissionChecker } from '../utils/tokenPermissionChecker.js'
 
 export default {
   name: 'LoginPage',
@@ -194,6 +201,7 @@ export default {
     const token = ref('')
     const loading = ref(false)
     const error = ref('')
+    const successMessage = ref('')
     const { playSuccessSound } = useSoundSystem()
     const videoElement = ref(null)
 
@@ -244,11 +252,60 @@ export default {
         // Test the token by getting user info
         const response = await axios.get('https://api.github.com/user', config)
 
+        // VALIDATE TOKEN PERMISSIONS - Check for required scopes
+        // Clear cache before checking new token permissions to avoid stale data
+        tokenPermissionChecker.clearCache()
+        
+        console.log('🔍 Checking token permissions...')
+        const permissions = await tokenPermissionChecker.validateTokenPermissions(token.value.trim())
+        
+        // Debug: Log what scopes were detected
+        console.log('📋 Detected scopes:', permissions.scopes)
+        console.log('📋 Permission details:', {
+          valid: permissions.valid,
+          fullAccess: permissions.fullAccess,
+          operations: permissions.operations,
+          missingScopes: permissions.missingScopes
+        })
+        
+        // Check if token has ALL required scopes (repo, workflow)
+        if (!permissions.valid) {
+          console.error('❌ Token has insufficient permissions:', permissions)
+          
+          // Build detailed error message
+          const missingScopes = permissions.missingScopes.join(', ')
+          error.value = `Token has insufficient permissions. 
+
+REQUIRED SCOPES: Personal Access Token (classic) must have:
+✅ "repo" scope
+✅ "workflow" scope
+
+Your token is missing: ${missingScopes}
+
+Please create a new token with all required scopes checked.`
+          
+          // Log the recommendations
+          const recommendations = tokenPermissionChecker.generateRecommendations(permissions)
+          recommendations.forEach(rec => console.warn(rec))
+          
+          // Track permission failure
+          trackEvent('login_permission_error', {
+            missing_scopes: missingScopes,
+            user_id: response.data.id
+          })
+          
+          loading.value = false
+          return
+        }
+
+        console.log('✅ Token has all required permissions')
+
         const userData = {
           ...response.data,
           token: token.value.trim(),
           tokenType: validation.tokenType,
-          loginTimestamp: new Date().toISOString()
+          loginTimestamp: new Date().toISOString(),
+          permissions: permissions.scopes // Store scopes for later reference
         }
 
         emit('login', userData)
@@ -256,21 +313,28 @@ export default {
         // Play success sound
         playSuccessSound()
 
+        // Show temporary success message
+        successMessage.value = `✅ Successfully logged in as ${response.data.login}!`
+
         // Track successful login with token type
         trackLogin('github')
         trackEvent('secure_login_success', {
           token_type: validation.tokenType,
-          user_id: response.data.id
+          user_id: response.data.id,
+          has_required_permissions: true
         })
 
-        // Check if there's an intended redirect URL
-        const intendedRedirect = localStorage.getItem('intended_redirect')
-        if (intendedRedirect) {
-          localStorage.removeItem('intended_redirect')
-          router.push(intendedRedirect)
-        } else {
-          router.push('/home')
-        }
+        // Redirect after a short delay to allow user to see the success message
+        setTimeout(() => {
+          // Check if there's an intended redirect URL
+          const intendedRedirect = localStorage.getItem('intended_redirect')
+          if (intendedRedirect) {
+            localStorage.removeItem('intended_redirect')
+            router.push(intendedRedirect)
+          } else {
+            router.push('/home')
+          }
+        }, 1500)
 
       } catch (err) {
         console.error('Login error:', err)
@@ -303,6 +367,7 @@ export default {
       token,
       loading,
       error,
+      successMessage,
       handleLogin,
       videoElement,
       toggleFullscreen
