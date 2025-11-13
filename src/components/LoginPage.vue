@@ -105,7 +105,7 @@ export default {
      * Provides users with detailed instructions on creating a GitHub token.
      */
     const openTokenHelp = () => {
-      window.open('/token-instructions.html', 'token_help', 'width=900,height=1000,resizable=yes,scrollbars=yes')
+      window.open('token-instructions.html', 'token_help', 'width=900,height=1000,resizable=yes,scrollbars=yes')
     }
 
     const handleLogin = async () => {
