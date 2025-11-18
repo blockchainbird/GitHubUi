@@ -202,7 +202,8 @@
                 <div class="small">
                   <strong>Workflow Information:</strong><br>
                   The action will run on branch: <strong>{{ branch }}</strong><br>
-                  Using workflow: <strong>menu.yml</strong>
+                  Using workflow: <strong>menu.yml</strong><br>
+                  <span class="text-muted">Note: Requires Node.js 20+ for collectExternalReferences action</span>
                 </div>
               </div>
             </div>
