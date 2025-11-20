@@ -19,18 +19,11 @@ My name is Kor Dwarshuis, and I am the (only) web developer on Spec-Up-T Web Edi
 
 ### Command Line: No
 
-![spec-up-t-web-editor](https://github.com/user-attachments/assets/e049ad97-6fdc-4716-b100-50130e108573)
-
+![command-line](https://github.com/user-attachments/assets/5f7855e8-a090-425d-91ca-12f110a65173)
 
 ### Spec-Up-T Web Editor: Yes!
 
-<video controls autoplay loop muted src="[assets/spec-up-t-web-editor.mp4](https://github.com/user-attachments/assets/00fecfa8-3943-4a6c-a95c-ddd9db0c41c4)"></video>
-
-
-
-
-
-
+![spec-up-t-web-editor](https://github.com/user-attachments/assets/e049ad97-6fdc-4716-b100-50130e108573)
 
 ## Goal
 
