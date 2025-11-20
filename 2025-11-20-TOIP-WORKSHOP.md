@@ -25,7 +25,12 @@ My name is Kor Dwarshuis, and I am the (only) web developer on Spec-Up-T Web Edi
 
 ### Spec-Up-T Web Editor: Yes!
 
-<video controls autoplay loop muted src="assets/spec-up-t-web-editor.mp4"></video>
+<video controls autoplay loop muted src="[assets/spec-up-t-web-editor.mp4](https://github.com/user-attachments/assets/00fecfa8-3943-4a6c-a95c-ddd9db0c41c4)"></video>
+
+
+
+
+
 
 
 ## Goal
