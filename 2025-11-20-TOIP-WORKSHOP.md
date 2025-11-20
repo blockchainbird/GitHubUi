@@ -19,8 +19,7 @@ My name is Kor Dwarshuis, and I am the (only) web developer on Spec-Up-T Web Edi
 
 ### Command Line: No
 
-![command-line](https://github.com/user-attachments/assets/5f7855e8-a090-425d-91ca-12f110a65173)
-
+![spec-up-t-web-editor](https://github.com/user-attachments/assets/e049ad97-6fdc-4716-b100-50130e108573)
 
 
 ### Spec-Up-T Web Editor: Yes!
