@@ -37,8 +37,7 @@
           <!-- Explorer menu (formerly File menu) -->
           <li v-if="showRepoRelatedButtons" class="nav-item">
             <button @click="navigateToFilesAndClose"
-              :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/files') }]"
-              title="Navigate to Files">
+              :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/files') }]" title="Navigate to Files">
               <i class="bi bi-folder"></i>
               Explorer
             </button>
@@ -119,6 +118,46 @@
                   title="Application Settings">
                   <i class="bi bi-gear"></i> Settings
                 </button>
+              </li>
+            </ul>
+          </li>
+
+          <!-- Help menu -->
+          <li class="nav-item dropdown" data-menu="help" @mouseenter="onHoverMenu('help', true)"
+            @mouseleave="onHoverMenu('help', false)">
+            <button :class="['nav-link', 'btn', 'btn-link', 'dropdown-toggle', { active: isHelpSectionActive }]"
+              id="helpMenuButton" aria-haspopup="true" :aria-expanded="isHelpOpen.toString() "
+              aria-controls="helpMenuDropdown" @click="toggleMenu('help')" @keydown="handleMenuKeydown('help', $event)"
+              ref="helpToggle">
+              Help
+            </button>
+            <ul id="helpMenuDropdown" class="dropdown-menu" :class="{ show: isHelpOpen }"
+              aria-labelledby="helpMenuButton" ref="helpMenuEl" @keydown="handleMenuListKeydown('help', $event)">
+              <li>
+                <button class="dropdown-item" @click="showWelcomeModalAndClose">
+                  <i class="bi bi-info-circle"></i> Welcome
+                </button>
+              </li>
+              <li>
+                <a class="dropdown-item" href="https://github.com/blockchainbird/GitHubUi/issues" target="_blank"
+                  rel="noopener" @click="closeNavbar">
+                  <i class="bi bi-bug"></i> Report issue <i class="bi bi-box-arrow-up-right ms-1"
+                    style="font-size: 0.8em;"></i>
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item" href="https://github.com/blockchainbird/GitHubUi/blob/main/USER_GUIDE.md"
+                  target="_blank" rel="noopener" @click="closeNavbar">
+                  <i class="bi bi-book"></i> Documentation <i class="bi bi-box-arrow-up-right ms-1"
+                    style="font-size: 0.8em;"></i>
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item" href="https://github.com/blockchainbird/GitHubUi" target="_blank"
+                  rel="noopener">
+                  <i class="bi bi-github"></i> Repository <i class="bi bi-box-arrow-up-right ms-1"
+                    style="font-size: 0.8em;"></i>
+                </a>
               </li>
             </ul>
           </li>
@@ -217,6 +256,20 @@
       </div>
     </template>
   </Modal>
+  <!-- Welcome Modal -->
+  <Modal v-if="showWelcomeModal" @close="showWelcomeModal = false">
+    <template #header>
+      <div class="w-100">
+        <h2 class="text-center">Spec-Up-T Web Editor</h2>
+      </div>
+    </template>
+    <template #body>
+      <p>
+        <strong>Spec-Up-T Web Editor</strong> is a web-based specification writing tool based on <a target="_blank"
+          rel="noopener" href="https://trustoverip.github.io/spec-up-t-website/">Spec-Up-T</a>, a command line tool.
+      </p>
+    </template>
+  </Modal>
 </template>
 
 <script>
@@ -250,13 +303,16 @@ export default {
     const isFileOpen = ref(false);
     const isViewOpen = ref(false);
     const isConfigOpen = ref(false);
+    const isHelpOpen = ref(false);
     // Element refs for focus management
     const fileToggle = ref(null);
     const viewToggle = ref(null);
     const configToggle = ref(null);
+    const helpToggle = ref(null);
     const fileMenuEl = ref(null);
     const viewMenuEl = ref(null);
     const configMenuEl = ref(null);
+    const helpMenuEl = ref(null);
     // Advanced user reactive state
     const { isAdvancedUser } = useAdvancedUser();
 
@@ -382,9 +438,11 @@ export default {
       const insideFile = !!event.target.closest('[data-menu="file"]');
       const insideView = !!event.target.closest('[data-menu="view"]');
       const insideConfig = !!event.target.closest('[data-menu="config"]');
+      const insideHelp = !!event.target.closest('[data-menu="help"]');
       if (!insideFile) isFileOpen.value = false;
       if (!insideView) isViewOpen.value = false;
       if (!insideConfig) isConfigOpen.value = false;
+      if (!insideHelp) isHelpOpen.value = false;
     };
 
     // Close navbar on window resize to larger screen
@@ -400,6 +458,7 @@ export default {
       isFileOpen.value = false;
       isViewOpen.value = false;
       isConfigOpen.value = false;
+      isHelpOpen.value = false;
     };
 
     const toggleMenu = (menu) => {
@@ -407,14 +466,22 @@ export default {
         isFileOpen.value = !isFileOpen.value;
         isViewOpen.value = false;
         isConfigOpen.value = false;
+        isHelpOpen.value = false;
       } else if (menu === 'view') {
         isViewOpen.value = !isViewOpen.value;
         isFileOpen.value = false;
         isConfigOpen.value = false;
+        isHelpOpen.value = false;
       } else if (menu === 'config') {
         isConfigOpen.value = !isConfigOpen.value;
         isFileOpen.value = false;
         isViewOpen.value = false;
+        isHelpOpen.value = false;
+      } else if (menu === 'help') {
+        isHelpOpen.value = !isHelpOpen.value;
+        isFileOpen.value = false;
+        isViewOpen.value = false;
+        isConfigOpen.value = false;
       }
     };
 
@@ -443,6 +510,7 @@ export default {
       if (menu === 'file') return fileMenuEl.value;
       if (menu === 'view') return viewMenuEl.value;
       if (menu === 'config') return configMenuEl.value;
+      if (menu === 'help') return helpMenuEl.value;
       return null;
     };
 
@@ -450,6 +518,7 @@ export default {
       if (menu === 'file') return fileToggle.value;
       if (menu === 'view') return viewToggle.value;
       if (menu === 'config') return configToggle.value;
+      if (menu === 'help') return helpToggle.value;
       return null;
     };
 
@@ -495,11 +564,13 @@ export default {
     const isDesktopLike = () => window.matchMedia('(hover: hover) and (pointer: fine)').matches;
     const onHoverMenu = (menu, entering) => {
       if (!isDesktopLike()) return;
-      if (!showRepoRelatedButtons.value) return;
+      // Help menu should always be hoverable, not just when repo buttons are visible
+      if (menu !== 'help' && !showRepoRelatedButtons.value) return;
       if (entering) {
-        if (menu === 'file') { isFileOpen.value = true; isViewOpen.value = false; isConfigOpen.value = false; }
-        if (menu === 'view') { isViewOpen.value = true; isFileOpen.value = false; isConfigOpen.value = false; }
-        if (menu === 'config') { isConfigOpen.value = true; isFileOpen.value = false; isViewOpen.value = false; }
+        if (menu === 'file') { isFileOpen.value = true; isViewOpen.value = false; isConfigOpen.value = false; isHelpOpen.value = false; }
+        if (menu === 'view') { isViewOpen.value = true; isFileOpen.value = false; isConfigOpen.value = false; isHelpOpen.value = false; }
+        if (menu === 'config') { isConfigOpen.value = true; isFileOpen.value = false; isViewOpen.value = false; isHelpOpen.value = false; }
+        if (menu === 'help') { isHelpOpen.value = true; isFileOpen.value = false; isViewOpen.value = false; isConfigOpen.value = false; }
       } else {
         // delay close slightly to allow into menu area
         setTimeout(() => {
@@ -512,6 +583,7 @@ export default {
             if (menu === 'file') isFileOpen.value = false;
             if (menu === 'view') isViewOpen.value = false;
             if (menu === 'config') isConfigOpen.value = false;
+            if (menu === 'help') isHelpOpen.value = false;
           }
         }, 100);
       }
@@ -577,12 +649,20 @@ export default {
     const isConfigSectionActive = computed(() => (
       isActiveRoute('/admin') || isActiveRoute('/external-specs') || isActiveRoute('/settings')
     ));
+    const isHelpSectionActive = computed(() => false); // Help menu items don't correspond to routes
 
     // Accessibility: ESC closes any open menu
     const onGlobalKeydown = (e) => {
       if (e.key === 'Escape') {
         closeAllMenus();
       }
+    };
+
+    // Welcome modal state and handler (local to setup)
+    const showWelcomeModal = ref(false);
+    const showWelcomeModalAndClose = () => {
+      showWelcomeModal.value = true;
+      closeNavbar();
     };
 
     return {
@@ -592,13 +672,16 @@ export default {
       isFileOpen,
       isViewOpen,
       isConfigOpen,
+      isHelpOpen,
       // showAlwaysVisibleButtons,
       fileToggle,
       viewToggle,
       configToggle,
+      helpToggle,
       fileMenuEl,
       viewMenuEl,
       configMenuEl,
+      helpMenuEl,
       githubRepoUrl,
       isNavbarOpen,
       toggleNavbar,
@@ -629,20 +712,15 @@ export default {
       isFileSectionActive,
       isViewSectionActive,
       isConfigSectionActive,
+      isHelpSectionActive,
       isSoundEnabled,
       toggleSound,
+      showWelcomeModal,
+      showWelcomeModalAndClose,
     };
   },
   data() {
-    return {
-      showModal: false
-    };
-  },
-  methods: {
-    showModalAndClose() {
-      this.showModal = true;
-      this.closeNavbar();
-    }
+    return {};
   }
 };
 </script>
