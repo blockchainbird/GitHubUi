@@ -1,41 +1,61 @@
 # Workshop Spec-Up-T Web Editor ToIP Fifth Year Anniversary Symposium
 
+- - -
+## 🔴 Link to the editor: **tinyurl.com/mvrra753**
+
+Short for: https://dwarshuis.com/test/spec-up-t-temp/GitHubUi/
+
+This is a temporary location for testing.
+- - -
+
 ## Who am I
 
 My name is Kor Dwarshuis, and I am the (only) web developer on Spec-Up-T Web Editor.
 
 ## Why Spec-Up-T *Web* Editor
 
-| Spec-Up | Spec-Up-T | Spec-Up-T Web Editor |
+Why do we need a Spec-Up-T ***web*** editor?
+
+### Command Line
+
+![command-line](https://github.com/user-attachments/assets/5f7855e8-a090-425d-91ca-12f110a65173)
+
+
+### Spec-Up-T Web Editor
+
+![spec-up-t-web-editor](https://github.com/user-attachments/assets/e049ad97-6fdc-4716-b100-50130e108573)
+
+- - -
+### 🔴 Link to the editor: **tinyurl.com/mvrra753**
+- - -
+
+## Short history
+
+| ❶ Spec-Up | ❷ Spec-Up-T | ❸ Spec-Up-T Web Editor |
 | :-: | :-: | :-: |
-| 2020 | 2023 | Now |
+| 2020 | 2024 | 2025 |
 | Computer Nerd | Computer Nerd | Normal people |
 | Command Line | Command Line | “MS Word” |
 | People who say “Directory” | People who say “Directory” | People who say “Folder” |
 
 
-- For writing specifications
-- For less techy people who do not like the command line:
-
-### Command Line: No
-
-![command-line](https://github.com/user-attachments/assets/5f7855e8-a090-425d-91ca-12f110a65173)
-
-### Spec-Up-T Web Editor: Yes!
-
-![spec-up-t-web-editor](https://github.com/user-attachments/assets/e049ad97-6fdc-4716-b100-50130e108573)
-
 ## Goal
 
-My goal is that you will try **Spec-Up-T Web Editor** tomorrow
+I hope that you will try **Spec-Up-T Web Editor** tomorrow! 😁 🚀
+🔴 Link to the editor: **tinyurl.com/mvrra753**
 
 ## **Spec-Up-T Web Editor** is under development
 
 - It's working, but…
 - Be careful
+- Test it on a test that you create
 - Create GitHub issues
 
 ![Help](assets/help.jpg)
+
+- - -
+## 🔴 Link to the editor: **tinyurl.com/mvrra753**
+- - -
 
 
 ## How to authenticate
@@ -88,14 +108,6 @@ If you use ***Spec-Up-T Web Editor*** you'll never see this anyway:
 `specs.json`: configuration file with instructions on how to do it,
 `docs`: `index.html` containing the processed markdown files, stitched together in one file
 
-
-| ❶ `spec` folder | ❷ `specs.json` file | 
-| :- | :- |
-|  `file with some text`| `web page` |
-|  `file with a term and definition`||
-|  `file with a term and definition`||
-|  `file with some text`| `fsdgsdf` ||
-
 <table>
 <tbody>
 <tr>
@@ -109,7 +121,7 @@ If you use ***Spec-Up-T Web Editor*** you'll never see this anyway:
 </tr>
 <tr>
 <td>File with some text</td>
-<td rowspan="5">Web page</td>
+<td rowspan="5">Web page (index.html)</td>
 </tr>
 <tr>
 <td>File with a term and definition</td>
@@ -118,7 +130,7 @@ If you use ***Spec-Up-T Web Editor*** you'll never see this anyway:
 <td>File with a term and definition</td>
 </tr>
 <tr>
-<td>Etcetera </td>
+<td>… </td>
 </tr>
 <tr>
 <td>File with some text</td>
@@ -128,18 +140,23 @@ If you use ***Spec-Up-T Web Editor*** you'll never see this anyway:
 
 ## Let's have a look at the **Spec-Up-T Web Editor**
 
-=============
-=============
+- - -
+## 🔴 Link to the editor: **tinyurl.com/mvrra753**
+- - -
 
 
-presentation GitHubUi
 
-- logging in
-- token validation
+
+
+## Let's try
+
+- create a token
+- log in
+- create a repo
 - open a repo
 - explorer: reorder terms
+- modify specification text
 - modifying a term
-- saving (commiting) a term
 - running health check / check URLs
 - doing a preview
 - Configure local config
