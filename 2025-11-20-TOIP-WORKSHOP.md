@@ -144,21 +144,12 @@ If you use ***Spec-Up-T Web Editor*** you'll never see this anyway:
 ## 🔴 Link to the editor: **tinyurl.com/mvrra753**
 - - -
 
+## Let's try the web editor
 
-
-
-
-## Let's try
-
-- create a token
-- log in
-- create a repo
-- open a repo
-- explorer: reorder terms
-- modify specification text
-- modifying a term
-- running health check / check URLs
-- doing a preview
-- Configure local config
-- Configure external repo's (via custom, json, reference sets)
-
+- create spec-up-t project
+- explorer reorder files
+- change content of specification file
+- change content of term file
+- render and preview
+- running health check
+- running link check
