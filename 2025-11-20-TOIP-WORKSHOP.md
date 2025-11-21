@@ -25,10 +25,6 @@ Why do we need a Spec-Up-T ***web*** editor?
 
 ![spec-up-t-web-editor](https://github.com/user-attachments/assets/e049ad97-6fdc-4716-b100-50130e108573)
 
-- - -
-### 🔴 Link to the editor: **tinyurl.com/mvrra753**
-- - -
-
 ## Short history
 
 | ❶ Spec-Up | ❷ Spec-Up-T | ❸ Spec-Up-T Web Editor |
@@ -52,11 +48,6 @@ I hope that you will try **Spec-Up-T Web Editor** tomorrow! 😁 🚀
 - Create GitHub issues
 
 ![Help](assets/help.jpg)
-
-- - -
-## 🔴 Link to the editor: **tinyurl.com/mvrra753**
-- - -
-
 
 ## How to authenticate
 
@@ -139,12 +130,6 @@ If you use ***Spec-Up-T Web Editor*** you'll never see this anyway:
 </table>
 
 ## Let's have a look at the **Spec-Up-T Web Editor**
-
-- - -
-## 🔴 Link to the editor: **tinyurl.com/mvrra753**
-- - -
-
-## Let's try the web editor
 
 - create spec-up-t project
 - explorer reorder files
