@@ -13,7 +13,7 @@ export function useBulkImport() {
   const autoPreviewStatus = ref('')
   const autoPreviewTimeout = ref(null)
 
-  const exampleJsonPlaceholder = '[\n  {\n    "external_spec": "toip1",\n    "gh_page": "https://example.github.io/spec/",\n    "url": "https://github.com/user/repo",\n    "terms_dir": "spec/terms-definitions"\n  }\n]'
+  const exampleJsonPlaceholder = '[\n  {\n    "external_spec": "toip1",\n    "gh_page": "https://example.github.io/spec/",\n    "url": "https://github.com/user/repo"\n  }\n]'
 
   const resetBulkImport = () => {
     jsonInput.value = ''
@@ -128,8 +128,7 @@ export function useBulkImport() {
     isObject: typeof spec === 'object',
     hasExternalSpec: !!spec.external_spec,
     hasGhPage: !!spec.gh_page,
-    hasUrl: !!spec.url,
-    hasTermsDir: !!spec.terms_dir
+    hasUrl: !!spec.url
   })
 
   const categorizeSpecs = (specsData, validateExternalSpec) => {
@@ -148,7 +147,7 @@ export function useBulkImport() {
   }
 
   const handleNoValidSpecs = (invalidSpecs) => {
-    const errorMsg = 'No valid external specifications found. Please check your JSON format. Expected fields: external_spec, gh_page (valid URL), url (valid URL), terms_dir'
+    const errorMsg = 'No valid external specifications found. Please check your JSON format. Expected fields: external_spec, gh_page (valid URL), url (valid URL)'
     setError(bulkImportMode.value, errorMsg)
     bulkPreviewData.value = invalidSpecs
   }

@@ -13,16 +13,14 @@ export function useSpecsManager() {
   const newSpec = ref({
     external_spec: '',
     gh_page: '',
-    url: '',
-    terms_dir: 'spec/terms-definitions'
+    url: ''
   })
 
   const resetNewSpec = () => {
     newSpec.value = {
       external_spec: '',
       gh_page: '',
-      url: '',
-      terms_dir: 'spec/terms-definitions'
+      url: ''
     }
   }
 
