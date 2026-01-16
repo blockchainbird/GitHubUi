@@ -693,4 +693,16 @@ export default {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* Make placeholder text more greyed out and ensure it's clearly distinguished from actual content */
+.form-control::placeholder {
+  color: #999;
+  opacity: 0.6;
+  font-style: italic;
+}
+
+/* Make placeholder disappear on focus for better UX */
+.form-control:focus::placeholder {
+  color: transparent;
+}
 </style>
