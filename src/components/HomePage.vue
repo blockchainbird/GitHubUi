@@ -33,16 +33,30 @@
 
           <form @submit.prevent="accessRepository">
             <div class="mb-3">
+              <label for="githubUrl" class="form-label">GitHub Repository URL</label>
+              <input 
+                type="text" 
+                id="githubUrl" 
+                v-model="githubUrl" 
+                class="form-control" 
+                placeholder="e.g., https://github.com/trustoverip/tswg-keri-specification/tree/main"
+                @input="parseGitHubUrl">
+              <small class="form-text text-muted">Paste the full GitHub repository URL (optionally with branch)</small>
+            </div>
+
+            <div class="text-center my-3">
+              <span class="text-muted">— or enter details separately —</span>
+            </div>
+
+            <div class="mb-3">
               <label for="owner" class="form-label">GitHub Username/Organization</label>
-              <input type="text" id="owner" v-model="owner" class="form-control" placeholder="e.g., trustoverip"
-                required>
+              <input type="text" id="owner" v-model="owner" class="form-control" placeholder="e.g., trustoverip">
             </div>
 
             <div class="mb-4 position-relative">
               <label for="repo" class="form-label">Repository Name</label>
               <input type="text" id="repo" v-model="repo" class="form-control"
-                placeholder="e.g., tswg-keri-specification" required @focus="onRepoInputFocus" autocomplete="off"
-                :disabled="!owner.trim()">
+                placeholder="e.g., tswg-keri-specification" @focus="onRepoInputFocus" autocomplete="off">
             </div>
             <Modal v-if="showRepoModal" @close="showRepoModal = false">
               <template #header>
@@ -79,8 +93,8 @@
 
             <div class="mb-4 position-relative">
               <label for="branch" class="form-label">Branch</label>
-              <input type="text" id="branch" v-model="branch" class="form-control" placeholder="e.g., main" required
-                @focus="onBranchInputFocus" autocomplete="off" :disabled="!owner.trim() || !repo.trim()">
+              <input type="text" id="branch" v-model="branch" class="form-control" placeholder="e.g., main"
+                @focus="onBranchInputFocus" autocomplete="off">
             </div>
             <Modal v-if="showBranchModal" @close="showBranchModal = false">
               <template #header>
@@ -111,10 +125,10 @@
             </Modal>
 
             <div class="d-grid">
-              <button type="submit" class="btn btn-primary" :disabled="!owner || !repo || loading">
+              <button type="submit" class="btn btn-primary" :disabled="!owner.trim() || !repo.trim() || loading">
                 <span v-if="loading">
                   <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-                  Accessing Existing Repository...
+                  Accessing Repository...
                 </span>
                 <span v-else>
                   <i class="bi bi-folder2-open"></i>
@@ -190,7 +204,7 @@
 </template>
 
 <script>
-import { ref, onMounted, watchEffect, watch } from 'vue'
+import { ref, onMounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import Modal from './Modal.vue'
@@ -212,6 +226,7 @@ export default {
   setup() {
     const router = useRouter()
     const route = useRoute()
+    const githubUrl = ref('')
     const owner = ref('')
     const repo = ref('')
     const branch = ref('main')
@@ -229,6 +244,63 @@ export default {
     const branchLoading = ref(false)
     const branchFilter = ref('')
     const filteredBranchList = ref([])
+    const isParsingUrl = ref(false) // Flag to prevent watchers from clearing values during URL parsing
+
+    // Parse GitHub URL to extract owner, repo, and branch
+    const parseGitHubUrl = () => {
+      const url = githubUrl.value.trim()
+      console.log('Parsing URL:', url)
+      
+      if (!url) {
+        return
+      }
+
+      try {
+        // Match various GitHub URL formats:
+        // https://github.com/owner/repo
+        // https://github.com/owner/repo/tree/branch
+        // github.com/owner/repo
+        // owner/repo
+        const patterns = [
+          // Full URL with branch - must come first to match before the more general pattern
+          /(?:https?:\/\/)?(?:www\.)?github\.com\/([^\/]+)\/([^\/]+)\/tree\/(.+)/,
+          // Full URL without branch
+          /(?:https?:\/\/)?(?:www\.)?github\.com\/([^\/]+)\/([^\/]+)(?:\/.*)?/,
+          // Short format: owner/repo
+          /^([^\/]+)\/([^\/]+)$/
+        ]
+
+        let matched = false
+        for (const pattern of patterns) {
+          const match = url.match(pattern)
+          if (match) {
+            console.log('Matched pattern:', pattern, 'Groups:', match)
+            // Set flag to prevent watchers from clearing values
+            isParsingUrl.value = true
+            owner.value = match[1]
+            repo.value = match[2].replace(/\.git$/, '') // Remove .git suffix if present
+            if (match[3]) {
+              branch.value = decodeURIComponent(match[3])
+            } else {
+              branch.value = 'main' // Default branch
+            }
+            // Reset flag after Vue has processed all watcher callbacks
+            nextTick(() => {
+              isParsingUrl.value = false
+            })
+            matched = true
+            console.log('Set values - Owner:', owner.value, 'Repo:', repo.value, 'Branch:', branch.value)
+            break
+          }
+        }
+        
+        if (!matched) {
+          console.warn('No pattern matched for URL:', url)
+        }
+      } catch (err) {
+        console.error('Error parsing GitHub URL:', err)
+      }
+    }
 
     // Use composable to fetch default branch
     const { defaultBranch, fetchDefaultBranch } = useDefaultBranch(
@@ -532,7 +604,7 @@ export default {
 
     // Watch for changes in owner and clear dependent fields
     watch(owner, (newOwner, oldOwner) => {
-      if (newOwner !== oldOwner && oldOwner !== undefined) {
+      if (newOwner !== oldOwner && oldOwner !== undefined && !isParsingUrl.value) {
         repo.value = ''
         branch.value = 'main'
       }
@@ -540,12 +612,14 @@ export default {
 
     // Watch for changes in repo and clear dependent fields
     watch(repo, (newRepo, oldRepo) => {
-      if (newRepo !== oldRepo && oldRepo !== undefined) {
+      if (newRepo !== oldRepo && oldRepo !== undefined && !isParsingUrl.value) {
         branch.value = 'main'
       }
     })
 
     return {
+      githubUrl,
+      parseGitHubUrl,
       owner,
       repo,
       branch,
