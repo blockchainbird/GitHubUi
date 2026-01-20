@@ -276,7 +276,7 @@ export function useExternalRefsFlowchart() {
    * @returns {string} Mermaid flowchart code
    */
   const treeToMermaid = (tree) => {
-    const lines = ['flowchart TB']
+    const lines = ['flowchart BT']
     const processedLinks = new Set()
     const processedNodes = new Map() // Track node ID -> was it defined
     const clickHandlers = [] // Store click handlers to add at the end
@@ -345,9 +345,9 @@ export function useExternalRefsFlowchart() {
     
     // Add styles
     lines.push(
-      '    classDef rootNode fill:#4a90d9,stroke:#2c5282,stroke-width:2px,color:#fff',
-      '    classDef directExternalRef fill:#3d6fa8,stroke:#2c5282,stroke-width:2px,color:#fff',
-      '    classDef errorNode fill:#fc8181,stroke:#c53030,stroke-width:2px,color:#fff'
+      '    classDef rootNode fill:#a3a5f6,stroke:#6366f1,stroke-width:3px,color:#1e293b',
+      '    classDef directExternalRef fill:#c4b5fd,stroke:#8b5cf6,stroke-width:2px,color:#1e293b',
+      '    classDef errorNode fill:#f87171,stroke:#dc2626,stroke-width:2px,color:#fff'
     )
     
     return lines.join('\n')
