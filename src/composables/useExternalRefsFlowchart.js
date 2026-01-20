@@ -306,6 +306,8 @@ export function useExternalRefsFlowchart() {
           lines.push(`    ${nodeId}[/"${label} (error)"/]:::errorNode`)
         } else if (node.depth === 0) {
           lines.push(`    ${nodeId}(["${label}<br/><small>${urlDisplay}</small>"]):::rootNode`)
+        } else if (node.depth === 1) {
+          lines.push(`    ${nodeId}["${label}<br/><small>${urlDisplay}</small>"]:::directExternalRef`)
         } else {
           lines.push(`    ${nodeId}["${label}<br/><small>${urlDisplay}</small>"]`)
         }
@@ -344,6 +346,7 @@ export function useExternalRefsFlowchart() {
     // Add styles
     lines.push(
       '    classDef rootNode fill:#4a90d9,stroke:#2c5282,stroke-width:2px,color:#fff',
+      '    classDef directExternalRef fill:#3d6fa8,stroke:#2c5282,stroke-width:2px,color:#fff',
       '    classDef errorNode fill:#fc8181,stroke:#c53030,stroke-width:2px,color:#fff'
     )
     
