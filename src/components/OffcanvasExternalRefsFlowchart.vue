@@ -51,9 +51,9 @@
                             {{ loading ? 'Refreshing...' : 'Refresh' }}
                         </button>
                     </div>
-                    <div class="flex-grow-1 text-muted small d-flex align-items-end pb-1" v-if="currentRepoUrl">
+                    <div class="flex-grow-1 text-muted small d-flex align-items-end pb-1" v-if="currentRepoName">
                         <i class="bi bi-diagram-3 me-1"></i>
-                        Showing: Current repository
+                        Showing: {{ currentRepoName }}
                     </div>
                 </div>
             </div>
@@ -245,6 +245,17 @@ export default {
             const { owner, repo } = route.params
             if (owner && repo) {
                 return `https://${owner}.github.io/${repo}/`
+            }
+            return null
+        })
+        
+        /**
+         * Computes the current repository name for display.
+         */
+        const currentRepoName = computed(() => {
+            const { owner, repo } = route.params
+            if (owner && repo) {
+                return `${owner}/${repo}`
             }
             return null
         })
@@ -520,6 +531,7 @@ export default {
             error,
             mermaidCode,
             currentRepoUrl,
+            currentRepoName,
             zoomLevel,
             
             // Methods
