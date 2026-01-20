@@ -182,7 +182,7 @@
  * @component
  */
 
-import { ref, computed, watch, onUnmounted, nextTick } from 'vue'
+import { ref, computed, watch, onUnmounted, onMounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useExternalRefsFlowchart } from '../composables/useExternalRefsFlowchart.js'
 
@@ -231,7 +231,7 @@ export default {
         const maxDepth = ref(3)
         const showCode = ref(false)
         const mermaidContainer = ref(null)
-        const offcanvasWidth = ref('600px')
+        const offcanvasWidth = ref(`${window.innerWidth - 100}px`)
         const zoomLevel = ref(1) // Zoom level for the flowchart (1 = 100%)
         const isResizing = ref(false)
         const startX = ref(0)
@@ -460,6 +460,20 @@ export default {
             }
         }
         
+        /**
+         * Updates offcanvas width on window resize.
+         */
+        const updateWidth = () => {
+            if (!isResizing.value) {
+                offcanvasWidth.value = `${window.innerWidth - 100}px`
+            }
+        }
+        
+        // Set up resize listener on mount
+        onMounted(() => {
+            window.addEventListener('resize', updateWidth)
+        })
+        
         // Watch for visibility prop changes
         watch(() => props.visible, (newVal) => {
             isVisible.value = newVal
@@ -489,6 +503,7 @@ export default {
             document.removeEventListener('keydown', handleEscKey)
             document.removeEventListener('mousemove', handleResize)
             document.removeEventListener('mouseup', stopResize)
+            window.removeEventListener('resize', updateWidth)
             document.body.classList.remove('offcanvas-open')
         })
         
@@ -527,8 +542,8 @@ export default {
     top: 0;
     right: 0;
     bottom: 0;
-    width: 600px;
-    max-width: 90vw;
+    width: 800px;
+    max-width: 95vw;
     background-color: #fff;
     z-index: 1050;
     box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
@@ -590,13 +605,19 @@ export default {
 /* Make the offcanvas responsive */
 @media (min-width: 992px) {
     .offcanvas {
-        width: 700px;
+        width: 850px;
     }
 }
 
 @media (min-width: 1200px) {
     .offcanvas {
-        width: 800px;
+        width: 900px;
+    }
+}
+
+@media (min-width: 1400px) {
+    .offcanvas {
+        width: 950px;
     }
 }
 
