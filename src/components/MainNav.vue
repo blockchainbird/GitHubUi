@@ -665,6 +665,9 @@ export default {
       closeNavbar();
     };
 
+    // Info modal state
+    const showModal = ref(false);
+
     return {
       isAdvancedUser,
       route,
@@ -715,6 +718,7 @@ export default {
       isHelpSectionActive,
       isSoundEnabled,
       toggleSound,
+      showModal,
       showWelcomeModal,
       showWelcomeModalAndClose,
     };

@@ -8,9 +8,9 @@
         
         The offcanvas slides in from the right side of the screen.
     -->
-    <div class="offcanvas offcanvas-end" :class="{ show: isVisible }" tabindex="-1" id="externalRefsFlowchartOffcanvas"
+    <div class="offcanvas offcanvas-end" :class="{ show: isVisible, hide: !isVisible && hasBeenOpened }" tabindex="-1" id="externalRefsFlowchartOffcanvas"
         data-bs-backdrop="true" aria-labelledby="externalRefsFlowchartLabel"
-        :style="{ visibility: isVisible ? 'visible' : 'hidden', width: offcanvasWidth }">
+        :style="{ visibility: (isVisible || isClosing) ? 'visible' : 'hidden', width: offcanvasWidth }">
         
         <div class="offcanvas-header border-bottom">
             <h5 class="offcanvas-title" id="externalRefsFlowchartLabel">
@@ -144,7 +144,7 @@
     </div>
     
     <!-- Backdrop overlay -->
-    <div v-if="isVisible" class="offcanvas-backdrop fade show" @click="close"></div>
+    <div v-if="isVisible || isClosing" class="offcanvas-backdrop fade" :class="{ show: isVisible }" @click="close"></div>
 </template>
 
 <script>
@@ -208,6 +208,8 @@ export default {
         
         // Local state
         const isVisible = ref(false)
+        const hasBeenOpened = ref(false) // Track if offcanvas was ever opened
+        const isClosing = ref(false) // Track if currently closing for animation
         const specUrl = ref('')
         const maxDepth = ref(3)
         const showCode = ref(false)
@@ -353,6 +355,14 @@ export default {
          */
         const close = () => {
             isVisible.value = false
+            isClosing.value = true
+            
+            // Wait for animation to complete before cleaning up
+            setTimeout(() => {
+                isClosing.value = false
+                hasBeenOpened.value = false
+            }, 350) // Match the CSS transition duration
+            
             document.body.classList.remove('offcanvas-open')
             document.removeEventListener('keydown', handleEscKey)
             emit('close')
@@ -373,6 +383,8 @@ export default {
         watch(() => props.visible, (newVal) => {
             isVisible.value = newVal
             if (newVal) {
+                hasBeenOpened.value = true
+                isClosing.value = false
                 document.body.classList.add('offcanvas-open')
                 document.addEventListener('keydown', handleEscKey)
                 
@@ -403,6 +415,8 @@ export default {
         return {
             // State
             isVisible,
+            hasBeenOpened,
+            isClosing,
             specUrl,
             maxDepth,
             showCode,
@@ -428,6 +442,17 @@ export default {
 .offcanvas {
     width: 600px;
     max-width: 90vw;
+    transition: transform 0.35s ease-in-out;
+}
+
+/* Open state - slide in from right */
+.offcanvas.show {
+    transform: translateX(0);
+}
+
+/* Closed state - slide out to right */
+.offcanvas.hide {
+    transform: translateX(100%);
 }
 
 /* Make the offcanvas responsive */
