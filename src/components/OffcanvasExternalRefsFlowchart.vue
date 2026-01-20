@@ -611,17 +611,25 @@ export default {
     flex: 1;
     min-height: 300px;
     overflow: auto;
+    display: flex;
+    align-items: stretch;
+    justify-content: stretch;
 }
 
 .mermaid-diagram {
-    display: inline-block;
+    width: 100%;
+    height: 100%;
     min-height: 200px;
     transition: transform 0.2s ease-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .mermaid-diagram :deep(svg) {
-    max-width: none;
+    width: 100%;
     height: auto;
+    min-height: 100%;
 }
 
 /* Zoom controls */
