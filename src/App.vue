@@ -9,14 +9,28 @@
     <BackToTop />
     <Notepad />
 
-    <!-- Floating File Manager Button -->
+    <!-- Floating File Manager Button (left side) -->
     <button v-if="showRepoRelatedButtons && !isFileExplorerVisible" @click="toggleFileExplorer"
       class="floating-file-manager-btn btn btn-primary" title="Open File Explorer" aria-label="Open File Explorer">
       <i class="bi bi-folder2-open"></i>
     </button>
 
+    <!-- Floating Flowchart Button (right side) -->
+    <button v-if="isAuthenticated && !isFlowchartVisible" @click="toggleFlowchart"
+      class="floating-flowchart-btn btn btn-secondary" title="External Refs Flowchart" aria-label="Open External Refs Flowchart">
+      <i class="bi bi-diagram-3"></i>
+    </button>
+
     <OffcanvasFileExplorer :visible="isFileExplorerVisible" @close="closeFileExplorer"
       @file-selected="onFileSelected" />
+    
+    <!-- External Refs Flowchart Offcanvas -->
+    <OffcanvasExternalRefsFlowchart 
+      :visible="isFlowchartVisible" 
+      :initial-url="flowchartInitialUrl"
+      :auto-generate="flowchartAutoGenerate"
+      @close="closeFlowchart" 
+    />
   </div>
 </template>
 
@@ -28,11 +42,12 @@ import MainNav from './components/MainNav.vue'
 import BackToTop from './components/BackToTop.vue'
 import Notepad from './components/Notepad.vue'
 import OffcanvasFileExplorer from './components/OffcanvasFileExplorer.vue'
+import OffcanvasExternalRefsFlowchart from './components/OffcanvasExternalRefsFlowchart.vue'
 import { secureTokenManager } from './utils/secureTokenManager.js'
 
 export default {
   name: 'App',
-  components: { MainNav, BackToTop, Notepad, OffcanvasFileExplorer },
+  components: { MainNav, BackToTop, Notepad, OffcanvasFileExplorer, OffcanvasExternalRefsFlowchart },
   setup() {
     const router = useRouter()
     const route = useRoute()
@@ -199,6 +214,55 @@ export default {
       }
     }
 
+    // Flowchart Offcanvas state management
+    const isFlowchartVisible = ref(false)
+    const flowchartInitialUrl = ref('')
+    const flowchartAutoGenerate = ref(false)
+
+    /**
+     * Toggles the flowchart offcanvas visibility.
+     * If in a repo context, pre-fills the URL.
+     */
+    const toggleFlowchart = () => {
+      const { owner, repo } = route.params
+      if (owner && repo && !isFlowchartVisible.value) {
+        // Pre-fill with current repo's GitHub Pages URL
+        flowchartInitialUrl.value = `https://${owner}.github.io/${repo}/`
+      }
+      isFlowchartVisible.value = !isFlowchartVisible.value
+    }
+
+    const closeFlowchart = () => {
+      isFlowchartVisible.value = false
+      flowchartAutoGenerate.value = false
+      // Remove flowchart query param if present
+      if (route.query.flowchart) {
+        const query = { ...route.query }
+        delete query.flowchart
+        router.replace({ query })
+      }
+    }
+
+    /**
+     * Checks URL for flowchart query parameter on mount and route changes.
+     * If ?flowchart=<url> is present, opens the flowchart with that URL.
+     */
+    const checkFlowchartUrlParam = () => {
+      const flowchartUrl = route.query.flowchart
+      if (flowchartUrl) {
+        flowchartInitialUrl.value = decodeURIComponent(flowchartUrl)
+        flowchartAutoGenerate.value = true
+        isFlowchartVisible.value = true
+      }
+    }
+
+    // Watch for route changes to detect flowchart parameter
+    watch(() => route.query.flowchart, (newVal) => {
+      if (newVal) {
+        checkFlowchartUrlParam()
+      }
+    }, { immediate: true })
+
     return {
       isAuthenticated,
       user,
@@ -209,7 +273,13 @@ export default {
       isFileExplorerVisible,
       toggleFileExplorer,
       closeFileExplorer,
-      onFileSelected
+      onFileSelected,
+      // Flowchart state
+      isFlowchartVisible,
+      flowchartInitialUrl,
+      flowchartAutoGenerate,
+      toggleFlowchart,
+      closeFlowchart
     }
   }
 }
@@ -295,9 +365,39 @@ body {
   transform: translateY(-50%) scale(0.95);
 }
 
-/* Hide floating button on very small screens to avoid overlap */
+/* Floating Flowchart Button (right side) */
+.floating-flowchart-btn {
+  position: fixed;
+  right: -20px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1040;
+  width: 48px;
+  height: 148px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: none;
+  transition: all 0.2s ease-in-out;
+  padding-left: 0 !important;
+}
+
+.floating-flowchart-btn:hover {
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.floating-flowchart-btn:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+/* Hide floating buttons on very small screens to avoid overlap */
 @media (max-width: 576px) {
-  .floating-file-manager-btn {
+  .floating-file-manager-btn,
+  .floating-flowchart-btn {
     display: none;
   }
 }
