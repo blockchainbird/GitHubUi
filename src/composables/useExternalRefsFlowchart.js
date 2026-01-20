@@ -280,6 +280,8 @@ export function useExternalRefsFlowchart() {
     const processedLinks = new Set()
     const processedNodes = new Map() // Track node ID -> was it defined
     const clickHandlers = [] // Store click handlers to add at the end
+    const linkStyles = [] // Store link styles with their indices
+    let linkIndex = 0 // Track the current link index for styling
     
     /**
      * Extracts a display URL from a full URL for shorter labels.
@@ -350,10 +352,19 @@ export function useExternalRefsFlowchart() {
       if (parentId) {
         const linkKey = `${parentId}->${nodeId}`
         if (!processedLinks.has(linkKey)) {
-          // Use thick arrow for direct children (depth 0 -> 1), normal for others
-          const arrow = parentDepth === 0 ? ' ==>' : ' -->'
-          lines.push(`    ${parentId}${arrow} ${nodeId}`)
+          // Add the link
+          lines.push(`    ${parentId} --> ${nodeId}`)
           processedLinks.add(linkKey)
+          
+          // Add link styling based on depth
+          if (parentDepth === 0) {
+            // Direct link from root: thicker blue line
+            linkStyles.push(`    linkStyle ${linkIndex} stroke:#6366f1,stroke-width:4px`)
+          } else {
+            // Nested link: thinner gray line
+            linkStyles.push(`    linkStyle ${linkIndex} stroke:#6b7280,stroke-width:1px`)
+          }
+          linkIndex++
         }
       }
       
@@ -370,7 +381,10 @@ export function useExternalRefsFlowchart() {
     // Add click handlers at the end
     lines.push(...clickHandlers)
     
-    // Add styles
+    // Add link styles
+    lines.push(...linkStyles)
+    
+    // Add node styles (classDef for nodes only)
     const styleDefinitions = [
       '    classDef rootNode fill:#a3a5f6,stroke:#6366f1,stroke-width:3px,color:#1e293b',
       '    classDef directExternalRef fill:#c4b5fd,stroke:#8b5cf6,stroke-width:2px,color:#1e293b',
