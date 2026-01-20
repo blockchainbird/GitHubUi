@@ -23,21 +23,10 @@
         <div class="offcanvas-body p-0 d-flex flex-column">
             <!-- Controls Section -->
             <div class="controls-section p-3 border-bottom bg-light">
-                <div class="row g-2 align-items-end">
-                    <div class="col-md-6">
-                        <label for="specUrlInput" class="form-label small text-muted mb-1">Specification URL</label>
-                        <input 
-                            id="specUrlInput"
-                            type="url" 
-                            class="form-control form-control-sm" 
-                            v-model="specUrl"
-                            placeholder="Enter spec URL (e.g., https://example.github.io/spec/)"
-                            @keyup.enter="handleGenerate"
-                        />
-                    </div>
-                    <div class="col-md-2">
+                <div class="d-flex align-items-end gap-3">
+                    <div class="flex-shrink-0">
                         <label for="maxDepthSelect" class="form-label small text-muted mb-1">Max Depth</label>
-                        <select id="maxDepthSelect" class="form-select form-select-sm" v-model.number="maxDepth">
+                        <select id="maxDepthSelect" class="form-select form-select-sm" v-model.number="maxDepth" @change="handleGenerate">
                             <option :value="1">1</option>
                             <option :value="2">2</option>
                             <option :value="3">3</option>
@@ -45,28 +34,20 @@
                             <option :value="5">5</option>
                         </select>
                     </div>
-                    <div class="col-md-4">
+                    <div class="flex-shrink-0">
                         <button 
-                            class="btn btn-primary btn-sm w-100" 
+                            class="btn btn-primary btn-sm" 
                             @click="handleGenerate"
-                            :disabled="loading || !specUrl"
+                            :disabled="loading || !currentRepoUrl"
                         >
-                            <i class="bi" :class="loading ? 'bi-arrow-clockwise spin' : 'bi-play-fill'"></i>
-                            {{ loading ? 'Generating...' : 'Generate Flowchart' }}
+                            <i class="bi" :class="loading ? 'bi-arrow-clockwise spin' : 'bi-arrow-clockwise'"></i>
+                            {{ loading ? 'Refreshing...' : 'Refresh' }}
                         </button>
                     </div>
-                </div>
-                
-                <!-- Quick load from current repo -->
-                <div v-if="currentRepoUrl" class="mt-2">
-                    <button 
-                        class="btn btn-outline-secondary btn-sm" 
-                        @click="loadCurrentRepo"
-                        :disabled="loading"
-                    >
-                        <i class="bi bi-box-arrow-in-down me-1"></i>
-                        Load from current repository
-                    </button>
+                    <div class="flex-grow-1 text-muted small d-flex align-items-end pb-1" v-if="currentRepoUrl">
+                        <i class="bi bi-diagram-3 me-1"></i>
+                        Showing: Current repository
+                    </div>
                 </div>
             </div>
             
@@ -122,10 +103,10 @@
             <div v-else class="empty-state text-center py-5 flex-grow-1 d-flex align-items-center justify-content-center">
                 <div>
                     <i class="bi bi-diagram-3 text-muted" style="font-size: 4rem;"></i>
-                    <h6 class="mt-3 text-muted">No Flowchart Generated</h6>
+                    <h6 class="mt-3 text-muted">No Repository Loaded</h6>
                     <p class="text-muted small mb-0">
-                        Enter a Spec-Up-T specification URL above<br>
-                        to visualize its external reference dependencies.
+                        Load a repository to visualize<br>
+                        its external reference dependencies.
                     </p>
                 </div>
             </div>
@@ -210,7 +191,6 @@ export default {
         const isVisible = ref(false)
         const hasBeenOpened = ref(false) // Track if offcanvas was ever opened
         const isClosing = ref(false) // Track if currently closing for animation
-        const specUrl = ref('')
         const maxDepth = ref(3)
         const showCode = ref(false)
         const mermaidContainer = ref(null)
@@ -229,23 +209,13 @@ export default {
         })
         
         /**
-         * Loads the current repository's URL into the input field.
-         */
-        const loadCurrentRepo = () => {
-            if (currentRepoUrl.value) {
-                specUrl.value = currentRepoUrl.value
-                handleGenerate()
-            }
-        }
-        
-        /**
-         * Handles the generate button click.
-         * Validates input and triggers flowchart generation.
+         * Handles the generate/refresh button click.
+         * Uses the current repository URL to generate the flowchart.
          */
         const handleGenerate = async () => {
-            if (!specUrl.value) return
+            if (!currentRepoUrl.value) return
             
-            await generateFlowchart(specUrl.value)
+            await generateFlowchart(currentRepoUrl.value)
             
             // Render Mermaid diagram after generation
             await nextTick()
@@ -388,12 +358,9 @@ export default {
                 document.body.classList.add('offcanvas-open')
                 document.addEventListener('keydown', handleEscKey)
                 
-                // If initialUrl is provided, load it
-                if (props.initialUrl && !specUrl.value) {
-                    specUrl.value = props.initialUrl
-                    if (props.autoGenerate) {
-                        nextTick(() => handleGenerate())
-                    }
+                // Auto-generate flowchart for current repository
+                if (currentRepoUrl.value) {
+                    nextTick(() => handleGenerate())
                 }
             } else {
                 document.body.classList.remove('offcanvas-open')
@@ -417,7 +384,6 @@ export default {
             isVisible,
             hasBeenOpened,
             isClosing,
-            specUrl,
             maxDepth,
             showCode,
             mermaidContainer,
@@ -429,7 +395,6 @@ export default {
             
             // Methods
             handleGenerate,
-            loadCurrentRepo,
             copyCode,
             close
         }
