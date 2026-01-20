@@ -252,7 +252,7 @@ export function useExternalRefsFlowchart() {
     // Create a simple hash from the URL
     let hash = 0
     for (let i = 0; i < url.length; i++) {
-      const char = url.charCodeAt(i)
+      const char = url.codePointAt(i)
       hash = ((hash << 5) - hash) + char
       hash = hash & hash // Convert to 32-bit integer
     }
@@ -281,42 +281,69 @@ export function useExternalRefsFlowchart() {
     const processedNodes = new Map() // Track node ID -> was it defined
     const clickHandlers = [] // Store click handlers to add at the end
     
+    /**
+     * Extracts a display URL from a full URL for shorter labels.
+     * 
+     * @param {string} url - The full URL
+     * @returns {string} A shorter display URL
+     */
+    const getUrlDisplay = (url) => {
+      try {
+        const urlObj = new URL(url)
+        return urlObj.hostname + urlObj.pathname.replace(/\/$/, '')
+      } catch {
+        return url
+      }
+    }
+    
+    /**
+     * Defines a node in the Mermaid diagram with appropriate styling.
+     * 
+     * @param {Object} node - The node to define
+     * @param {string} nodeId - The sanitized node ID
+     * @param {string} label - The escaped label
+     * @param {string} urlDisplay - The display URL
+     */
+    const defineNode = (node, nodeId, label, urlDisplay) => {
+      if (node.cycle) {
+        return // Don't create a separate node for cycles
+      }
+      
+      if (node.truncated) {
+        lines.push(`    ${nodeId}[/"..."/]`)
+      } else if (node.error) {
+        lines.push(`    ${nodeId}[/"${label} (error)"/]:::errorNode`)
+      } else if (node.depth === 0) {
+        lines.push(`    ${nodeId}(["${label}<br/><small>${urlDisplay}</small>"]):::rootNode`)
+      } else if (node.depth === 1) {
+        lines.push(`    ${nodeId}["${label}<br/><small>${urlDisplay}</small>"]:::directExternalRef`)
+      } else {
+        lines.push(`    ${nodeId}["${label}<br/><small>${urlDisplay}</small>"]`)
+      }
+      
+      processedNodes.set(nodeId, true)
+      
+      // Add click handler to open URL in new tab
+      if (node.url && !node.cycle && !node.truncated) {
+        clickHandlers.push(`    click ${nodeId} href "${node.url}" _blank`)
+      }
+    }
+    
+    /**
+     * Processes a single node and its children recursively.
+     * 
+     * @param {Object} node - The node to process
+     * @param {string|null} parentId - The parent node ID
+     * @param {number|null} parentDepth - The parent node depth
+     */
     const processNode = (node, parentId = null, parentDepth = null) => {
       const nodeId = sanitizeMermaidId(node.id)
       const label = escapeForMermaid(node.title)
-      
-      // Extract domain from URL for shorter display
-      let urlDisplay = ''
-      try {
-        const urlObj = new URL(node.url)
-        urlDisplay = urlObj.hostname + urlObj.pathname.replace(/\/$/, '')
-      } catch {
-        urlDisplay = node.url
-      }
+      const urlDisplay = getUrlDisplay(node.url)
       
       // Only define the node if it hasn't been defined yet
       if (!processedNodes.has(nodeId)) {
-        // Define the node with appropriate styling
-        if (node.cycle) {
-          // Don't create a separate node for cycles, just use the link
-          return
-        } else if (node.truncated) {
-          lines.push(`    ${nodeId}[/"..."/]`)
-        } else if (node.error) {
-          lines.push(`    ${nodeId}[/"${label} (error)"/]:::errorNode`)
-        } else if (node.depth === 0) {
-          lines.push(`    ${nodeId}(["${label}<br/><small>${urlDisplay}</small>"]):::rootNode`)
-        } else if (node.depth === 1) {
-          lines.push(`    ${nodeId}["${label}<br/><small>${urlDisplay}</small>"]:::directExternalRef`)
-        } else {
-          lines.push(`    ${nodeId}["${label}<br/><small>${urlDisplay}</small>"]`)
-        }
-        processedNodes.set(nodeId, true)
-        
-        // Add click handler to open URL in new tab
-        if (node.url && !node.cycle && !node.truncated) {
-          clickHandlers.push(`    click ${nodeId} href "${node.url}" _blank`)
-        }
+        defineNode(node, nodeId, label, urlDisplay)
       }
       
       // Add link from parent if exists
@@ -344,11 +371,12 @@ export function useExternalRefsFlowchart() {
     lines.push(...clickHandlers)
     
     // Add styles
-    lines.push(
+    const styleDefinitions = [
       '    classDef rootNode fill:#a3a5f6,stroke:#6366f1,stroke-width:3px,color:#1e293b',
       '    classDef directExternalRef fill:#c4b5fd,stroke:#8b5cf6,stroke-width:2px,color:#1e293b',
       '    classDef errorNode fill:#f87171,stroke:#dc2626,stroke-width:2px,color:#fff'
-    )
+    ]
+    lines.push(...styleDefinitions)
     
     return lines.join('\n')
   }

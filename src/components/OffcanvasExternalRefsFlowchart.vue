@@ -12,6 +12,13 @@
         data-bs-backdrop="true" aria-labelledby="externalRefsFlowchartLabel"
         :style="{ visibility: (isVisible || isClosing) ? 'visible' : 'hidden', width: offcanvasWidth }">
         
+        <!-- Resize handle on the left edge -->
+        <div 
+            class="resize-handle" 
+            @mousedown="startResize"
+            title="Drag to resize"
+        ></div>
+        
         <div class="offcanvas-header border-bottom">
             <h5 class="offcanvas-title" id="externalRefsFlowchartLabel">
                 <i class="bi bi-diagram-3 me-2"></i>
@@ -70,8 +77,38 @@
             
             <!-- Flowchart Display -->
             <div v-else-if="mermaidCode" class="flowchart-container flex-grow-1 p-3 overflow-auto">
+                <!-- Zoom Controls -->
+                <div class="zoom-controls mb-2 d-flex gap-2 align-items-center">
+                    <button 
+                        class="btn btn-sm btn-outline-secondary" 
+                        @click="zoomIn"
+                        title="Zoom In"
+                    >
+                        <i class="bi bi-zoom-in"></i>
+                    </button>
+                    <button 
+                        class="btn btn-sm btn-outline-secondary" 
+                        @click="zoomOut"
+                        title="Zoom Out"
+                    >
+                        <i class="bi bi-zoom-out"></i>
+                    </button>
+                    <button 
+                        class="btn btn-sm btn-outline-secondary" 
+                        @click="resetZoom"
+                        title="Reset Zoom"
+                    >
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                    <span class="text-muted small ms-2">{{ Math.round(zoomLevel * 100) }}%</span>
+                </div>
+                
                 <div class="flowchart-wrapper bg-white rounded border p-3">
-                    <div ref="mermaidContainer" class="mermaid-diagram"></div>
+                    <div 
+                        ref="mermaidContainer" 
+                        class="mermaid-diagram" 
+                        :style="{ transform: `scale(${zoomLevel})`, transformOrigin: 'top left' }"
+                    ></div>
                 </div>
                 
                 <!-- Mermaid Code Toggle -->
@@ -195,6 +232,10 @@ export default {
         const showCode = ref(false)
         const mermaidContainer = ref(null)
         const offcanvasWidth = ref('600px')
+        const zoomLevel = ref(1) // Zoom level for the flowchart (1 = 100%)
+        const isResizing = ref(false)
+        const startX = ref(0)
+        const startWidth = ref(0)
         
         /**
          * Computes the current repository's GitHub Pages URL if available.
@@ -321,6 +362,76 @@ export default {
         }
         
         /**
+         * Zooms in the flowchart.
+         */
+        const zoomIn = () => {
+            zoomLevel.value = Math.min(zoomLevel.value + 0.1, 3) // Max 300%
+        }
+        
+        /**
+         * Zooms out the flowchart.
+         */
+        const zoomOut = () => {
+            zoomLevel.value = Math.max(zoomLevel.value - 0.1, 0.3) // Min 30%
+        }
+        
+        /**
+         * Resets the zoom level to 100%.
+         */
+        const resetZoom = () => {
+            zoomLevel.value = 1
+        }
+        
+        /**
+         * Starts the resize operation when user clicks on the resize handle.
+         * 
+         * @param {MouseEvent} event - The mousedown event
+         */
+        const startResize = (event) => {
+            isResizing.value = true
+            startX.value = event.clientX
+            // Parse current width (remove 'px')
+            startWidth.value = Number.parseInt(offcanvasWidth.value, 10)
+            
+            // Add event listeners for dragging
+            document.addEventListener('mousemove', handleResize)
+            document.addEventListener('mouseup', stopResize)
+            
+            // Prevent text selection during drag
+            event.preventDefault()
+        }
+        
+        /**
+         * Handles the mouse move during resize.
+         * 
+         * @param {MouseEvent} event - The mousemove event
+         */
+        const handleResize = (event) => {
+            if (!isResizing.value) return
+            
+            // Calculate the delta (negative because we're dragging from right to left)
+            const deltaX = startX.value - event.clientX
+            const newWidth = startWidth.value + deltaX
+            
+            // Constrain width between 400px and 90vw
+            const minWidth = 400
+            const maxWidth = window.innerWidth * 0.9
+            
+            if (newWidth >= minWidth && newWidth <= maxWidth) {
+                offcanvasWidth.value = newWidth + 'px'
+            }
+        }
+        
+        /**
+         * Stops the resize operation.
+         */
+        const stopResize = () => {
+            isResizing.value = false
+            document.removeEventListener('mousemove', handleResize)
+            document.removeEventListener('mouseup', stopResize)
+        }
+        
+        /**
          * Closes the offcanvas panel.
          */
         const close = () => {
@@ -376,6 +487,8 @@ export default {
         // Cleanup on unmount
         onUnmounted(() => {
             document.removeEventListener('keydown', handleEscKey)
+            document.removeEventListener('mousemove', handleResize)
+            document.removeEventListener('mouseup', stopResize)
             document.body.classList.remove('offcanvas-open')
         })
         
@@ -392,10 +505,15 @@ export default {
             error,
             mermaidCode,
             currentRepoUrl,
+            zoomLevel,
             
             // Methods
             handleGenerate,
             copyCode,
+            zoomIn,
+            zoomOut,
+            resetZoom,
+            startResize,
             close
         }
     }
@@ -405,9 +523,41 @@ export default {
 <style scoped>
 /* Offcanvas styling for right-side panel */
 .offcanvas {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
     width: 600px;
     max-width: 90vw;
+    background-color: #fff;
+    z-index: 1050;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
     transition: transform 0.35s ease-in-out;
+    transform: translateX(100%);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Resize handle on the left edge */
+.resize-handle {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    cursor: ew-resize;
+    z-index: 1000;
+    background: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.05));
+    transition: background 0.2s;
+}
+
+.resize-handle:hover {
+    background: linear-gradient(to right, transparent, rgba(0, 123, 255, 0.2));
+}
+
+.resize-handle:active {
+    background: linear-gradient(to right, transparent, rgba(0, 123, 255, 0.4));
 }
 
 /* Open state - slide in from right */
@@ -418,6 +568,23 @@ export default {
 /* Closed state - slide out to right */
 .offcanvas.hide {
     transform: translateX(100%);
+}
+
+/* Backdrop overlay */
+.offcanvas-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1040;
+    opacity: 0;
+    transition: opacity 0.35s ease-in-out;
+}
+
+.offcanvas-backdrop.show {
+    opacity: 1;
 }
 
 /* Make the offcanvas responsive */
@@ -436,22 +603,35 @@ export default {
 /* Flowchart container */
 .flowchart-container {
     background-color: #f8f9fa;
+    display: flex;
+    flex-direction: column;
 }
 
 .flowchart-wrapper {
+    flex: 1;
     min-height: 300px;
+    overflow: auto;
 }
 
 .mermaid-diagram {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    display: inline-block;
     min-height: 200px;
+    transition: transform 0.2s ease-out;
 }
 
 .mermaid-diagram :deep(svg) {
-    max-width: 100%;
+    max-width: none;
     height: auto;
+}
+
+/* Zoom controls */
+.zoom-controls {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(248, 249, 250, 0.95);
+    padding: 8px;
+    border-radius: 4px;
 }
 
 /* Spinner animation */
