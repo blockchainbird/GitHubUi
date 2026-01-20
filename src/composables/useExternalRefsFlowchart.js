@@ -279,10 +279,20 @@ export function useExternalRefsFlowchart() {
     const lines = ['flowchart TB']
     const processedLinks = new Set()
     const processedNodes = new Map() // Track node ID -> was it defined
+    const clickHandlers = [] // Store click handlers to add at the end
     
-    const processNode = (node, parentId = null) => {
+    const processNode = (node, parentId = null, parentDepth = null) => {
       const nodeId = sanitizeMermaidId(node.id)
       const label = escapeForMermaid(node.title)
+      
+      // Extract domain from URL for shorter display
+      let urlDisplay = ''
+      try {
+        const urlObj = new URL(node.url)
+        urlDisplay = urlObj.hostname + urlObj.pathname.replace(/\/$/, '')
+      } catch {
+        urlDisplay = node.url
+      }
       
       // Only define the node if it hasn't been defined yet
       if (!processedNodes.has(nodeId)) {
@@ -295,18 +305,25 @@ export function useExternalRefsFlowchart() {
         } else if (node.error) {
           lines.push(`    ${nodeId}[/"${label} (error)"/]:::errorNode`)
         } else if (node.depth === 0) {
-          lines.push(`    ${nodeId}(["${label}"]):::rootNode`)
+          lines.push(`    ${nodeId}(["${label}<br/><small>${urlDisplay}</small>"]):::rootNode`)
         } else {
-          lines.push(`    ${nodeId}["${label}"]`)
+          lines.push(`    ${nodeId}["${label}<br/><small>${urlDisplay}</small>"]`)
         }
         processedNodes.set(nodeId, true)
+        
+        // Add click handler to open URL in new tab
+        if (node.url && !node.cycle && !node.truncated) {
+          clickHandlers.push(`    click ${nodeId} href "${node.url}" _blank`)
+        }
       }
       
       // Add link from parent if exists
       if (parentId) {
         const linkKey = `${parentId}->${nodeId}`
         if (!processedLinks.has(linkKey)) {
-          lines.push(`    ${parentId} --> ${nodeId}`)
+          // Use thick arrow for direct children (depth 0 -> 1), normal for others
+          const arrow = parentDepth === 0 ? ' ==>' : ' -->'
+          lines.push(`    ${parentId}${arrow} ${nodeId}`)
           processedLinks.add(linkKey)
         }
       }
@@ -314,12 +331,15 @@ export function useExternalRefsFlowchart() {
       // Process children
       if (node.children && node.children.length > 0) {
         node.children.forEach(child => {
-          processNode(child, nodeId)
+          processNode(child, nodeId, node.depth)
         })
       }
     }
     
     processNode(tree)
+    
+    // Add click handlers at the end
+    lines.push(...clickHandlers)
     
     // Add styles
     lines.push(
