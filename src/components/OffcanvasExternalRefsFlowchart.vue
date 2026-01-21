@@ -19,21 +19,23 @@
             title="Drag to resize"
         ></div>
         
-        <div class="offcanvas-header border-bottom">
-            <h5 class="offcanvas-title" id="externalRefsFlowchartLabel">
-                <i class="bi bi-diagram-3 me-2"></i>
-                External References Flowchart
-            </h5>
+        <div class="offcanvas-header border-bottom py-2">
+            <h6 class="offcanvas-title mb-0" id="externalRefsFlowchartLabel">
+                <i class="bi bi-diagram-3 me-1"></i>
+                External Refs
+                <span v-if="currentRepoName" class="text-muted small ms-2">{{ currentRepoName }}</span>
+            </h6>
             <button type="button" class="btn-close" @click="close" aria-label="Close"></button>
         </div>
         
         <div class="offcanvas-body p-0 d-flex flex-column">
-            <!-- Controls Section -->
-            <div class="controls-section p-3 border-bottom bg-light">
-                <div class="d-flex align-items-end gap-3">
-                    <div class="flex-shrink-0">
-                        <label for="maxDepthSelect" class="form-label small text-muted mb-1">Max Depth</label>
-                        <select id="maxDepthSelect" class="form-select form-select-sm" v-model.number="maxDepth" @change="handleGenerate">
+            <!-- Compact Controls Section -->
+            <div class="controls-section px-3 py-2 border-bottom bg-light">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <!-- Max Depth -->
+                    <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                        <label for="maxDepthSelect" class="form-label small text-muted mb-0">Depth:</label>
+                        <select id="maxDepthSelect" class="form-select form-select-sm" v-model.number="maxDepth" @change="handleGenerate" style="width: 60px;">
                             <option :value="1">1</option>
                             <option :value="2">2</option>
                             <option :value="3">3</option>
@@ -41,19 +43,66 @@
                             <option :value="5">5</option>
                         </select>
                     </div>
-                    <div class="flex-shrink-0">
+                    
+                    <!-- Refresh Button -->
+                    <button 
+                        class="btn btn-primary btn-sm flex-shrink-0" 
+                        @click="handleGenerate"
+                        :disabled="loading || !currentRepoUrl"
+                        style="min-width: 85px;"
+                    >
+                        <i class="bi" :class="loading ? 'bi-arrow-clockwise spin' : 'bi-arrow-clockwise'"></i>
+                        {{ loading ? 'Loading' : 'Refresh' }}
+                    </button>
+                    
+                    <!-- Zoom Controls -->
+                    <div class="d-flex align-items-center gap-1 ms-auto flex-shrink-0">
+                        <span class="text-muted small me-1">Zoom:</span>
                         <button 
-                            class="btn btn-primary btn-sm" 
-                            @click="handleGenerate"
-                            :disabled="loading || !currentRepoUrl"
+                            class="btn btn-sm btn-outline-secondary p-1" 
+                            @click="zoomOut"
+                            title="Zoom Out"
+                            style="width: 28px; height: 28px;"
                         >
-                            <i class="bi" :class="loading ? 'bi-arrow-clockwise spin' : 'bi-arrow-clockwise'"></i>
-                            {{ loading ? 'Refreshing...' : 'Refresh' }}
+                            <i class="bi bi-dash"></i>
+                        </button>
+                        <span class="text-muted small" style="min-width: 42px; text-align: center;">{{ Math.round(zoomLevel * 100) }}%</span>
+                        <button 
+                            class="btn btn-sm btn-outline-secondary p-1" 
+                            @click="zoomIn"
+                            title="Zoom In"
+                            style="width: 28px; height: 28px;"
+                        >
+                            <i class="bi bi-plus"></i>
+                        </button>
+                        <button 
+                            class="btn btn-sm btn-outline-secondary p-1" 
+                            @click="resetZoom"
+                            title="Reset Zoom"
+                            style="width: 28px; height: 28px;"
+                        >
+                            <i class="bi bi-arrow-clockwise"></i>
                         </button>
                     </div>
-                    <div class="flex-grow-1 text-muted small d-flex align-items-end pb-1" v-if="currentRepoName">
-                        <i class="bi bi-diagram-3 me-1"></i>
-                        Showing: {{ currentRepoName }}
+                    
+                    <!-- Mermaid Code Toggle -->
+                    <div class="d-flex align-items-center gap-1 flex-shrink-0" v-if="mermaidCode">
+                        <button 
+                            class="btn btn-outline-secondary btn-sm" 
+                            @click="showCode = !showCode"
+                            style="min-width: 70px;"
+                        >
+                            <i class="bi" :class="showCode ? 'bi-eye-slash' : 'bi-code'"></i>
+                            {{ showCode ? 'Hide' : 'Code' }}
+                        </button>
+                        <button 
+                            class="btn btn-outline-secondary btn-sm" 
+                            @click="copyCode"
+                            v-if="showCode"
+                            title="Copy Code"
+                        >
+                            <i class="bi bi-clipboard"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -77,32 +126,6 @@
             
             <!-- Flowchart Display -->
             <div v-else-if="mermaidCode" class="flowchart-container flex-grow-1 p-3 overflow-auto">
-                <!-- Zoom Controls -->
-                <div class="zoom-controls mb-2 d-flex gap-2 align-items-center">
-                    <button 
-                        class="btn btn-sm btn-outline-secondary" 
-                        @click="zoomIn"
-                        title="Zoom In"
-                    >
-                        <i class="bi bi-zoom-in"></i>
-                    </button>
-                    <button 
-                        class="btn btn-sm btn-outline-secondary" 
-                        @click="zoomOut"
-                        title="Zoom Out"
-                    >
-                        <i class="bi bi-zoom-out"></i>
-                    </button>
-                    <button 
-                        class="btn btn-sm btn-outline-secondary" 
-                        @click="resetZoom"
-                        title="Reset Zoom"
-                    >
-                        <i class="bi bi-arrow-clockwise"></i>
-                    </button>
-                    <span class="text-muted small ms-2">{{ Math.round(zoomLevel * 100) }}%</span>
-                </div>
-                
                 <div class="flowchart-wrapper bg-white rounded border p-3">
                     <div 
                         ref="mermaidContainer" 
@@ -111,27 +134,7 @@
                     ></div>
                 </div>
                 
-                <!-- Mermaid Code Toggle -->
-                <div class="mt-3">
-                    <button 
-                        class="btn btn-outline-secondary btn-sm" 
-                        @click="showCode = !showCode"
-                    >
-                        <i class="bi" :class="showCode ? 'bi-eye-slash' : 'bi-code'"></i>
-                        {{ showCode ? 'Hide Code' : 'Show Mermaid Code' }}
-                    </button>
-                    
-                    <button 
-                        class="btn btn-outline-secondary btn-sm ms-2" 
-                        @click="copyCode"
-                        v-if="showCode"
-                    >
-                        <i class="bi bi-clipboard"></i>
-                        Copy Code
-                    </button>
-                </div>
-                
-                <div v-if="showCode" class="mt-2">
+                <div v-if="showCode" class="mt-3">
                     <pre class="bg-dark text-light p-3 rounded small overflow-auto" style="max-height: 200px;">{{ mermaidCode }}</pre>
                 </div>
             </div>
@@ -665,14 +668,9 @@ export default {
     min-height: 100%;
 }
 
-/* Zoom controls */
-.zoom-controls {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    background: rgba(248, 249, 250, 0.95);
-    padding: 8px;
-    border-radius: 4px;
+/* Compact controls section */
+.controls-section {
+    flex-shrink: 0;
 }
 
 /* Spinner animation */
