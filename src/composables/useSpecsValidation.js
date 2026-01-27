@@ -17,7 +17,6 @@ export function useSpecsValidation() {
       spec.external_spec &&
       spec.gh_page &&
       spec.url &&
-      spec.terms_dir &&
       isValidUrl(spec.gh_page) &&
       isValidUrl(spec.url)
   }
@@ -41,10 +40,6 @@ export function useSpecsValidation() {
       errors.push('Repository URL must be valid')
     }
 
-    if (!newSpec.terms_dir?.trim()) {
-      errors.push('Terms directory is required')
-    }
-
     return {
       isValid: errors.length === 0,
       errors
@@ -56,7 +51,6 @@ export function useSpecsValidation() {
       !spec.external_spec ||
       !spec.gh_page ||
       !spec.url ||
-      !spec.terms_dir ||
       !isValidUrl(spec.gh_page) ||
       !isValidUrl(spec.url)
     )

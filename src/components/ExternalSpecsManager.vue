@@ -40,7 +40,6 @@
                       <th>Spec ID</th>
                       <th>GitHub Page</th>
                       <th>Repository URL</th>
-                      <th>Terms Directory</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -84,14 +83,6 @@
                         </div>
                         <div v-else-if="!isValidUrl(spec.url)" class="invalid-feedback">
                           Please enter a valid URL
-                        </div>
-                      </td>
-                      <td>
-                        <input v-model="spec.terms_dir" class="form-control form-control-sm"
-                          placeholder="spec/terms-definitions" @input="markAsChanged"
-                          :class="{ 'is-invalid': !spec.terms_dir }">
-                        <div v-if="!spec.terms_dir" class="invalid-feedback">
-                          Terms directory is required
                         </div>
                       </td>
                       <td>
@@ -152,12 +143,6 @@
                         <input id="newSpecUrl" v-model="newSpec.url" type="url" class="form-control"
                           placeholder="https://github.com/user/repo" required>
                         <div class="form-text">The GitHub repository URL</div>
-                      </div>
-                      <div class="col-md-6 mb-3">
-                        <label for="newSpecTermsDir" class="form-label">Terms Directory</label>
-                        <input id="newSpecTermsDir" v-model="newSpec.terms_dir" class="form-control"
-                          placeholder="spec/terms-definitions" required>
-                        <div class="form-text">Path to the terms definitions directory</div>
                       </div>
                     </div>
                     <div class="d-flex justify-content-end">
@@ -248,7 +233,6 @@
                             <th>Spec ID</th>
                             <th>GitHub Page</th>
                             <th>Repository URL</th>
-                            <th>Terms Directory</th>
                             <th>Status</th>
                           </tr>
                         </thead>
@@ -270,11 +254,6 @@
                             <td class="text-truncate" style="max-width: 200px;">
                               <span :class="{ 'text-danger': spec._isInvalid && (!spec.url || !isValidUrl(spec.url)) }">
                                 {{ spec.url || 'Missing' }}
-                              </span>
-                            </td>
-                            <td>
-                              <span :class="{ 'text-danger': spec._isInvalid && !spec.terms_dir }">
-                                {{ spec.terms_dir || 'Missing' }}
                               </span>
                             </td>
                             <td>
