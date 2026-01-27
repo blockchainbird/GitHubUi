@@ -173,24 +173,23 @@
                   </div>
                 </div>
 
-                <!-- <div class="col-md-6">
+                <div class="col-md-6">
                   <div class="form-check card h-100">
                     <div class="card-body">
                       <input v-model="selectedAction" class="form-check-input" type="radio" value="custom-update"
                         id="action-custom">
                       <label class="form-check-label w-100" for="action-custom">
                         <div class="d-flex align-items-start">
-                          <i class="bi bi-wrench me-2 text-secondary"></i>
+                          <i class="bi bi-arrow-clockwise me-2 text-purple" style="color: #6f42c1;"></i>
                           <div>
                             <strong>Custom Update</strong>
-                            <div class="small text-muted">Run custom specification updates</div>
+                            <div class="small text-muted">Update scripts, system files, and .gitignore to latest spec-up-t version</div>
                           </div>
                         </div>
                       </label>
                     </div>
                   </div>
                 </div>
- -->
 
               </div>
             </div>
@@ -226,6 +225,7 @@
                       Specification</template>
                   <template v-else-if="selectedAction === 'freeze'">Freeze Specification</template>
                   <template v-else-if="selectedAction === 'todocx'">Generate DOCX</template>
+                  <template v-else-if="selectedAction === 'custom-update'">Run Custom Update</template>
                   <template v-else>Action</template>
                 </span>
               </button>
