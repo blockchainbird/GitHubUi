@@ -89,6 +89,20 @@
                         placeholder="https://example.com/favicon.ico" @focus="clearPlaceholderValue($event, 'favicon')">
                       <div class="form-text">URL to your project favicon</div>
                     </div>
+
+                    <div class="col-md-6 mb-3">
+                      <label for="account" class="form-label">GitHub Account</label>
+                      <input id="account" v-model="projectForm.account" class="form-control"
+                        placeholder="your-github-username" @focus="clearPlaceholderValue($event, 'account')">
+                      <div class="form-text">GitHub account or organization (auto-filled from login)</div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                      <label for="repo" class="form-label">Repository Name</label>
+                      <input id="repo" v-model="projectForm.repo" class="form-control"
+                        placeholder="my-spec-project" @focus="clearPlaceholderValue($event, 'repo')">
+                      <div class="form-text">Repository name for source reference (auto-filled from project name)</div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -232,7 +246,9 @@ export default {
       authors: '',
       logo: 'https://raw.githubusercontent.com/trustoverip/spec-up-t/refs/heads/master/src/install-from-boilerplate/boilerplate/static/logo.svg',
       logoLink: 'https://github.com/trustoverip/spec-up-t',
-      favicon: 'https://raw.githubusercontent.com/trustoverip/spec-up-t/refs/heads/master/src/install-from-boilerplate/boilerplate/static/favicon.ico'
+      favicon: 'https://raw.githubusercontent.com/trustoverip/spec-up-t/refs/heads/master/src/install-from-boilerplate/boilerplate/static/favicon.ico',
+      account: '',
+      repo: ''
     })
 
     // UI state
@@ -253,7 +269,9 @@ export default {
         authors: '',
         logo: 'https://raw.githubusercontent.com/trustoverip/spec-up-t/refs/heads/master/src/install-from-boilerplate/boilerplate/static/logo.svg',
         logoLink: 'https://github.com/trustoverip/spec-up-t',
-        favicon: 'https://raw.githubusercontent.com/trustoverip/spec-up-t/refs/heads/master/src/install-from-boilerplate/boilerplate/static/favicon.ico'
+        favicon: 'https://raw.githubusercontent.com/trustoverip/spec-up-t/refs/heads/master/src/install-from-boilerplate/boilerplate/static/favicon.ico',
+        account: '',
+        repo: ''
       }
     }
 
@@ -421,6 +439,8 @@ env:
   LOGO: "${(projectForm.value.logo || '').replace(/"/g, '')}"
   LOGO_LINK: "${(projectForm.value.logoLink || '').replace(/"/g, '')}"
   FAVICON: "${(projectForm.value.favicon || '').replace(/"/g, '')}"
+  ACCOUNT: "${(projectForm.value.account || '').replace(/"/g, '')}"
+  REPO: "${(projectForm.value.repo || projectForm.value.name || '').replace(/"/g, '')}"
 
 jobs:
   initialize:
@@ -472,6 +492,16 @@ jobs:
                 }
                 if (process.env.FAVICON) {
                   config.specs[0].favicon = process.env.FAVICON;
+                }
+                // Initialize source object if it doesn't exist
+                if (!config.specs[0].source) {
+                  config.specs[0].source = {};
+                }
+                if (process.env.ACCOUNT) {
+                  config.specs[0].source.account = process.env.ACCOUNT;
+                }
+                if (process.env.REPO) {
+                  config.specs[0].source.repo = process.env.REPO;
                 }
               }
               fs.writeFileSync('specs.json', JSON.stringify(config, null, 2));
