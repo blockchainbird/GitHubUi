@@ -58,17 +58,36 @@
                     <div class="col-md-6 mb-3">
                       <label for="specTitle" class="form-label">Specification Title</label>
                       <input id="specTitle" v-model="projectForm.specTitle" class="form-control"
-                        placeholder="My Specification"
-                        @focus="clearPlaceholderValue($event, 'specTitle')">
+                        placeholder="My Specification" @focus="clearPlaceholderValue($event, 'specTitle')">
                       <div class="form-text">Title for your specification document</div>
                     </div>
 
                     <div class="col-12 mb-3">
                       <label for="authors" class="form-label">Authors</label>
                       <input id="authors" v-model="projectForm.authors" class="form-control"
-                        placeholder="John Doe, Jane Smith"
-                        @focus="clearPlaceholderValue($event, 'authors')">
+                        placeholder="John Doe, Jane Smith" @focus="clearPlaceholderValue($event, 'authors')">
                       <div class="form-text">Comma-separated list of authors</div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                      <label for="logo" class="form-label">Logo URL</label>
+                      <input id="logo" v-model="projectForm.logo" class="form-control"
+                        placeholder="https://example.com/logo.svg" @focus="clearPlaceholderValue($event, 'logo')">
+                      <div class="form-text">URL to your project logo image</div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                      <label for="logoLink" class="form-label">Logo Link URL</label>
+                      <input id="logoLink" v-model="projectForm.logoLink" class="form-control"
+                        placeholder="https://github.com/your-org" @focus="clearPlaceholderValue($event, 'logoLink')">
+                      <div class="form-text">URL the logo links to when clicked</div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                      <label for="favicon" class="form-label">Favicon URL</label>
+                      <input id="favicon" v-model="projectForm.favicon" class="form-control"
+                        placeholder="https://example.com/favicon.ico" @focus="clearPlaceholderValue($event, 'favicon')">
+                      <div class="form-text">URL to your project favicon</div>
                     </div>
                   </div>
                 </div>
@@ -210,7 +229,10 @@ export default {
       description: '',
       isPrivate: false,
       specTitle: '',
-      authors: ''
+      authors: '',
+      logo: 'https://raw.githubusercontent.com/trustoverip/spec-up-t/refs/heads/master/src/install-from-boilerplate/boilerplate/static/logo.svg',
+      logoLink: 'https://github.com/trustoverip/spec-up-t',
+      favicon: 'https://raw.githubusercontent.com/trustoverip/spec-up-t/refs/heads/master/src/install-from-boilerplate/boilerplate/static/favicon.ico'
     })
 
     // UI state
@@ -228,7 +250,10 @@ export default {
         description: '',
         isPrivate: false,
         specTitle: '',
-        authors: ''
+        authors: '',
+        logo: 'https://raw.githubusercontent.com/trustoverip/spec-up-t/refs/heads/master/src/install-from-boilerplate/boilerplate/static/logo.svg',
+        logoLink: 'https://github.com/trustoverip/spec-up-t',
+        favicon: 'https://raw.githubusercontent.com/trustoverip/spec-up-t/refs/heads/master/src/install-from-boilerplate/boilerplate/static/favicon.ico'
       }
     }
 
@@ -303,7 +328,7 @@ export default {
         }
         // 404 is expected if repository doesn't exist, so continue
       }
-      
+
       const response = await fetch('https://api.github.com/user/repos', {
         method: 'POST',
         headers: {
@@ -324,7 +349,7 @@ export default {
 
       if (!response.ok) {
         const errorData = await response.json()
-        
+
         // Extract specific error messages
         let errorMessage = errorData.message || `Failed to create repository: ${response.statusText}`
         if (errorData.errors && errorData.errors.length > 0) {
@@ -336,7 +361,7 @@ export default {
           }).join('; ')
           errorMessage += ` (Details: ${specificErrors})`
         }
-        
+
         throw new Error(errorMessage)
       }
 
@@ -393,6 +418,9 @@ env:
   PROJECT_DESCRIPTION: "${(projectForm.value.description || 'A Spec-Up-T specification project').replace(/"/g, '')}"
   SPEC_TITLE: "${(projectForm.value.specTitle || projectForm.value.name).replace(/"/g, '')}"
   AUTHORS: "${(projectForm.value.authors || '').replace(/"/g, '')}"
+  LOGO: "${(projectForm.value.logo || '').replace(/"/g, '')}"
+  LOGO_LINK: "${(projectForm.value.logoLink || '').replace(/"/g, '')}"
+  FAVICON: "${(projectForm.value.favicon || '').replace(/"/g, '')}"
 
 jobs:
   initialize:
@@ -435,6 +463,15 @@ jobs:
                 config.specs[0].description = process.env.PROJECT_DESCRIPTION;
                 if (process.env.AUTHORS) {
                   config.specs[0].author = process.env.AUTHORS;
+                }
+                if (process.env.LOGO) {
+                  config.specs[0].logo = process.env.LOGO;
+                }
+                if (process.env.LOGO_LINK) {
+                  config.specs[0].logo_link = process.env.LOGO_LINK;
+                }
+                if (process.env.FAVICON) {
+                  config.specs[0].favicon = process.env.FAVICON;
                 }
               }
               fs.writeFileSync('specs.json', JSON.stringify(config, null, 2));
@@ -489,7 +526,7 @@ jobs:
 
       // Use the login token (which can be either PAT or OAuth)
       const effectiveToken = token
-      
+
       // Detect if we're using a PAT (login token that starts with ghp_)
       const isUsingPAT = token && token.startsWith('ghp_')
 
@@ -526,7 +563,7 @@ You can check and update your token scopes at: https://github.com/settings/token
       // Trigger the workflow with retry logic
       let retries = 3
       let response
-      
+
       while (retries > 0) {
         response = await fetch(
           `https://api.github.com/repos/${username}/${repoName}/actions/workflows/initialize-spec-up-t.yml/dispatches`,
@@ -638,12 +675,12 @@ You can check and update your token scopes at: https://github.com/settings/token
 
       if (!response.ok) {
         const errorData = await response.json()
-        
+
         // Check for permission-related errors
         if (response.status === 403 || response.status === 404) {
           throw new Error(`Failed to upload ${filePath}: ${errorData.message}`)
         }
-        
+
         throw new Error(`Failed to upload ${filePath}: ${errorData.message}`)
       }
 
@@ -797,13 +834,13 @@ You can check and update your token scopes at: https://github.com/settings/token
 
     const fetchMenuYmlFromBoilerplate = async () => {
       const boilerplateUrl = 'https://raw.githubusercontent.com/blockchainbird/spec-up-t/master/src/install-from-boilerplate/boilerplate/.github/workflows/menu.yml'
-      
+
       try {
         const response = await fetch(boilerplateUrl)
         if (!response.ok) {
           throw new Error(`Failed to fetch menu.yml: ${response.statusText}`)
         }
-        
+
         return await response.text()
       } catch (error) {
         console.error('Error fetching menu.yml from boilerplate:', error)
@@ -815,13 +852,13 @@ You can check and update your token scopes at: https://github.com/settings/token
       try {
         // Fetch menu.yml content from the boilerplate repository
         const menuYmlContent = await fetchMenuYmlFromBoilerplate()
-        
+
         // Use the login token for uploading workflow file
         const patToken = token
-        
+
         // Detect if we're using a PAT (login token that starts with ghp_)
         const isUsingPAT = token && token.startsWith('ghp_')
-        
+
         try {
           // Upload the menu.yml workflow file
           await uploadFile(
@@ -832,7 +869,7 @@ You can check and update your token scopes at: https://github.com/settings/token
             menuYmlContent,
             'Add menu.yml workflow from boilerplate'
           )
-          
+
         } catch (uploadError) {
           // If upload fails and we're not using PAT, provide helpful error message
           if (!isUsingPAT && (uploadError.message.includes('insufficient permissions') || uploadError.message.includes('Not Found'))) {
@@ -842,17 +879,17 @@ You can check and update your token scopes at: https://github.com/settings/token
           }
           throw uploadError
         }
-        
+
       } catch (error) {
         console.error('Failed to add workflow files:', error.message)
-        
+
         // Don't fail the entire project creation if workflow upload fails
         // Just log the error and continue
         if (error.message.includes('insufficient permissions') || error.message.includes('Not Found')) {
           console.warn('Workflow file upload failed - this is non-critical for project setup')
           return
         }
-        
+
         throw new Error(`Failed to add workflow files: ${error.message}`)
       }
     }
@@ -957,8 +994,8 @@ You can check and update your token scopes at: https://github.com/settings/token
 
       } catch (err) {
         console.error('Error creating project:', err)
-        console.error('Error details:', { 
-          message: err.message, 
+        console.error('Error details:', {
+          message: err.message,
           stack: err.stack,
           name: err.name
         })
@@ -976,7 +1013,7 @@ You can check and update your token scopes at: https://github.com/settings/token
         } else {
           error.value = `Project creation failed: ${err.message}`
         }
-        
+
         creationProgress.value = 0
         currentStep.value = ''
       }
