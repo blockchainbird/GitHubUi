@@ -89,20 +89,6 @@
                         placeholder="https://example.com/favicon.ico" @focus="clearPlaceholderValue($event, 'favicon')">
                       <div class="form-text">URL to your project favicon</div>
                     </div>
-
-                    <div class="col-md-6 mb-3">
-                      <label for="account" class="form-label">GitHub Account</label>
-                      <input id="account" v-model="projectForm.account" class="form-control"
-                        placeholder="your-github-username" @focus="clearPlaceholderValue($event, 'account')">
-                      <div class="form-text">GitHub account or organization (auto-filled from login)</div>
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                      <label for="repo" class="form-label">Repository Name</label>
-                      <input id="repo" v-model="projectForm.repo" class="form-control"
-                        placeholder="my-spec-project" @focus="clearPlaceholderValue($event, 'repo')">
-                      <div class="form-text">Repository name for source reference (auto-filled from project name)</div>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -246,9 +232,7 @@ export default {
       authors: '',
       logo: 'https://raw.githubusercontent.com/trustoverip/spec-up-t/refs/heads/master/src/install-from-boilerplate/boilerplate/static/logo.svg',
       logoLink: 'https://github.com/trustoverip/spec-up-t',
-      favicon: 'https://raw.githubusercontent.com/trustoverip/spec-up-t/refs/heads/master/src/install-from-boilerplate/boilerplate/static/favicon.ico',
-      account: '',
-      repo: ''
+      favicon: 'https://raw.githubusercontent.com/trustoverip/spec-up-t/refs/heads/master/src/install-from-boilerplate/boilerplate/static/favicon.ico'
     })
 
     // UI state
@@ -269,9 +253,7 @@ export default {
         authors: '',
         logo: 'https://raw.githubusercontent.com/trustoverip/spec-up-t/refs/heads/master/src/install-from-boilerplate/boilerplate/static/logo.svg',
         logoLink: 'https://github.com/trustoverip/spec-up-t',
-        favicon: 'https://raw.githubusercontent.com/trustoverip/spec-up-t/refs/heads/master/src/install-from-boilerplate/boilerplate/static/favicon.ico',
-        account: '',
-        repo: ''
+        favicon: 'https://raw.githubusercontent.com/trustoverip/spec-up-t/refs/heads/master/src/install-from-boilerplate/boilerplate/static/favicon.ico'
       }
     }
 
@@ -426,6 +408,7 @@ export default {
 
     const triggerProjectCreationWorkflow = async (token, username, repoName) => {
       // Create a much simpler workflow that uses environment variables to avoid YAML escaping issues
+      // Note: ACCOUNT and REPO are derived from the GitHub environment (logged-in user and project name)
       const workflowContent = `name: Initialize Spec-Up-T Project
 
 on:
@@ -439,8 +422,8 @@ env:
   LOGO: "${(projectForm.value.logo || '').replace(/"/g, '')}"
   LOGO_LINK: "${(projectForm.value.logoLink || '').replace(/"/g, '')}"
   FAVICON: "${(projectForm.value.favicon || '').replace(/"/g, '')}"
-  ACCOUNT: "${(projectForm.value.account || '').replace(/"/g, '')}"
-  REPO: "${(projectForm.value.repo || projectForm.value.name || '').replace(/"/g, '')}"
+  ACCOUNT: "${username}"
+  REPO: "${repoName}"
 
 jobs:
   initialize:
