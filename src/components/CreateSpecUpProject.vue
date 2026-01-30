@@ -21,14 +21,16 @@
                   <label for="projectName" class="form-label">Project Name <span class="text-danger">*</span></label>
                   <input id="projectName" v-model="projectForm.name" class="form-control"
                     placeholder="e.g., my-spec-project" pattern="[a-zA-Z0-9\-_]+"
-                    title="Only letters, numbers, hyphens, and underscores allowed" required>
+                    title="Only letters, numbers, hyphens, and underscores allowed" required
+                    @focus="clearPlaceholderValue($event, 'name')">
                   <div class="form-text">Repository name (letters, numbers, hyphens, underscores only)</div>
                 </div>
 
                 <div class="col-md-6 mb-3">
                   <label for="projectDescription" class="form-label">Description</label>
                   <input id="projectDescription" v-model="projectForm.description" class="form-control"
-                    placeholder="Brief description of your specification">
+                    placeholder="Brief description of your specification"
+                    @focus="clearPlaceholderValue($event, 'description')">
                   <div class="form-text">Optional description for the repository</div>
                 </div>
 
@@ -56,21 +58,16 @@
                     <div class="col-md-6 mb-3">
                       <label for="specTitle" class="form-label">Specification Title</label>
                       <input id="specTitle" v-model="projectForm.specTitle" class="form-control"
-                        placeholder="My Specification">
+                        placeholder="My Specification"
+                        @focus="clearPlaceholderValue($event, 'specTitle')">
                       <div class="form-text">Title for your specification document</div>
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                      <label for="specVersion" class="form-label">Initial Version</label>
-                      <input id="specVersion" v-model="projectForm.specVersion" class="form-control"
-                        placeholder="1.0.0">
-                      <div class="form-text">Starting version number</div>
                     </div>
 
                     <div class="col-12 mb-3">
                       <label for="authors" class="form-label">Authors</label>
                       <input id="authors" v-model="projectForm.authors" class="form-control"
-                        placeholder="John Doe, Jane Smith">
+                        placeholder="John Doe, Jane Smith"
+                        @focus="clearPlaceholderValue($event, 'authors')">
                       <div class="form-text">Comma-separated list of authors</div>
                     </div>
                   </div>
@@ -144,7 +141,7 @@
                     <div class="col-md-6">
                       <p class="mb-2"><strong>Repository:</strong> {{ projectForm.name }}</p>
                       <p class="mb-2"><strong>Title:</strong> {{ projectForm.specTitle || projectForm.name }}</p>
-                      <p class="mb-2"><strong>Version:</strong> {{ projectForm.specVersion || '1.0.0' }}</p>
+                      <p class="mb-2"><strong>Description:</strong> {{ projectForm.description || 'Not specified' }}</p>
                     </div>
                     <div class="col-md-6">
                       <p class="mb-2"><strong>Authors:</strong> {{ projectForm.authors || 'Not specified' }}</p>
@@ -213,7 +210,6 @@ export default {
       description: '',
       isPrivate: false,
       specTitle: '',
-      specVersion: '1.0.0',
       authors: ''
     })
 
@@ -232,9 +228,21 @@ export default {
         description: '',
         isPrivate: false,
         specTitle: '',
-        specVersion: '1.0.0',
         authors: ''
       }
+    }
+
+    /**
+     * Clears the input value on focus if it matches the placeholder,
+     * to avoid user confusion about whether the value is pre-filled.
+     * The placeholder will still be shown when the field is empty.
+     *
+     * @param {FocusEvent} event - The focus event from the input.
+     * @param {string} fieldName - The name of the form field to potentially clear.
+     */
+    const clearPlaceholderValue = (event, fieldName) => {
+      // Select all text in the input to make it easy for user to replace
+      event.target.select()
     }
 
     const createAnother = () => {
@@ -384,7 +392,6 @@ env:
   PROJECT_NAME: "${projectForm.value.name}"
   PROJECT_DESCRIPTION: "${(projectForm.value.description || 'A Spec-Up-T specification project').replace(/"/g, '')}"
   SPEC_TITLE: "${(projectForm.value.specTitle || projectForm.value.name).replace(/"/g, '')}"
-  SPEC_VERSION: "${projectForm.value.specVersion || '1.0.0'}"
   AUTHORS: "${(projectForm.value.authors || '').replace(/"/g, '')}"
 
 jobs:
@@ -425,9 +432,9 @@ jobs:
               const config = JSON.parse(fs.readFileSync('specs.json', 'utf8'));
               if (config.specs && config.specs[0]) {
                 config.specs[0].title = process.env.SPEC_TITLE;
-                config.specs[0].version = process.env.SPEC_VERSION;
+                config.specs[0].description = process.env.PROJECT_DESCRIPTION;
                 if (process.env.AUTHORS) {
-                  config.specs[0].editors = process.env.AUTHORS.split(',').map(a => ({name: a.trim()}));
+                  config.specs[0].author = process.env.AUTHORS;
                 }
               }
               fs.writeFileSync('specs.json', JSON.stringify(config, null, 2));
@@ -442,7 +449,6 @@ jobs:
               const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
               pkg.name = process.env.PROJECT_NAME;
               pkg.description = process.env.PROJECT_DESCRIPTION;
-              pkg.version = process.env.SPEC_VERSION;
               fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
             "
           fi
@@ -986,6 +992,7 @@ You can check and update your token scopes at: https://github.com/settings/token
       error,
       createdRepoUrl,
       resetForm,
+      clearPlaceholderValue,
       createAnother,
       goBack,
       openRepository,
