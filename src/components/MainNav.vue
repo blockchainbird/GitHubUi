@@ -778,8 +778,9 @@ export default {
 }
 
 .navbar-nav .nav-link:hover {
-  background-color: #e9ecef;
-  color: #0d6efd;
+  /* use theme-aware variables so dark mode works correctly */
+  background-color: var(--card-hover-bg, #e9ecef);
+  color: var(--bs-navbar-hover-color, #0d6efd);
 }
 
 .navbar-nav .nav-link.active {
@@ -826,8 +827,9 @@ export default {
   }
 
   .navbar-nav .nav-link:hover {
-    background-color: #f8f9fa;
-    border-color: #0d6efd;
+    /* theme-aware hover on mobile */
+    background-color: var(--card-hover-bg, #f8f9fa);
+    border-color: var(--bs-navbar-hover-color, #0d6efd);
   }
 
   .navbar-nav .nav-link.active {
