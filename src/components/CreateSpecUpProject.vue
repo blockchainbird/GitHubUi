@@ -440,7 +440,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Install create-spec-up-t
         run: npm install -g create-spec-up-t
