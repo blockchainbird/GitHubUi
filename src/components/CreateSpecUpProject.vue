@@ -519,6 +519,9 @@ jobs:
             fi
           fi
 
+      - name: Generate initial documentation
+        run: npm run render 4
+
       - name: Commit and push changes
         run: |
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
