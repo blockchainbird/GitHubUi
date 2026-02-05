@@ -202,8 +202,8 @@
 
         <!-- Create New File Modal -->
         <div v-if="showCreateFileModal" class="modal fade show d-block" tabindex="-1"
-          style="background-color: rgba(0,0,0,0.5);" @click.self="closeCreateFileModal"
-          @keyup.escape="closeCreateFileModal">
+          style="background-color: rgba(0,0,0,0.5);" @click.self="confirmAndCloseModal"
+          @keyup.escape="confirmAndCloseModal">
           <div class="modal-dialog">
             <div class="modal-content">
               <div class="modal-header">
@@ -211,7 +211,7 @@
                   <i class="bi bi-plus-circle"></i>
                   Create New File
                 </h5>
-                <button @click="closeCreateFileModal" type="button" class="btn-close"></button>
+                <button @click="confirmAndCloseModal" type="button" class="btn-close"></button>
               </div>
               <div class="modal-body">
                 <div v-if="createFileError" class="alert alert-danger" role="alert">
@@ -243,7 +243,7 @@
                 </div>
               </div>
               <div class="modal-footer">
-                <button @click="closeCreateFileModal" type="button" class="btn btn-secondary">Cancel</button>
+                <button @click="confirmAndCloseModal" type="button" class="btn btn-secondary">Cancel</button>
                 <button @click="createNewFile" type="button" class="btn btn-success"
                   :disabled="!newFileName.trim() || creatingFile">
                   <span v-if="creatingFile">
@@ -254,6 +254,38 @@
                     <i class="bi bi-plus-circle"></i>
                     Create Draft
                   </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Discard Changes Confirmation Modal -->
+        <div v-if="showConfirmDiscardModal" class="modal fade show d-block" tabindex="-1"
+          style="background-color: rgba(0,0,0,0.5);">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">
+                  <i class="bi bi-exclamation-triangle text-warning"></i>
+                  Discard Changes?
+                </h5>
+                <button @click="showConfirmDiscardModal = false" type="button" class="btn-close"></button>
+              </div>
+              <div class="modal-body">
+                <p class="mb-3">
+                  You have unsaved changes in the "Create New File" form. Are you sure you want to discard them?
+                </p>
+                <p class="text-muted mb-0">
+                  <i class="bi bi-info-circle"></i>
+                  This action cannot be undone.
+                </p>
+              </div>
+              <div class="modal-footer">
+                <button @click="showConfirmDiscardModal = false" type="button" class="btn btn-secondary">Keep Editing</button>
+                <button @click="discardChangesAndClose" type="button" class="btn btn-danger">
+                  <i class="bi bi-trash"></i>
+                  Discard Changes
                 </button>
               </div>
             </div>
@@ -398,6 +430,8 @@ export default {
     const creatingFile = ref(false)
     const createFileError = ref('')
     const fileNameInput = ref(null)
+    const hasUnsavedModalChanges = ref(false)
+    const showConfirmDiscardModal = ref(false)
 
     // Delete file modal state
     const showDeleteFileModal = ref(false)
@@ -929,18 +963,45 @@ export default {
 
     const showCreateModal = async () => {
       showCreateFileModal.value = true
+      hasUnsavedModalChanges.value = false
       await nextTick()
       if (fileNameInput.value) {
         fileNameInput.value.focus()
       }
     }
 
+    // Watch for changes in the create file modal fields
+    watch(() => [newFileName.value, newFileContent.value, newFileCommitMessage.value], () => {
+      if (showCreateFileModal.value) {
+        // Mark as unsaved if any field has meaningful content
+        hasUnsavedModalChanges.value = !!(
+          newFileName.value.trim() ||
+          newFileContent.value.trim() ||
+          (newFileCommitMessage.value && newFileCommitMessage.value !== 'Add new file')
+        )
+      }
+    })
+
+    const confirmAndCloseModal = () => {
+      if (hasUnsavedModalChanges.value) {
+        showConfirmDiscardModal.value = true
+      } else {
+        closeCreateFileModal()
+      }
+    }
+
     const closeCreateFileModal = () => {
       showCreateFileModal.value = false
+      hasUnsavedModalChanges.value = false
       newFileName.value = ''
       newFileContent.value = ''
       newFileCommitMessage.value = 'Add new file'
       createFileError.value = ''
+    }
+
+    const discardChangesAndClose = () => {
+      showConfirmDiscardModal.value = false
+      closeCreateFileModal()
     }
 
     const updateDefaultContent = () => {
@@ -1724,9 +1785,13 @@ export default {
       createFileError,
       fileNameInput,
       showCreateModal,
+      confirmAndCloseModal,
       closeCreateFileModal,
       createNewFile,
       updateDefaultContent,
+      hasUnsavedModalChanges,
+      showConfirmDiscardModal,
+      discardChangesAndClose,
       showDeleteModal,
       closeDeleteFileModal,
       deleteFile,
