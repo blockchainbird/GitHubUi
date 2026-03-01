@@ -29,7 +29,7 @@
             <!-- Success Message -->
             <div v-if="successMessage" class="alert alert-success" role="alert">
               <i class="bi bi-check-circle me-2"></i>
-              {{ successMessage }}
+              <span v-html="successMessage"></span>
             </div>
 
             <!-- Workflow Status -->
@@ -559,7 +559,7 @@ export default {
           await pollWorkflowStatus(run.id, config)
         } else {
           console.warn('⚠️ Could not find the workflow run to track')
-          successMessage.value = `Workflow triggered successfully. Visit GitHub Actions to see the status.`
+          successMessage.value = `Workflow triggered successfully. <a href="https://github.com/${props.owner}/${props.repo}/actions" target="_blank" rel="noopener" class="alert-link">Visit GitHub Actions</a> to see the status.`
           playErrorSound()
         }
 
