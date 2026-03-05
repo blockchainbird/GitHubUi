@@ -744,88 +744,52 @@ You can check and update your token scopes at: https://github.com/settings/token
       }
     }
 
-    // Enable or update GitHub Pages to deploy from a branch and path
-    const configureGitHubPages = async (token, username, repoName, branch, path) => {
+    // Configure GitHub Pages to use GitHub Actions as the deployment source.
+    // The render-and-deploy.yml workflow packages and deploys docs/ as a Pages
+    // artifact, so we only need to set build_type to 'workflow'; no branch/path
+    // source is required.
+    const configureGitHubPages = async (token, username, repoName) => {
       const headers = {
         'Authorization': `Bearer ${token}`,
         'Accept': 'application/vnd.github+json',
         'Content-Type': 'application/json'
       }
 
-      // Normalize candidate paths. GitHub Pages branch sources only support '/' or '/docs'.
-      const norm = (p) => {
-        if (!p) return '/docs'
-        const t = p.trim()
-        const withSlash = t.startsWith('/') ? t : `/${t}`
-        return withSlash === '/' || withSlash === '/docs' ? withSlash : withSlash
-      }
-      const requestedPath = norm(path)
-      const candidates = Array.from(new Set([requestedPath, '/docs', '/']))
-
-      // Determine whether a Pages site already exists
+      // Determine whether a Pages site already exists.
       const existsResp = await fetch(`https://api.github.com/repos/${username}/${repoName}/pages`, {
         method: 'GET',
         headers
       })
 
-      const siteExists = existsResp.ok
+      const method = existsResp.ok ? 'PUT' : 'POST'
+      const body = JSON.stringify({ build_type: 'workflow' })
 
-      const tryConfigure = async (candidatePath, method) => {
-        const body = JSON.stringify({
-          build_type: 'legacy',
-          source: { branch, path: candidatePath }
-        })
-        const resp = await fetch(`https://api.github.com/repos/${username}/${repoName}/pages`, {
-          method,
+      const resp = await fetch(`https://api.github.com/repos/${username}/${repoName}/pages`, {
+        method,
+        headers,
+        body
+      })
+
+      // 409 means Pages already exists with a conflicting config; try a PUT to update.
+      if (resp.status === 409) {
+        const retryResp = await fetch(`https://api.github.com/repos/${username}/${repoName}/pages`, {
+          method: 'PUT',
           headers,
           body
         })
-        return resp
-      }
-
-      // Try to create or update using candidate paths
-      let lastErr = null
-      for (const candidate of candidates) {
-        try {
-          let resp
-          if (!siteExists) {
-            resp = await tryConfigure(candidate, 'POST')
-            if (resp.status === 422) {
-              // Possibly invalid path or conflicting mode; try next candidate
-              lastErr = await resp.text()
-              continue
-            }
-            if (!resp.ok) {
-              lastErr = await resp.text()
-              // If creation fails with conflict, attempt update path
-              if (resp.status === 409 || resp.status === 403) {
-                const upd = await tryConfigure(candidate, 'PUT')
-                if (upd.ok) return true
-                lastErr = await upd.text()
-                continue
-              }
-              continue
-            }
-            return true
-          } else {
-            resp = await tryConfigure(candidate, 'PUT')
-            if (resp.status === 422) {
-              lastErr = await resp.text()
-              continue
-            }
-            if (!resp.ok) {
-              lastErr = await resp.text()
-              continue
-            }
-            return true
-          }
-        } catch (e) {
-          lastErr = e?.message || String(e)
-          continue
+        if (!retryResp.ok) {
+          const err = await retryResp.text()
+          throw new Error(`Failed to configure GitHub Pages: ${err}`)
         }
+        return true
       }
 
-      throw new Error(`Failed to configure GitHub Pages: ${lastErr || 'unknown error'}`)
+      if (!resp.ok) {
+        const err = await resp.text()
+        throw new Error(`Failed to configure GitHub Pages: ${err}`)
+      }
+
+      return true
     }
 
     // Set the repository homepage to the GitHub Pages URL (Website field)
@@ -848,59 +812,62 @@ You can check and update your token scopes at: https://github.com/settings/token
       return pagesUrl
     }
 
-    const fetchMenuYmlFromBoilerplate = async () => {
-      const boilerplateUrl = 'https://raw.githubusercontent.com/blockchainbird/spec-up-t/master/src/install-from-boilerplate/boilerplate/.github/workflows/menu.yml'
+    // Base URL for the boilerplate workflow files in the spec-up-t repository.
+    const boilerplateWorkflowBase = 'https://raw.githubusercontent.com/blockchainbird/spec-up-t/master/src/install-from-boilerplate/boilerplate/.github/workflows/'
 
+    // Fetch a single workflow file from the boilerplate repository by filename.
+    const fetchWorkflowFile = async (filename) => {
+      const url = boilerplateWorkflowBase + filename
       try {
-        const response = await fetch(boilerplateUrl)
+        const response = await fetch(url)
         if (!response.ok) {
-          throw new Error(`Failed to fetch menu.yml: ${response.statusText}`)
+          throw new Error(`Failed to fetch ${filename}: ${response.statusText}`)
         }
-
         return await response.text()
       } catch (error) {
-        console.error('Error fetching menu.yml from boilerplate:', error)
-        throw new Error(`Could not retrieve menu.yml from boilerplate: ${error.message}`)
+        console.error(`Error fetching ${filename} from boilerplate:`, error)
+        throw new Error(`Could not retrieve ${filename} from boilerplate: ${error.message}`)
       }
     }
 
     const addWorkflowFilesFromTemplate = async (token, username, repoName) => {
+      // The three workflow files that must be present for the new
+      // GitHub-Actions-based rendering and deployment pipeline to work:
+      //   menu.yml              — manual dispatch trigger (all non-render actions)
+      //   render-and-deploy.yml — triggered on push; renders spec and deploys to Pages
+      //   set-gh-pages.yml      — one-time setup: configures Pages source via API
+      const workflowFiles = [
+        'menu.yml',
+        'render-and-deploy.yml',
+        'set-gh-pages.yml'
+      ]
+
+      // Detect if we're using a PAT (login token that starts with ghp_)
+      const isUsingPAT = token && token.startsWith('ghp_')
+
       try {
-        // Fetch menu.yml content from the boilerplate repository
-        const menuYmlContent = await fetchMenuYmlFromBoilerplate()
-
-        // Use the login token for uploading workflow file
-        const patToken = token
-
-        // Detect if we're using a PAT (login token that starts with ghp_)
-        const isUsingPAT = token && token.startsWith('ghp_')
-
-        try {
-          // Upload the menu.yml workflow file
-          await uploadFile(
-            patToken,
-            username,
-            repoName,
-            '.github/workflows/menu.yml',
-            menuYmlContent,
-            'Add menu.yml workflow from boilerplate'
-          )
-
-        } catch (uploadError) {
-          // If upload fails and we're not using PAT, provide helpful error message
-          if (!isUsingPAT && (uploadError.message.includes('insufficient permissions') || uploadError.message.includes('Not Found'))) {
-            console.warn('Failed to upload menu.yml workflow file due to permissions. This is non-critical.')
-            // Don't throw error for menu.yml - it's not critical for project creation
-            return
+        for (const filename of workflowFiles) {
+          const content = await fetchWorkflowFile(filename)
+          try {
+            await uploadFile(
+              token,
+              username,
+              repoName,
+              `.github/workflows/${filename}`,
+              content,
+              `Add ${filename} workflow from boilerplate`
+            )
+          } catch (uploadError) {
+            if (!isUsingPAT && (uploadError.message.includes('insufficient permissions') || uploadError.message.includes('Not Found'))) {
+              console.warn(`Failed to upload ${filename} due to permissions. This is non-critical.`)
+              return
+            }
+            throw uploadError
           }
-          throw uploadError
         }
-
       } catch (error) {
         console.error('Failed to add workflow files:', error.message)
 
-        // Don't fail the entire project creation if workflow upload fails
-        // Just log the error and continue
         if (error.message.includes('insufficient permissions') || error.message.includes('Not Found')) {
           console.warn('Workflow file upload failed - this is non-critical for project setup')
           return
@@ -970,17 +937,13 @@ You can check and update your token scopes at: https://github.com/settings/token
 
         await addWorkflowFilesFromTemplate(token, user.login, projectForm.value.name)
 
-        updateProgress(85, 'Configuring GitHub Pages (Deploy from a branch)...')
-
-        // Determine branch and output path
-        const branch = repo?.default_branch || 'main'
-        const outputPath = await getSpecsOutputPath(token, user.login, projectForm.value.name)
+        updateProgress(85, 'Configuring GitHub Pages (GitHub Actions deployment)...')
 
         // Try using PAT if available and token fails
         const effectiveToken = token
 
         try {
-          await configureGitHubPages(effectiveToken, user.login, projectForm.value.name, branch, outputPath)
+          await configureGitHubPages(effectiveToken, user.login, projectForm.value.name)
         } catch (pagesErr) {
           console.warn('Could not auto-configure GitHub Pages. You may set it manually in Settings > Pages.', pagesErr)
           // Non-fatal: continue setup; user can configure Pages manually
