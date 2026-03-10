@@ -194,6 +194,25 @@
               </div>
             </div>
 
+            <!-- Freeze label – only shown when freeze is selected -->
+            <div v-if="selectedAction === 'freeze'" class="mb-4">
+              <label for="freeze-label" class="form-label fw-semibold">
+                <i class="bi bi-tag me-1"></i>
+                Snapshot label
+              </label>
+              <input
+                id="freeze-label"
+                v-model="freezeLabel"
+                type="text"
+                class="form-control"
+                :placeholder="'e.g. Public review draft (leave empty for auto-generated default)'"
+              >
+              <div class="form-text">
+                This label will appear as the link text in the snapshot index.
+                Leave empty to use the auto-generated version number (e.g. v3).
+              </div>
+            </div>
+
             <!-- Workflow Info -->
             <div class="alert alert-light" role="alert">
               <div class="d-flex align-items-start">
@@ -266,6 +285,7 @@ export default {
 
     // State
     const selectedAction = ref('render')
+    const freezeLabel = ref('')
     const actionError = ref('')
     const successMessage = ref('')
     const selectedWorkflow = ref('')
@@ -525,12 +545,15 @@ export default {
 
         console.log(`� Triggering menu.yml workflow with action: ${selectedAction.value}`)
 
-        // Build inputs for the menu.yml workflow
+        // Build inputs for the menu.yml workflow.
+        // freeze_label is only meaningful for the freeze action, but sending it
+        // for other actions is harmless – the workflow ignores it.
         const inputs = {
           action_type: selectedAction.value || 'render',
           repository: `${props.owner}/${props.repo}`,
           branch: props.branch,
-          triggered_by: 'GitHubUI'
+          triggered_by: 'GitHubUI',
+          freeze_label: freezeLabel.value || ''
         }
 
         const dispatchData = {
@@ -607,7 +630,11 @@ on:
         required: false
       triggered_by:
         description: 'Triggered by'
-        required: false`
+        required: false
+      freeze_label:
+        description: 'Label for the snapshot (freeze action only)'
+        required: false
+        default: ''`
           } else {
             actionError.value = `Cannot trigger menu.yml workflow: ${errorMsg}`
           }
@@ -631,6 +658,7 @@ on:
 
     return {
       selectedAction,
+      freezeLabel,
       actionError,
       successMessage,
       selectedWorkflow,
