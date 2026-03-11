@@ -95,14 +95,9 @@ jobs:
       - name: Install dependencies
         run: npm install
         
-      - name: Render specification
-        run: |
-          echo "🚀 Rendering specification..."
-          echo "Repository: ${{ inputs.repository || github.repository }}"
-          echo "Branch: ${{ inputs.branch || github.ref_name }}"
-          echo "Triggered by: ${{ inputs.triggered_by || 'push' }}"
-          echo "Spec directory: ${{ needs.setup.outputs.spec_directory }}"
-          npm run render
+      # Collect external references — this also renders the specification.
+      - name: Collect external references and render
+        run: npm run collectExternalReferences
           
       - name: Upload rendered specification
         uses: actions/upload-artifact@v4
