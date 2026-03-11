@@ -82,16 +82,18 @@ jobs:
     needs: setup
     runs-on: ubuntu-latest
     if: needs.setup.outputs.action_type == 'render'
+    permissions:
+      contents: write   # Required by peaceiris/actions-gh-pages to push to gh-pages
     steps:
       - uses: actions/checkout@v4
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           
-      - name: Install Spec-Up-T
-        run: npm install -g spec-up-t
+      - name: Install dependencies
+        run: npm install
         
       - name: Render specification
         run: |
@@ -100,20 +102,27 @@ jobs:
           echo "Branch: ${{ inputs.branch || github.ref_name }}"
           echo "Triggered by: ${{ inputs.triggered_by || 'push' }}"
           echo "Spec directory: ${{ needs.setup.outputs.spec_directory }}"
-          
-          # Run spec-up-t render
-          spec-up render
+          npm run render
           
       - name: Upload rendered specification
         uses: actions/upload-artifact@v4
         with:
           name: rendered-specification
-          path: |
-            index.html
-            assets/
-            *.css
-            *.js
+          path: ./docs
           retention-days: 30
+
+      # Deploy to gh-pages branch on main/master pushes or manual dispatch.
+      # Pull request runs skip this step so that unreviewed changes are not published.
+      - name: Deploy to GitHub Pages 🚀
+        if: >
+          github.ref == 'refs/heads/main' ||
+          github.ref == 'refs/heads/master' ||
+          github.event_name == 'workflow_dispatch'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+          publish_branch: gh-pages
 
   topdf:
     needs: setup
@@ -125,7 +134,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           
       - name: Setup Google Chrome
         id: setup-chrome
@@ -143,8 +152,8 @@ jobs:
             fonts-noto-cjk \
             fonts-noto-color-emoji
           
-      - name: Install Spec-Up-T
-        run: npm install -g spec-up-t
+      - name: Install dependencies
+        run: npm install
         
       - name: Generate PDF
         env:
@@ -152,7 +161,7 @@ jobs:
         run: |
           echo "📄 Generating PDF..."
           echo "Chrome path: $PUPPETEER_EXECUTABLE_PATH"
-          spec-up topdf
+          npm run topdf
           
       - name: Upload PDF
         uses: actions/upload-artifact@v4
@@ -171,15 +180,15 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           
-      - name: Install Spec-Up-T
-        run: npm install -g spec-up-t
+      - name: Install dependencies
+        run: npm install
         
       - name: Generate DOCX
         run: |
           echo "📝 Generating DOCX..."
-          spec-up todocx
+          npm run todocx
           
       - name: Upload DOCX
         uses: actions/upload-artifact@v4
@@ -198,15 +207,15 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           
-      - name: Install Spec-Up-T
-        run: npm install -g spec-up-t
+      - name: Install dependencies
+        run: npm install
         
       - name: Freeze specification
         run: |
           echo "🧊 Freezing specification..."
-          spec-up freeze
+          npm run freeze
           
       - name: Commit frozen specification
         run: |
@@ -230,15 +239,15 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           
-      - name: Install Spec-Up-T
-        run: npm install -g spec-up-t
+      - name: Install dependencies
+        run: npm install
         
       - name: Custom update
         run: |
           echo "🔄 Running custom update..."
-          spec-up custom-update
+          npm run custom-update
           
       - name: Commit updates
         run: |
@@ -262,16 +271,15 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           
-      - name: Install Spec-Up-T
-        run: npm install -g spec-up-t
+      - name: Install dependencies
+        run: npm install
         
       - name: Collect external references
         run: |
           echo "🔗 Collecting external references..."
-          # Run the collect-external-references script
-          npx spec-up-t collect-external-references
+          npm run collectExternalReferences
           
       - name: Upload collected references
         uses: actions/upload-artifact@v4
@@ -281,25 +289,6 @@ jobs:
             external-*.json
             collected-references.json
           retention-days: 30
-
-  deploy:
-    needs: [setup, render]
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && needs.setup.outputs.action_type == 'render'
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Download rendered specification
-        uses: actions/download-artifact@v4
-        with:
-          name: rendered-specification
-          
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./
-          publish_branch: gh-pages
 
   notify:
     needs: [setup, render, topdf, todocx, freeze, custom-update, collect-external-references]
