@@ -744,16 +744,15 @@ You can check and update your token scopes at: https://github.com/settings/token
       }
     }
 
-    // Configure GitHub Pages to use GitHub Actions as the deployment source.
-    // The render-and-deploy.yml workflow packages and deploys docs/ as a Pages
-    // artifact, so we only need to set build_type to 'workflow'; no branch/path
-    // source is required.
+    // Configure GitHub Pages to serve from the gh-pages branch (root /).
+    // peaceiris/actions-gh-pages pushes built docs/ there on every render run.
     const configureGitHubPages = async (token, username, repoName) => {
       const headers = {
         'Authorization': `Bearer ${token}`,
         'Accept': 'application/vnd.github+json',
         'Content-Type': 'application/json'
       }
+      const body = JSON.stringify({ source: { branch: 'gh-pages', path: '/' } })
 
       // Determine whether a Pages site already exists.
       const existsResp = await fetch(`https://api.github.com/repos/${username}/${repoName}/pages`, {
@@ -762,8 +761,6 @@ You can check and update your token scopes at: https://github.com/settings/token
       })
 
       const method = existsResp.ok ? 'PUT' : 'POST'
-      const body = JSON.stringify({ build_type: 'workflow' })
-
       const resp = await fetch(`https://api.github.com/repos/${username}/${repoName}/pages`, {
         method,
         headers,
@@ -790,6 +787,50 @@ You can check and update your token scopes at: https://github.com/settings/token
       }
 
       return true
+    }
+
+    // Dispatch render-and-deploy.yml to trigger the first render.
+    // collectExternalReferences runs as part of this workflow and also generates docs/.
+    // A short delay lets GitHub recognise the newly uploaded workflow file.
+    const dispatchInitialRender = async (token, username, repoName) => {
+      await new Promise(resolve => setTimeout(resolve, 5000))
+      const resp = await fetch(
+        `https://api.github.com/repos/${username}/${repoName}/actions/workflows/render-and-deploy.yml/dispatches`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ ref: 'main' })
+        }
+      )
+      // 204 = accepted; anything else is a warning only — the push trigger may already
+      // have started the workflow when the workflow file was committed.
+      if (!resp.ok) {
+        console.warn(`Could not explicitly dispatch render-and-deploy.yml (HTTP ${resp.status}). The push trigger may already be handling it.`)
+      }
+    }
+
+    // Poll until the gh-pages branch appears (created by render-and-deploy.yml).
+    // Returns true once found; throws when maxWaitMs is exceeded.
+    const waitForGhPagesBranch = async (token, username, repoName, maxWaitMs = 300000) => {
+      const start = Date.now()
+      while (Date.now() - start < maxWaitMs) {
+        const resp = await fetch(
+          `https://api.github.com/repos/${username}/${repoName}/branches/gh-pages`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/vnd.github+json'
+            }
+          }
+        )
+        if (resp.ok) return true
+        await new Promise(resolve => setTimeout(resolve, 10000))
+      }
+      throw new Error('gh-pages branch was not created within the expected time. Please wait for the render workflow to complete, then configure GitHub Pages manually in Settings → Pages.')
     }
 
     // Set the repository homepage to the GitHub Pages URL (Website field)
@@ -821,7 +862,7 @@ You can check and update your token scopes at: https://github.com/settings/token
       try {
         const response = await fetch(url)
         if (!response.ok) {
-          throw new Error(`Failed to fetch ${filename}: ${response.statusText}`)
+          throw new Error(`Failed to fetch ${filename}: HTTP ${response.status} ${response.statusText}`)
         }
         return await response.text()
       } catch (error) {
@@ -921,9 +962,9 @@ You can check and update your token scopes at: https://github.com/settings/token
         // Wait for the workflow to complete
         await waitForWorkflowCompletion(token, user.login, projectForm.value.name)
 
-        updateProgress(80, 'Fetching and adding menu.yml workflow from template...')
+        updateProgress(80, 'Fetching and adding workflow files from template...')
         /*
-          Fetch and add the menu.yml workflow file from the boilerplate repository.
+          Fetch and add the workflow files from the boilerplate repository.
           The web app uses a PAT to fetch the file content directly and upload it to the repository.
 
           How it now works:
@@ -931,21 +972,25 @@ You can check and update your token scopes at: https://github.com/settings/token
           2. Project Initialization: Runs npx create-spec-up-t but excludes workflow files
           3. Content Customization: Updates specs.json, package.json, README.md with user details
           4. Main Content Commit: Commits all project files except workflows
-          5. Workflow File Addition: Fetches menu.yml from boilerplate and uploads via GitHub API using PAT
-          6. Cleanup: Removes the initialization workflow
+          5. Workflow File Addition: Fetches workflow files from boilerplate and uploads via GitHub API
+          6. Initial Render: Dispatches render-and-deploy.yml (runs collectExternalReferences + render)
+          7. Pages Setup: Waits for gh-pages branch to appear, then configures GitHub Pages
+          8. Cleanup: Removes the initialization workflow
         */
 
         await addWorkflowFilesFromTemplate(token, user.login, projectForm.value.name)
 
-        updateProgress(85, 'Configuring GitHub Pages (GitHub Actions deployment)...')
+        updateProgress(84, 'Triggering initial render (collecting external references)...')
 
-        // Try using PAT if available and token fails
-        const effectiveToken = token
+        await dispatchInitialRender(token, user.login, projectForm.value.name)
+
+        updateProgress(86, 'Waiting for first render to deploy to gh-pages branch...')
 
         try {
-          await configureGitHubPages(effectiveToken, user.login, projectForm.value.name)
+          await waitForGhPagesBranch(token, user.login, projectForm.value.name)
+          await configureGitHubPages(token, user.login, projectForm.value.name)
         } catch (pagesErr) {
-          console.warn('Could not auto-configure GitHub Pages. You may set it manually in Settings > Pages.', pagesErr)
+          console.warn('Could not auto-configure GitHub Pages:', pagesErr.message)
           // Non-fatal: continue setup; user can configure Pages manually
         }
 
