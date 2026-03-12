@@ -162,10 +162,8 @@
                   </ol>
 
                   <div class="mt-4">
-                    <video width="100%" controls muted loop style="max-width: 100%; border-radius: 4px;">
-                      <source
-                        :src="`${createdRepoUrl.replace('https://github.com', 'https://raw.githubusercontent.com')}/main/public/2025-08-12-spec-up-t-editor.mp4`"
-                        type="video/mp4">
+                    <video controls muted loop style="width: 100%; height: auto; border-radius: 4px;">
+                      <source src="/public/2026-03-12-setting-github-page-in-about.mp4" type="video/mp4">
                       Your browser does not support the video tag.
                     </video>
                   </div>
