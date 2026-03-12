@@ -162,8 +162,8 @@
                   </ol>
 
                   <div class="mt-4">
-                    <video controls muted loop style="width: 100%; height: auto; border-radius: 4px;">
-                      <source src="/public/2026-03-12-setting-github-page-in-about.mp4" type="video/mp4">
+                    <video controls muted loop autoplay style="width: 100%; height: auto; border-radius: 4px;">
+                      <source :src="videoSrc" type="video/mp4">
                       Your browser does not support the video tag.
                     </video>
                   </div>
@@ -1071,6 +1071,12 @@ You can check and update your token scopes at: https://github.com/settings/token
       }
     }
 
+    // Build a base-aware path for the video so it works in both local dev
+    // (base = '/') and production (base = VITE_BASE_PATH, e.g. '/editor/').
+    // Files placed in the Vite `public/` folder are served at the root of
+    // the configured base without the `/public/` prefix.
+    const videoSrc = import.meta.env.BASE_URL + '2026-03-12-setting-github-page-in-about.mp4'
+
     return {
       projectForm,
       showAdvanced,
@@ -1081,6 +1087,7 @@ You can check and update your token scopes at: https://github.com/settings/token
       error,
       createdRepoUrl,
       createdUsername,
+      videoSrc,
       resetForm,
       clearPlaceholderValue,
       createAnother,
