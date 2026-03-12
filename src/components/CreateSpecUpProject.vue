@@ -162,7 +162,7 @@
                   </ol>
 
                   <div class="mt-4">
-                    <video controls muted loop autoplay style="width: 100%; height: auto; border-radius: 4px;">
+                    <video controls muted loop autoplay>
                       <source :src="videoSrc" type="video/mp4">
                       Your browser does not support the video tag.
                     </video>
@@ -1142,5 +1142,13 @@ You can check and update your token scopes at: https://github.com/settings/token
   to {
     transform: rotate(360deg);
   }
+}
+
+video {
+  width: 100%;
+  height: auto;
+  border: 30px solid #c6ddf3;
+  border-radius: 4px;
+
 }
 </style>
