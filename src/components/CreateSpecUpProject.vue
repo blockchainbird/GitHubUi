@@ -136,10 +136,6 @@
                     <i class="bi bi-github"></i>
                     View on GitHub
                   </a>
-                  <a :href="`${createdRepoUrl}/settings/pages`" target="_blank" class="btn btn-outline-secondary">
-                    <i class="bi bi-gear"></i>
-                    Setup Pages
-                  </a>
                   <button @click="createAnother" class="btn btn-outline-secondary">
                     <i class="bi bi-plus"></i>
                     Create Another
@@ -147,37 +143,68 @@
                 </div>
               </div>
 
-              <!-- Quick Info -->
+              <!-- GitHub Pages Setup Instructions -->
               <div class="card mt-4 text-start">
                 <div class="card-header">
                   <h6 class="mb-0">
-                    <i class="bi bi-info-circle"></i>
-                    Your Spec-Up-T Project
+                    <i class="bi bi-gear"></i>
+                    Setting Up GitHub Pages
                   </h6>
                 </div>
+
                 <div class="card-body">
-                  <div class="row">
-                    <div class="col-md-6">
-                      <p class="mb-2"><strong>Repository:</strong> {{ projectForm.name }}</p>
-                      <p class="mb-2"><strong>Title:</strong> {{ projectForm.specTitle || projectForm.name }}</p>
-                      <p class="mb-2"><strong>Description:</strong> {{ projectForm.description || 'Not specified' }}</p>
-                    </div>
-                    <div class="col-md-6">
-                      <p class="mb-2"><strong>Authors:</strong> {{ projectForm.authors || 'Not specified' }}</p>
-                      <p class="mb-2"><strong>Actions:</strong> Enabled (from template)</p>
-                      <p class="mb-2"><strong>Visibility:</strong> {{ projectForm.isPrivate ? 'Private' : 'Public' }}
-                      </p>
-                    </div>
-                  </div>
-                  <div class="mt-3">
-                    <small class="text-muted">
-                      Click "Open Project Files" above to start editing your specification files, or visit GitHub to set
-                      up Pages deployment.
-                    </small>
+                  <p class="mb-3">To enable your GitHub Pages website, follow these steps:</p>
+
+                  <ol class="mb-3">
+                    <li><a :href="createdRepoUrl" target="_blank">Go to your repository on GitHub</a></li>
+                    <li>Click the <strong>About</strong> section (cog icon at top right)</li>
+                    <li>Check the box next to <strong>"Use your GitHub Pages website"</strong></li>
+                  </ol>
+
+                  <div class="mt-4">
+                    <video width="100%" controls muted loop style="max-width: 100%; border-radius: 4px;">
+                      <source
+                        :src="`${createdRepoUrl.replace('https://github.com', 'https://raw.githubusercontent.com')}/main/public/2025-08-12-spec-up-t-editor.mp4`"
+                        type="video/mp4">
+                      Your browser does not support the video tag.
+                    </video>
                   </div>
                 </div>
               </div>
             </div>
+
+            <!-- Quick Info -->
+            <div class="card mt-4 text-start">
+              <div class="card-header">
+                <h6 class="mb-0">
+                  <i class="bi bi-info-circle"></i>
+                  Your Spec-Up-T Project
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-6">
+                    <p class="mb-2"><strong>Repository:</strong> {{ projectForm.name }}</p>
+                    <p class="mb-2"><strong>Title:</strong> {{ projectForm.specTitle || projectForm.name }}</p>
+                    <p class="mb-2"><strong>Description:</strong> {{ projectForm.description || 'Not specified' }}</p>
+                  </div>
+                  <div class="col-md-6">
+                    <p class="mb-2"><strong>Authors:</strong> {{ projectForm.authors || 'Not specified' }}</p>
+                    <p class="mb-2"><strong>Actions:</strong> Enabled (from template)</p>
+                    <p class="mb-2"><strong>Visibility:</strong> {{ projectForm.isPrivate ? 'Private' : 'Public' }}
+                    </p>
+                  </div>
+                </div>
+                <div class="mt-3">
+                  <small class="text-muted">
+                    Click "Open Project Files" above to start editing your specification files. Your GitHub Pages will
+                    be automatically deployed via the Actions workflow.
+                  </small>
+                </div>
+              </div>
+            </div>
+
+
 
             <!-- Error Display -->
             <div v-if="error" class="alert alert-danger mt-4">
@@ -243,6 +270,7 @@ export default {
     const currentStep = ref('')
     const error = ref('')
     const createdRepoUrl = ref('')
+    const createdUsername = ref('')
 
     const resetForm = () => {
       projectForm.value = {
@@ -276,6 +304,7 @@ export default {
       currentStep.value = ''
       error.value = ''
       createdRepoUrl.value = ''
+      createdUsername.value = ''
       resetForm()
     }
 
@@ -951,6 +980,7 @@ You can check and update your token scopes at: https://github.com/settings/token
         // Create the repository
         const repo = await createRepository(token, user.login)
         createdRepoUrl.value = repo.html_url
+        createdUsername.value = user.login
 
         updateProgress(25, 'Setting up project initialization workflow...')
 
@@ -1052,6 +1082,7 @@ You can check and update your token scopes at: https://github.com/settings/token
       currentStep,
       error,
       createdRepoUrl,
+      createdUsername,
       resetForm,
       clearPlaceholderValue,
       createAnother,
