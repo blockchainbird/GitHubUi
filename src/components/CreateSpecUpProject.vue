@@ -42,6 +42,16 @@
                   </select>
                   <div class="form-text">Choose repository visibility</div>
                 </div>
+
+                <div class="col-md-6 mb-3">
+                  <label for="contentTemplate" class="form-label">Content Template</label>
+                  <select id="contentTemplate" v-model="projectForm.contentTemplate" class="form-select">
+                    <option value="default">Default (Starter Pack)</option>
+                    <option value="boilerplate-template-01">Standard Specification (Intro, Body, Coda)</option>
+                    <option value="boilerplate-template-02">Multi-Part Specification (Part 1, 2, 3)</option>
+                  </select>
+                  <div class="form-text">Choose the content structure for your spec files</div>
+                </div>
               </div>
 
               <!-- Advanced Options -->
@@ -188,6 +198,7 @@
                   </div>
                   <div class="col-md-6">
                     <p class="mb-2"><strong>Authors:</strong> {{ projectForm.authors || 'Not specified' }}</p>
+                    <p class="mb-2"><strong>Content Template:</strong> {{ templateLabel }}</p>
                     <p class="mb-2"><strong>Actions:</strong> Enabled (from template)</p>
                     <p class="mb-2"><strong>Visibility:</strong> {{ projectForm.isPrivate ? 'Private' : 'Public' }}
                     </p>
@@ -239,7 +250,7 @@
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { secureTokenManager } from '../utils/secureTokenManager.js'
 
@@ -253,6 +264,7 @@ export default {
       name: '',
       description: '',
       isPrivate: false,
+      contentTemplate: 'default',
       specTitle: '',
       authors: '',
       logo: 'https://raw.githubusercontent.com/trustoverip/spec-up-t/refs/heads/master/src/install-from-boilerplate/boilerplate/static/logo.svg',
@@ -275,6 +287,7 @@ export default {
         name: '',
         description: '',
         isPrivate: false,
+        contentTemplate: 'default',
         specTitle: '',
         authors: '',
         logo: 'https://raw.githubusercontent.com/trustoverip/spec-up-t/refs/heads/master/src/install-from-boilerplate/boilerplate/static/logo.svg',
@@ -451,6 +464,7 @@ env:
   FAVICON: "${(projectForm.value.favicon || '').replace(/"/g, '')}"
   ACCOUNT: "${username}"
   REPO: "${repoName}"
+  SPEC_UP_T_TEMPLATE: "${projectForm.value.contentTemplate || 'default'}"
 
 jobs:
   initialize:
@@ -474,7 +488,7 @@ jobs:
 
       - name: Create project structure
         run: |
-          npx create-spec-up-t temp-project
+          SPEC_UP_T_TEMPLATE=$SPEC_UP_T_TEMPLATE npx create-spec-up-t temp-project
           # Copy everything except .github/workflows to avoid permission issues
           find temp-project -maxdepth 1 -not -name temp-project -not -name .git -not -name .github -exec cp -r {} . \\;
           # Copy .github directory but exclude workflows
@@ -1077,6 +1091,14 @@ You can check and update your token scopes at: https://github.com/settings/token
     // the configured base without the `/public/` prefix.
     const videoSrc = import.meta.env.BASE_URL + '2026-03-12-setting-github-page-in-about.mp4'
 
+    // Human-readable label for the selected content template
+    const templateLabels = {
+      'default': 'Default (Starter Pack)',
+      'boilerplate-template-01': 'Standard Specification (Intro, Body, Coda)',
+      'boilerplate-template-02': 'Multi-Part Specification (Part 1, 2, 3)'
+    }
+    const templateLabel = computed(() => templateLabels[projectForm.value.contentTemplate] || 'Default (Starter Pack)')
+
     return {
       projectForm,
       showAdvanced,
@@ -1088,6 +1110,7 @@ You can check and update your token scopes at: https://github.com/settings/token
       createdRepoUrl,
       createdUsername,
       videoSrc,
+      templateLabel,
       resetForm,
       clearPlaceholderValue,
       createAnother,
