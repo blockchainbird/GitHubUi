@@ -47,7 +47,7 @@
                   <label for="contentTemplate" class="form-label">Content Template</label>
                   <select id="contentTemplate" v-model="projectForm.contentTemplate" class="form-select">
                     <option value="default">Default (Starter Pack)</option>
-                    <option value="boilerplate-template-01">Standard Specification (Intro, Body, Coda)</option>
+                    <option value="boilerplate-template-01">Trust over IP Specification (Intro, Body, Coda)</option>
                     <option value="boilerplate-template-02">Multi-Part Specification (Part 1, 2, 3)</option>
                   </select>
                   <div class="form-text">Choose the content structure for your spec files</div>
