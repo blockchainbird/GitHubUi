@@ -157,7 +157,7 @@
                     Create Another
                   </button>
                 </div>
-                <div class="alert alert-warning text-center lead" role="alert">
+                <div class="mt-3 alert alert-warning text-center lead" role="alert">
                   Only one step to take 👇
                 </div>
               </div>
