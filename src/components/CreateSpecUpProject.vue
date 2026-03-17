@@ -158,7 +158,8 @@
                   </button>
                 </div>
                 <div class="mt-3 alert alert-warning text-center lead" role="alert">
-                  Only one step to take 👇
+                  <p>Only one step to take:</p>
+                  <p>👇 Setting Up GitHub Pages manually 👇</p>
                 </div>
               </div>
 
