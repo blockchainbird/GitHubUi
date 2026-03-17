@@ -151,6 +151,9 @@
                     Create Another
                   </button>
                 </div>
+                <div class="alert alert-warning text-center lead" role="alert">
+                  Only one step to take 👇
+                </div>
               </div>
 
               <!-- GitHub Pages Setup Instructions -->
@@ -158,7 +161,7 @@
                 <div class="card-header">
                   <h6 class="mb-0">
                     <i class="bi bi-gear"></i>
-                    Setting Up GitHub Pages
+                    Setting Up GitHub Pages manually.
                   </h6>
                 </div>
 
@@ -212,8 +215,6 @@
                 </div>
               </div>
             </div>
-
-
 
             <!-- Error Display -->
             <div v-if="error" class="alert alert-danger mt-4">
