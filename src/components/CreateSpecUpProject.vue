@@ -112,6 +112,12 @@
                   Create Project
                 </button>
               </div>
+
+              <!-- Error Display -->
+              <div v-if="error" class="alert alert-danger mt-4">
+                <i class="bi bi-exclamation-triangle"></i>
+                <strong>Error:</strong> {{ error }}
+              </div>
             </form>
 
             <!-- Creation Progress -->
@@ -214,12 +220,6 @@
                   </small>
                 </div>
               </div>
-            </div>
-
-            <!-- Error Display -->
-            <div v-if="error" class="alert alert-danger mt-4">
-              <i class="bi bi-exclamation-triangle"></i>
-              <strong>Error:</strong> {{ error }}
             </div>
           </div>
         </div>
