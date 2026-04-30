@@ -10,6 +10,13 @@
 export default {
   testEnvironment: 'node',
 
+  /**
+   * Run browser-global stubs before any test module (and its ESM imports)
+   * are evaluated. This allows modules that access navigator/screen/location
+   * in their module-level code to be imported safely in Node.js.
+   */
+  setupFiles: ['<rootDir>/test/setup.js'],
+
   /** Discover tests only in the test/ folder */
   testMatch: ['<rootDir>/test/**/*.test.js'],
 
