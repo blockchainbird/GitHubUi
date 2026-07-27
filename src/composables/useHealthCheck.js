@@ -233,7 +233,8 @@ export function useHealthCheck(props) {
       console.log('Running health checks...')
       const requestedChecks = ['package-json', 'spec-files', 'specs-json', 'gitignore', 'spec-directory-and-files', 'external-specs-urls', 'markdown-tables', 'heading-hierarchy', 'term-references']
       const healthCheckResults = await runHealthChecks(provider, {
-        checks: requestedChecks
+        checks: requestedChecks,
+        timeout: 120000
       })
       console.log('Health check results:', healthCheckResults)
 
