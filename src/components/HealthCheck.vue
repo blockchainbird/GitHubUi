@@ -121,7 +121,7 @@
             <div class="spinner-border text-primary" role="status">
               <span class="visually-hidden">Running health checks...</span>
             </div>
-            <p class="mt-3 mb-0">Running health checks, please wait...</p>
+            <p class="mt-3 mb-0 waiting-message">{{ waitingMessage }}</p>
           </div>
         </div>
 
@@ -198,7 +198,7 @@
 </template>
 
 <script>
-import { onMounted, ref, computed, watch } from 'vue'
+import { onMounted, onUnmounted, ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useHealthCheck } from '../composables/useHealthCheck.js'
 import { addToVisitedRepos } from '../utils/visitedRepos.js'
@@ -236,6 +236,40 @@ export default {
       linkCheckProgress,
       runLinkCheck
     } = useHealthCheck(props)
+
+    const waitingMessages = [
+      'Running health checks. This can take up to two minutes…',
+      'This can take a while…',
+      'Please have some patience…',
+      'Still checking things over…',
+      'Almost there — specs are thorough…',
+      'Good things take time…'
+    ]
+    const waitingMessageIndex = ref(0)
+    const waitingMessage = computed(() => waitingMessages[waitingMessageIndex.value])
+    let waitingMessageInterval = null
+
+    const startWaitingMessages = () => {
+      waitingMessageIndex.value = 0
+      clearInterval(waitingMessageInterval)
+      waitingMessageInterval = setInterval(() => {
+        waitingMessageIndex.value = (waitingMessageIndex.value + 1) % waitingMessages.length
+      }, 3000)
+    }
+
+    const stopWaitingMessages = () => {
+      clearInterval(waitingMessageInterval)
+      waitingMessageInterval = null
+      waitingMessageIndex.value = 0
+    }
+
+    watch(isRunning, (running) => {
+      if (running) {
+        startWaitingMessages()
+      } else {
+        stopWaitingMessages()
+      }
+    })
 
     // Status display functions
     const getStatusClass = (result) => {
@@ -302,6 +336,10 @@ export default {
       addToVisitedRepos(props.owner, props.repo, props.branch, defaultBranch.value)
     })
 
+    onUnmounted(() => {
+      stopWaitingMessages()
+    })
+
     /**
      * Handles branch change from the branch selector
      * Navigates to the same route with the new branch
@@ -337,6 +375,7 @@ export default {
       linkCheckProgress,
       runLinkCheck,
       ghPageUrl,
+      waitingMessage,
       getStatusClass,
       getStatusIcon,
       getStatusText,
@@ -360,5 +399,10 @@ export default {
 .spinner-border-sm {
   width: 1rem;
   height: 1rem;
+}
+
+.waiting-message {
+  min-height: 1.5em;
+  transition: opacity 0.3s ease;
 }
 </style>
