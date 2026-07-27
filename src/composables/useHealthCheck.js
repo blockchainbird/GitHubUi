@@ -231,10 +231,28 @@ export function useHealthCheck(props) {
       
       // Run health checks using the spec-up-t-healthcheck package
       console.log('Running health checks...')
+      const requestedChecks = ['package-json', 'spec-files', 'specs-json', 'gitignore', 'spec-directory-and-files', 'external-specs-urls', 'markdown-tables', 'heading-hierarchy', 'term-references']
       const healthCheckResults = await runHealthChecks(provider, {
-        checks: ['package-json', 'spec-files', 'specs-json', 'gitignore', 'spec-directory-and-files', 'external-specs-urls', 'markdown-tables', 'heading-hierarchy', 'term-references']
+        checks: requestedChecks
       })
       console.log('Health check results:', healthCheckResults)
+
+      // Detect silently skipped checks by count only.
+      // Do NOT compare result.check to requested IDs: older checks store a
+      // human-readable CHECK_NAME (e.g. "package.json") while newer ones use
+      // CHECK_ID (e.g. "term-references"), so name/id mismatch is expected.
+      const returnedCount = healthCheckResults?.results?.length
+        ?? healthCheckResults?.summary?.total
+        ?? 0
+      if (returnedCount < requestedChecks.length) {
+        console.warn(
+          `Expected ${requestedChecks.length} health checks but got ${returnedCount}. ` +
+          'Some requested check IDs may be missing from the installed spec-up-t-healthcheck package.'
+        )
+        error.value =
+          `Expected ${requestedChecks.length} health checks but only ${returnedCount} ran. ` +
+          'Update spec-up-t-healthcheck and rebuild/redeploy the app.'
+      }
 
       // Convert results to UI format
       results.value = convertHealthCheckResults(healthCheckResults)
