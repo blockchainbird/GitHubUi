@@ -334,6 +334,8 @@ export default {
     onMounted(() => {
       // Add this repository to visited history
       addToVisitedRepos(props.owner, props.repo, props.branch, defaultBranch.value)
+      // Start health check automatically when the URL is loaded
+      runHealthCheck()
     })
 
     onUnmounted(() => {
@@ -351,14 +353,15 @@ export default {
     }
 
     /**
-     * Watch for branch changes and reload data
+     * Watch for branch changes and re-run health check
      */
     watch(() => props.branch, (newBranch, oldBranch) => {
       if (newBranch && oldBranch && newBranch !== oldBranch) {
-        console.log('Branch changed from', oldBranch, 'to', newBranch, '- health check needs to be rerun')
-        // Clear results when branch changes
+        console.log('Branch changed from', oldBranch, 'to', newBranch, '- re-running health check')
         results.value = []
         timestamp.value = null
+        linkCheckResults.value = null
+        runHealthCheck()
       }
     })
 

@@ -19,10 +19,24 @@ describe('HealthCheck Component', () => {
     timestamp: ref(''),
     showPassing: ref(true),
     filteredResults: ref([]),
-    runHealthCheck: vi.fn()
+    runHealthCheck: vi.fn(),
+    linkCheckResults: ref(null),
+    isCheckingLinks: ref(false),
+    linkCheckProgress: ref(''),
+    runLinkCheck: vi.fn()
   }
 
   beforeEach(() => {
+    vi.clearAllMocks()
+    mockHealthCheck.isRunning.value = false
+    mockHealthCheck.error.value = ''
+    mockHealthCheck.results.value = []
+    mockHealthCheck.timestamp.value = ''
+    mockHealthCheck.showPassing.value = true
+    mockHealthCheck.filteredResults.value = []
+    mockHealthCheck.linkCheckResults.value = null
+    mockHealthCheck.isCheckingLinks.value = false
+    mockHealthCheck.linkCheckProgress.value = ''
     vi.mocked(useHealthCheck).mockReturnValue(mockHealthCheck)
   })
 
@@ -89,6 +103,25 @@ describe('HealthCheck Component', () => {
     expect(wrapper.find('.alert-danger').text()).toContain('Test error message')
   })
 
+  it('should start health check automatically on mount', () => {
+    mount(HealthCheck, {
+      props: {
+        owner: 'testowner',
+        repo: 'testrepo',
+        branch: 'main'
+      },
+      global: {
+        mocks: {
+          $router: {
+            push: vi.fn()
+          }
+        }
+      }
+    })
+
+    expect(mockHealthCheck.runHealthCheck).toHaveBeenCalledTimes(1)
+  })
+
   it('should call runHealthCheck when button is clicked', async () => {
     const wrapper = mount(HealthCheck, {
       props: {
@@ -105,8 +138,9 @@ describe('HealthCheck Component', () => {
       }
     })
 
+    // onMounted already started one run; click starts another
     await wrapper.find('button').trigger('click')
-    expect(mockHealthCheck.runHealthCheck).toHaveBeenCalled()
+    expect(mockHealthCheck.runHealthCheck).toHaveBeenCalledTimes(2)
   })
 
   it('should display results when available', async () => {
