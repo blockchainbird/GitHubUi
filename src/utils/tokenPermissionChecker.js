@@ -99,8 +99,13 @@ class TokenPermissionChecker {
         }
       })
 
-      // GitHub returns scopes in the X-OAuth-Scopes header
-      const scopesHeader = response.headers['x-oauth-scopes'] || ''
+      // GitHub returns scopes in the X-OAuth-Scopes header.
+      // Axios lowercases header names; also check common aliases.
+      const scopesHeader =
+        response.headers['x-oauth-scopes'] ||
+        response.headers['X-OAuth-Scopes'] ||
+        response.headers?.common?.['x-oauth-scopes'] ||
+        ''
       const scopes = scopesHeader
         .split(',')
         .map(s => s.trim())
@@ -215,6 +220,32 @@ class TokenPermissionChecker {
     try {
       // Fetch token scopes from GitHub
       const { scopes, user, rateLimit } = await this.fetchTokenScopes(token)
+
+      // Fine-grained tokens (and some CORS edge cases) return an empty
+      // X-OAuth-Scopes header even when the token is valid. A successful
+      // /user call already proved the token authenticates.
+      const isFineGrained = typeof token === 'string' && token.startsWith('github_pat_')
+      if (!scopes.length) {
+        return {
+          valid: true,
+          fullAccess: false,
+          scopes,
+          operations: {},
+          missingScopes: [],
+          warnings: [
+            isFineGrained
+              ? 'Fine-grained token detected: classic scope headers are unavailable. Access depends on the token repository permissions.'
+              : 'Could not read classic OAuth scopes from GitHub. Proceeding because authentication succeeded.'
+          ],
+          errors: [],
+          user: {
+            login: user.login,
+            id: user.id,
+            type: user.type
+          },
+          rateLimit
+        }
+      }
 
       // Check each operation type
       const operations = {

@@ -15,6 +15,7 @@ import SecurityDashboard from './components/SecurityDashboard.vue'
 import { autoEnhanceTooltips } from './directives/tooltip.js'
 import { secureTokenManager } from './utils/secureTokenManager.js'
 import { getPostLoginDestination } from './utils/authRedirect.js'
+import { isAuthenticationFailure } from './utils/authError.js'
 
 import * as bootstrap from 'bootstrap/dist/js/bootstrap.bundle.min.js'
 import 'bootstrap-icons/font/bootstrap-icons.css'
@@ -66,8 +67,8 @@ if (measurementId) {
 router.beforeEach((to, from, next) => {
   const publicPages = ['/login', '/color-demo', '/security'];
   const token = secureTokenManager.getToken();
-  const userData = secureTokenManager.getUserData();
-  const isAuthenticated = !!(userData && token);
+  // Token alone is enough for route access; user profile is restored separately
+  const isAuthenticated = !!token;
 
   // Already logged in — don't keep users on the login page
   if (to.path === '/login' && isAuthenticated) {
@@ -119,8 +120,10 @@ axios.interceptors.response.use(
       updateRateLimit(error.response.headers)
     }
 
-    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-      // Token is invalid or expired, clear it and redirect to login
+    // Only clear the session for real auth failures.
+    // Generic GitHub 403s (rate limit, SSO, missing resource access) must not
+    // log the user out — that was bouncing people back to /login after login.
+    if (isAuthenticationFailure(error)) {
       secureTokenManager.clearToken()
       
       // Also clear old localStorage entries for cleanup
@@ -130,7 +133,8 @@ axios.interceptors.response.use(
       // Log security event
       secureTokenManager.logSecurityEvent('token_expired_or_invalid', {
         status: error.response.status,
-        url: error.response.config?.url
+        url: error.response.config?.url,
+        message: error.response?.data?.message
       })
       
       // Store the current path as intended redirect before redirecting to login

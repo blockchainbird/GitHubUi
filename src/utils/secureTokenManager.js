@@ -45,16 +45,45 @@ class SecureTokenManager {
    * @param {string} key - Encryption key
    * @returns {string} Encrypted/decrypted text
    */
+  /**
+   * Encode a UTF-8 string to base64-safe binary string
+   */
+  utf8ToBinary(text) {
+    const bytes = new TextEncoder().encode(text)
+    let binary = ''
+    bytes.forEach((byte) => {
+      binary += String.fromCharCode(byte)
+    })
+    return binary
+  }
+
+  /**
+   * Decode a binary string produced by utf8ToBinary back to UTF-8 text
+   */
+  binaryToUtf8(binary) {
+    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0))
+    return new TextDecoder().decode(bytes)
+  }
+
+  /**
+   * Simple XOR encryption/decryption
+   * @param {string} text - Text to encrypt/decrypt
+   * @param {string} key - Encryption key
+   * @returns {string} Encrypted/decrypted text
+   */
   xorEncrypt(text, key) {
     if (!text || !key) return text
     
+    // UTF-8 safe: encode first so btoa never sees code points > 255
+    // (GitHub user profiles often contain non-Latin1 characters)
+    const utf8Text = this.utf8ToBinary(text)
     let result = ''
-    for (let i = 0; i < text.length; i++) {
+    for (let i = 0; i < utf8Text.length; i++) {
       result += String.fromCharCode(
-        text.charCodeAt(i) ^ key.charCodeAt(i % key.length)
+        utf8Text.charCodeAt(i) ^ key.charCodeAt(i % key.length)
       )
     }
-    return btoa(result) // Base64 encode the result
+    return btoa(result)
   }
 
   /**
@@ -67,14 +96,14 @@ class SecureTokenManager {
     if (!encryptedText || !key) return encryptedText
     
     try {
-      const decoded = atob(encryptedText) // Base64 decode
+      const decoded = atob(encryptedText)
       let result = ''
       for (let i = 0; i < decoded.length; i++) {
         result += String.fromCharCode(
           decoded.charCodeAt(i) ^ key.charCodeAt(i % key.length)
         )
       }
-      return result
+      return this.binaryToUtf8(result)
     } catch (error) {
       console.error('Token decryption failed:', error)
       return null
@@ -145,17 +174,28 @@ class SecureTokenManager {
 
       // Encrypt token
       const encryptedToken = this.xorEncrypt(token, this.encryptionKey)
-      
-      // Store in sessionStorage (more secure than localStorage)
-      sessionStorage.setItem(this.storageKey, encryptedToken)
-      
-      // Store user data if provided
+
+      let encryptedUserData = null
       if (userData) {
-        const encryptedUserData = this.xorEncrypt(JSON.stringify(userData), this.encryptionKey)
-        sessionStorage.setItem(this.userDataKey, encryptedUserData)
+        const safeUserData = {
+          login: userData.login,
+          id: userData.id,
+          avatar_url: userData.avatar_url,
+          name: userData.name,
+          html_url: userData.html_url,
+          tokenType: userData.tokenType,
+          loginTimestamp: userData.loginTimestamp,
+          permissions: userData.permissions
+        }
+        encryptedUserData = this.xorEncrypt(JSON.stringify(safeUserData), this.encryptionKey)
       }
 
-      // Log security event (without sensitive data)
+      // Write only after both payloads encrypt successfully (atomic-ish)
+      localStorage.setItem(this.storageKey, encryptedToken)
+      if (encryptedUserData) {
+        localStorage.setItem(this.userDataKey, encryptedUserData)
+      }
+
       this.logSecurityEvent('token_stored', {
         tokenType: validation.tokenType,
         timestamp: new Date().toISOString()
@@ -164,6 +204,7 @@ class SecureTokenManager {
       return true
     } catch (error) {
       console.error('Failed to store token securely:', error)
+      this.clearToken()
       this.logSecurityEvent('token_store_failed', { error: error.message })
       return false
     }
@@ -175,7 +216,7 @@ class SecureTokenManager {
    */
   getToken() {
     try {
-      const encryptedToken = sessionStorage.getItem(this.storageKey)
+      const encryptedToken = localStorage.getItem(this.storageKey)
       if (!encryptedToken) {
         return null
       }
@@ -203,7 +244,7 @@ class SecureTokenManager {
    */
   getUserData() {
     try {
-      const encryptedUserData = sessionStorage.getItem(this.userDataKey)
+      const encryptedUserData = localStorage.getItem(this.userDataKey)
       if (!encryptedUserData) {
         return null
       }
@@ -222,6 +263,9 @@ class SecureTokenManager {
    */
   clearToken() {
     try {
+      localStorage.removeItem(this.storageKey)
+      localStorage.removeItem(this.userDataKey)
+      // Also clear legacy sessionStorage entries from before this change
       sessionStorage.removeItem(this.storageKey)
       sessionStorage.removeItem(this.userDataKey)
       
@@ -238,7 +282,7 @@ class SecureTokenManager {
    * @returns {boolean} True if token exists
    */
   hasToken() {
-    return sessionStorage.getItem(this.storageKey) !== null
+    return localStorage.getItem(this.storageKey) !== null
   }
 
   /**
@@ -247,6 +291,16 @@ class SecureTokenManager {
    */
   migrateFromLocalStorage() {
     try {
+      // Migrate from sessionStorage (old default) to localStorage (new default)
+      const sessionToken = sessionStorage.getItem(this.storageKey)
+      if (sessionToken && !localStorage.getItem(this.storageKey)) {
+        localStorage.setItem(this.storageKey, sessionToken)
+        const sessionUser = sessionStorage.getItem(this.userDataKey)
+        if (sessionUser) localStorage.setItem(this.userDataKey, sessionUser)
+        sessionStorage.removeItem(this.storageKey)
+        sessionStorage.removeItem(this.userDataKey)
+      }
+
       // Check if there's an old token in localStorage
       const oldToken = localStorage.getItem('github_token')
       const oldUserData = localStorage.getItem('github_user')
@@ -300,7 +354,7 @@ class SecureTokenManager {
     }
 
     // Store in sessionStorage for security monitoring
-    const securityLog = JSON.parse(sessionStorage.getItem('security_log') || '[]')
+    const securityLog = JSON.parse(localStorage.getItem('security_log') || '[]')
     securityLog.push(logEntry)
     
     // Keep only last 50 entries to prevent storage bloat
@@ -308,7 +362,7 @@ class SecureTokenManager {
       securityLog.splice(0, securityLog.length - 50)
     }
     
-    sessionStorage.setItem('security_log', JSON.stringify(securityLog))
+    localStorage.setItem('security_log', JSON.stringify(securityLog))
     
     // Also log to console in development
     if (import.meta.env.DEV) {
@@ -322,7 +376,7 @@ class SecureTokenManager {
    */
   getSecurityLog() {
     try {
-      return JSON.parse(sessionStorage.getItem('security_log') || '[]')
+      return JSON.parse(localStorage.getItem('security_log') || '[]')
     } catch (error) {
       console.error('Failed to retrieve security log:', error)
       return []
@@ -333,7 +387,7 @@ class SecureTokenManager {
    * Clear security log
    */
   clearSecurityLog() {
-    sessionStorage.removeItem('security_log')
+    localStorage.removeItem('security_log')
   }
 }
 

@@ -7,6 +7,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { secureTokenManager } from '../utils/secureTokenManager.js'
+import { isAuthenticationFailure } from '../utils/authError.js'
 import { runHealthChecks } from 'spec-up-t-healthcheck/web'
 import { formatResultDetails } from 'spec-up-t-healthcheck/lib/formatters/result-details-formatter.js'
 import { checkPublishedPage } from '../utils/webLinkChecker.js'
@@ -131,13 +132,17 @@ export function useHealthCheck(props) {
 
   // Helper functions
   const checkAuthAndRedirect = (error) => {
-    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-      localStorage.removeItem('github_token')
-      localStorage.removeItem('github_user')
-      router.push('/login')
-      return true
+    if (!isAuthenticationFailure(error)) {
+      return false
     }
-    return false
+    secureTokenManager.clearToken()
+    localStorage.removeItem('github_token')
+    localStorage.removeItem('github_user')
+    if (router.currentRoute.value.path !== '/login') {
+      localStorage.setItem('intended_redirect', router.currentRoute.value.fullPath)
+      router.push('/login')
+    }
+    return true
   }
 
   // Computed properties

@@ -110,7 +110,7 @@ export default {
     }
 
     onMounted(() => {
-      if (secureTokenManager.getToken() && secureTokenManager.getUserData()) {
+      if (secureTokenManager.getToken()) {
         redirectAfterLogin(router)
       }
     })
@@ -160,66 +160,51 @@ export default {
           missingScopes: permissions.missingScopes
         })
 
-        // Check if token has ALL required scopes (repo, workflow)
+        // Do not hard-block login on scope detection.
+        // Fine-grained tokens often return an empty X-OAuth-Scopes header even when
+        // they work, which previously left users stuck on /login forever.
+        let permissionWarning = ''
         if (!permissions.valid) {
-          console.error('❌ Token has insufficient permissions:', permissions)
-
-          // Build detailed error message
-          const missingScopes = permissions.missingScopes.join(', ')
-          error.value = `Token has insufficient permissions. 
-
-REQUIRED SCOPES: Personal Access Token (classic) must have:
-✅ "repo" scope
-✅ "workflow" scope
-
-Your token is missing: ${missingScopes}
-
-Please create a new token with all required scopes checked.`
-
-          // Log the recommendations
-          const recommendations = tokenPermissionChecker.generateRecommendations(permissions)
-          recommendations.forEach(rec => console.warn(rec))
-
-          // Track permission failure
-          trackEvent('login_permission_error', {
-            missing_scopes: missingScopes,
-            user_id: response.data.id
-          })
-
-          loading.value = false
-          return
+          const missingScopes = (permissions.missingScopes || []).join(', ') || 'repo, workflow'
+          permissionWarning =
+            `Warning: could not confirm classic token scopes (${missingScopes}). ` +
+            'Login will continue; some write/Actions features may fail if permissions are missing.'
+          console.warn('❌ Token scope check incomplete:', permissions)
+        } else {
+          console.log('✅ Token has all required permissions')
         }
-
-        console.log('✅ Token has all required permissions')
 
         const userData = {
           ...response.data,
           token: token.value.trim(),
           tokenType: validation.tokenType,
           loginTimestamp: new Date().toISOString(),
-          permissions: permissions.scopes // Store scopes for later reference
+          permissions: permissions.scopes
         }
 
-        emit('login', userData)
-
-        if (!secureTokenManager.getToken()) {
+        // Store here — do not rely on App receiving the emit via router-view
+        if (!secureTokenManager.storeToken(userData.token, userData)) {
           error.value = 'Failed to store authentication token securely. Please try again.'
           return
         }
 
-        // Play success sound
+        emit('login', userData)
+
         playSuccessSound()
+        successMessage.value = permissionWarning
+          ? `✅ Logged in as ${response.data.login}. ${permissionWarning}`
+          : `✅ Successfully logged in as ${response.data.login}!`
 
-        // Show temporary success message
-        successMessage.value = `✅ Successfully logged in as ${response.data.login}!`
-
-        // Track successful login with token type
         trackLogin('github')
         trackEvent('secure_login_success', {
           token_type: validation.tokenType,
           user_id: response.data.id,
-          has_required_permissions: true
+          has_required_permissions: !!permissions.valid,
+          scope_warning: !permissions.valid
         })
+
+        // Leave /login immediately for the original deep-link (or /home)
+        await redirectAfterLogin(router)
 
       } catch (err) {
         console.error('Login error:', err)

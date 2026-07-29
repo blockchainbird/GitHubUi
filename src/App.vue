@@ -4,7 +4,15 @@
       @toggle-file-explorer="toggleFileExplorer" class="flex-shrink-0" />
     <main
       :class="isSplitViewActive ? 'container-fluid mt-3 flex-grow-1 d-flex flex-column' : 'container mt-3 flex-grow-1'">
-      <router-view @login="handleLogin" @logout="handleLogout"></router-view>
+      <!-- Explicit slot: Vue 3 does not reliably forward @login/@logout from router-view -->
+      <router-view v-slot="{ Component }">
+        <component
+          :is="Component"
+          v-if="Component"
+          @login="handleLogin"
+          @logout="handleLogout"
+        />
+      </router-view>
     </main>
     <BackToTop />
     <Notepad />
@@ -126,23 +134,21 @@ export default {
       isAuthenticated.value = true
       user.value = userData
       
-      // Use secure token manager instead of localStorage
-      if (!secureTokenManager.storeToken(userData.token, userData)) {
-        console.error('Failed to store token securely')
-        isAuthenticated.value = false
-        user.value = {}
-        alert('Warning: Failed to store authentication token securely. Please try logging in again.')
-        return false
+      // Token may already be stored by LoginPage; keep this for other callers
+      if (!secureTokenManager.getToken()) {
+        if (!secureTokenManager.storeToken(userData.token, userData)) {
+          console.error('Failed to store token securely')
+          isAuthenticated.value = false
+          user.value = {}
+          alert('Warning: Failed to store authentication token securely. Please try logging in again.')
+          return false
+        }
       }
       
       console.log('App: Authentication state after login:', {
         isAuthenticated: isAuthenticated.value,
         user: user.value
       });
-
-      if (router.currentRoute.value.path === '/login') {
-        redirectAfterLogin(router)
-      }
 
       return true
     }
@@ -178,6 +184,10 @@ export default {
       if (token && userData) {
         try {
           handleLogin({ ...userData, token })
+          // Router guard usually leaves /login when a session exists; keep a backup.
+          if (router.currentRoute.value.path === '/login') {
+            redirectAfterLogin(router)
+          }
         } catch (error) {
           console.error('Failed to restore authentication from secure storage:', error)
           secureTokenManager.clearToken()
