@@ -44,6 +44,7 @@ import Notepad from './components/Notepad.vue'
 import OffcanvasFileExplorer from './components/OffcanvasFileExplorer.vue'
 import OffcanvasExternalRefsFlowchart from './components/OffcanvasExternalRefsFlowchart.vue'
 import { secureTokenManager } from './utils/secureTokenManager.js'
+import { redirectAfterLogin } from './utils/authRedirect.js'
 
 export default {
   name: 'App',
@@ -128,15 +129,22 @@ export default {
       // Use secure token manager instead of localStorage
       if (!secureTokenManager.storeToken(userData.token, userData)) {
         console.error('Failed to store token securely')
-        // Fallback to show error to user
+        isAuthenticated.value = false
+        user.value = {}
         alert('Warning: Failed to store authentication token securely. Please try logging in again.')
-        return
+        return false
       }
       
       console.log('App: Authentication state after login:', {
         isAuthenticated: isAuthenticated.value,
         user: user.value
       });
+
+      if (router.currentRoute.value.path === '/login') {
+        redirectAfterLogin(router)
+      }
+
+      return true
     }
 
     const handleLogout = () => {
@@ -170,16 +178,6 @@ export default {
       if (token && userData) {
         try {
           handleLogin({ ...userData, token })
-          if (router.currentRoute.value.path === '/login') {
-            // Check if there's an intended redirect URL
-            const intendedRedirect = localStorage.getItem('intended_redirect')
-            if (intendedRedirect) {
-              localStorage.removeItem('intended_redirect')
-              router.push(intendedRedirect)
-            } else {
-              router.push('/home')
-            }
-          }
         } catch (error) {
           console.error('Failed to restore authentication from secure storage:', error)
           secureTokenManager.clearToken()

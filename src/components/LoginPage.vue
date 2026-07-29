@@ -61,13 +61,14 @@
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { useGoogleAnalytics } from '../composables/useGoogleAnalytics.js'
 import { useSoundSystem } from '../composables/useSoundSystem.js'
 import { secureTokenManager } from '../utils/secureTokenManager.js'
 import { tokenPermissionChecker } from '../utils/tokenPermissionChecker.js'
+import { redirectAfterLogin } from '../utils/authRedirect.js'
 
 export default {
   name: 'LoginPage',
@@ -107,6 +108,12 @@ export default {
     const openTokenHelp = () => {
       window.open('token-instructions.html', 'token_help', 'width=900,height=1000,resizable=yes,scrollbars=yes')
     }
+
+    onMounted(() => {
+      if (secureTokenManager.getToken() && secureTokenManager.getUserData()) {
+        redirectAfterLogin(router)
+      }
+    })
 
     const handleLogin = async () => {
       if (!token.value.trim()) {
@@ -195,6 +202,11 @@ Please create a new token with all required scopes checked.`
 
         emit('login', userData)
 
+        if (!secureTokenManager.getToken()) {
+          error.value = 'Failed to store authentication token securely. Please try again.'
+          return
+        }
+
         // Play success sound
         playSuccessSound()
 
@@ -208,18 +220,6 @@ Please create a new token with all required scopes checked.`
           user_id: response.data.id,
           has_required_permissions: true
         })
-
-        // Redirect after a short delay to allow user to see the success message
-        setTimeout(() => {
-          // Check if there's an intended redirect URL
-          const intendedRedirect = localStorage.getItem('intended_redirect')
-          if (intendedRedirect) {
-            localStorage.removeItem('intended_redirect')
-            router.push(intendedRedirect)
-          } else {
-            router.push('/home')
-          }
-        }, 1500)
 
       } catch (err) {
         console.error('Login error:', err)

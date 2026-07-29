@@ -14,6 +14,7 @@ import GitHubActions from './components/GitHubActions.vue'
 import SecurityDashboard from './components/SecurityDashboard.vue'
 import { autoEnhanceTooltips } from './directives/tooltip.js'
 import { secureTokenManager } from './utils/secureTokenManager.js'
+import { getPostLoginDestination } from './utils/authRedirect.js'
 
 import * as bootstrap from 'bootstrap/dist/js/bootstrap.bundle.min.js'
 import 'bootstrap-icons/font/bootstrap-icons.css'
@@ -64,22 +65,28 @@ if (measurementId) {
 // Global navigation guard to check authentication
 router.beforeEach((to, from, next) => {
   const publicPages = ['/login', '/color-demo', '/security'];
-  const authRequired = !publicPages.includes(to.path);
-  
-  // Use secure token manager instead of localStorage
   const token = secureTokenManager.getToken();
   const userData = secureTokenManager.getUserData();
+  const isAuthenticated = !!(userData && token);
 
-  // Allow authenticated users to access all routes
-  if (authRequired && (!userData || !token)) {
+  // Already logged in — don't keep users on the login page
+  if (to.path === '/login' && isAuthenticated) {
+    next(getPostLoginDestination());
+    return;
+  }
+
+  const authRequired = !publicPages.includes(to.path);
+
+  if (authRequired && !isAuthenticated) {
     // Store the intended destination before redirecting to login
     if (to.path !== '/login') {
       localStorage.setItem('intended_redirect', to.fullPath);
     }
     next('/login');
-  } else {
-    next();
+    return;
   }
+
+  next();
 });
 
 // Track page views after navigation
