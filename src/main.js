@@ -11,6 +11,9 @@ import AdminScreen from './components/AdminScreen.vue'
 import CreateSpecUpProject from './components/CreateSpecUpProject.vue'
 import Settings from './components/Settings.vue'
 import GitHubActions from './components/GitHubActions.vue'
+import ViewMenu from './components/ViewMenu.vue'
+import ConfigMenu from './components/ConfigMenu.vue'
+import HelpMenu from './components/HelpMenu.vue'
 import SecurityDashboard from './components/SecurityDashboard.vue'
 import { autoEnhanceTooltips } from './directives/tooltip.js'
 import { secureTokenManager } from './utils/secureTokenManager.js'
@@ -42,6 +45,9 @@ const routes = [
   // Read-only and works against public repositories without a token
   { path: '/health-check/:owner/:repo/:branch', component: HealthCheck, props: true, meta: { public: true } },
   { path: '/actions/:owner/:repo/:branch', component: GitHubActions, props: true },
+  { path: '/view/:owner/:repo/:branch', component: ViewMenu, props: true },
+  { path: '/config/:owner/:repo/:branch', component: ConfigMenu, props: true },
+  { path: '/help', component: HelpMenu, meta: { public: true } },
   { path: '/spec/:owner/:repo/:branch', component: () => import('./components/SpecViewer.vue'), props: true },
   { 
     path: '/terms-preview/:owner/:repo/:branch', 

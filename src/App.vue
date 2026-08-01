@@ -107,12 +107,18 @@ export default {
         title = `Health Check - ${repo} - Spec-Up-T Editor`
       } else if (routePath.includes('/actions/') && owner && repo) {
         title = `Actions - ${repo} - Spec-Up-T Editor`
+      } else if (routePath.includes('/view/') && owner && repo) {
+        title = `View - ${repo} - Spec-Up-T Editor`
+      } else if (routePath.includes('/config/') && owner && repo) {
+        title = `Config - ${repo} - Spec-Up-T Editor`
       } else if (routePath.includes('/settings/') && owner && repo) {
         title = `Settings - ${repo} - Spec-Up-T Editor`
       } else if (routePath.includes('/external-specs/') && owner && repo) {
         title = `External Specs - ${repo} - Spec-Up-T Editor`
       } else if (routePath.includes('/admin/') && owner && repo) {
         title = `Admin - ${repo} - Spec-Up-T Editor`
+      } else if (routePath === '/help') {
+        title = `Help - Spec-Up-T Editor`
       } else if (routePath === '/home') {
         title = `Home - Spec-Up-T Editor`
       } else if (routePath === '/login') {
