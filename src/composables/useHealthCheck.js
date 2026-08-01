@@ -24,6 +24,8 @@ export function useHealthCheck(props) {
   const results = ref([])
   const timestamp = ref('')
   const showPassing = ref(false)
+  // True when the health check ran without a GitHub token (public repos only)
+  const isAnonymous = ref(!secureTokenManager.getToken())
   
   // Link checker state
   const linkCheckResults = ref(null)
@@ -31,10 +33,41 @@ export function useHealthCheck(props) {
   const linkCheckProgress = ref('')
 
   /**
+   * Decodes base64 content from the GitHub Contents API as UTF-8.
+   * Bare atob() mangles multi-byte characters, which matters for rendered
+   * index.html and terminology files containing non-ASCII text.
+   */
+  const decodeBase64Content = (content) => {
+    const binary = atob(String(content).replace(/\s/g, ''))
+    const bytes = Uint8Array.from(binary, char => char.codePointAt(0))
+    return new TextDecoder('utf-8').decode(bytes)
+  }
+
+  /**
    * Creates a GitHub provider that implements the spec-up-t-healthcheck provider interface
    * This allows the health check system to work with repositories hosted on GitHub
+   *
+   * The health check is read-only, so a token is optional: public repositories are
+   * checked anonymously. Anonymous GitHub API access is capped at 60 requests per
+   * hour per IP, so without a token file reads go through raw.githubusercontent.com,
+   * which is not part of that budget. Directory listings have no raw equivalent and
+   * always use the Contents API.
    */
   const createGitHubProvider = (owner, repo, branch) => {
+    const contentsUrl = (path) =>
+      'https://api.github.com/repos/' + owner + '/' + repo + '/contents/' + path + '?ref=' + branch;
+    const rawUrl = (path) =>
+      'https://raw.githubusercontent.com/' + owner + '/' + repo + '/' + branch + '/' + path;
+
+    const apiHeaders = () => {
+      const token = secureTokenManager.getToken();
+      const headers = { 'Accept': 'application/vnd.github.v3+json' };
+      if (token) {
+        headers['Authorization'] = 'token ' + token;
+      }
+      return headers;
+    };
+
     const provider = {
       type: 'github',
       repoPath: owner + '/' + repo + '/' + branch,
@@ -44,15 +77,21 @@ export function useHealthCheck(props) {
       },
 
       async readFile(filePath) {
+        if (!secureTokenManager.getToken()) {
+          try {
+            // transformResponse keeps JSON files as raw text, which the checks parse themselves
+            const response = await axios.get(rawUrl(filePath), {
+              transformResponse: [(data) => data]
+            });
+            return response.data;
+          } catch {
+            throw new Error('File not found: ' + filePath);
+          }
+        }
+
         try {
-          const url = 'https://api.github.com/repos/' + owner + '/' + repo + '/contents/' + filePath + '?ref=' + branch;
-          const response = await axios.get(url, {
-            headers: {
-              'Authorization': 'token ' + secureTokenManager.getToken(),
-              'Accept': 'application/vnd.github.v3+json'
-            }
-          });
-          return atob(response.data.content);
+          const response = await axios.get(contentsUrl(filePath), { headers: apiHeaders() });
+          return decodeBase64Content(response.data.content);
         } catch (error) {
           if (checkAuthAndRedirect(error)) {
             throw new Error('Authentication required - redirecting to login');
@@ -62,14 +101,17 @@ export function useHealthCheck(props) {
       },
 
       async fileExists(filePath) {
+        if (!secureTokenManager.getToken()) {
+          try {
+            await axios.head(rawUrl(filePath));
+            return true;
+          } catch {
+            return false;
+          }
+        }
+
         try {
-          const url = 'https://api.github.com/repos/' + owner + '/' + repo + '/contents/' + filePath + '?ref=' + branch;
-          await axios.get(url, {
-            headers: {
-              'Authorization': 'token ' + secureTokenManager.getToken(),
-              'Accept': 'application/vnd.github.v3+json'
-            }
-          });
+          await axios.get(contentsUrl(filePath), { headers: apiHeaders() });
           return true;
         } catch (error) {
           if (checkAuthAndRedirect(error)) {
@@ -81,13 +123,7 @@ export function useHealthCheck(props) {
 
       async directoryExists(dirPath) {
         try {
-          const url = 'https://api.github.com/repos/' + owner + '/' + repo + '/contents/' + dirPath + '?ref=' + branch;
-          const response = await axios.get(url, {
-            headers: {
-              'Authorization': 'token ' + secureTokenManager.getToken(),
-              'Accept': 'application/vnd.github.v3+json'
-            }
-          });
+          const response = await axios.get(contentsUrl(dirPath), { headers: apiHeaders() });
           // Check if it's an array (directory) or if the type indicates a directory
           return Array.isArray(response.data) || (response.data && response.data.type === 'dir');
         } catch (error) {
@@ -100,13 +136,7 @@ export function useHealthCheck(props) {
 
       async listFiles(dirPath = '') {
         try {
-          const url = 'https://api.github.com/repos/' + owner + '/' + repo + '/contents/' + dirPath + '?ref=' + branch;
-          const response = await axios.get(url, {
-            headers: {
-              'Authorization': 'token ' + secureTokenManager.getToken(),
-              'Accept': 'application/vnd.github.v3+json'
-            }
-          });
+          const response = await axios.get(contentsUrl(dirPath), { headers: apiHeaders() });
           
           if (!Array.isArray(response.data)) {
             return [];
@@ -132,6 +162,11 @@ export function useHealthCheck(props) {
 
   // Helper functions
   const checkAuthAndRedirect = (error) => {
+    // Anonymous health checks are supported, so there is no session to clear and
+    // no reason to bounce to /login when the user never signed in.
+    if (!secureTokenManager.getToken()) {
+      return false
+    }
     if (!isAuthenticationFailure(error)) {
       return false
     }
@@ -221,6 +256,7 @@ export function useHealthCheck(props) {
     isRunning.value = true
     error.value = ''
     results.value = []
+    isAnonymous.value = !secureTokenManager.getToken()
 
     try {
       console.log('Starting health check for:', props.owner, props.repo, props.branch)
@@ -233,6 +269,14 @@ export function useHealthCheck(props) {
       console.log('Testing provider.fileExists...')
       const packageExists = await provider.fileExists('package.json')
       console.log('package.json exists:', packageExists)
+
+      // Anonymous requests cannot see private repositories, so an unreachable
+      // package.json is far more likely to be a permissions issue than a real finding.
+      if (!packageExists && isAnonymous.value) {
+        error.value =
+          `Could not read ${props.owner}/${props.repo} without signing in. ` +
+          'If this is a private repository, sign in with a GitHub token and run the check again.'
+      }
       
       // Run health checks using the spec-up-t-healthcheck package
       console.log('Running health checks...')
@@ -337,6 +381,7 @@ export function useHealthCheck(props) {
     results,
     timestamp,
     showPassing,
+    isAnonymous,
     filteredResults,
     runHealthCheck,
     // Link checker

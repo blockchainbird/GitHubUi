@@ -42,6 +42,15 @@
           {{ error }}
         </div>
 
+        <div v-if="isAnonymous" class="alert alert-info d-flex align-items-start">
+          <i class="bi bi-info-circle-fill me-2 mt-1"></i>
+          <div>
+            Checking without signing in. This works for public repositories.
+            <button type="button" class="btn btn-link p-0 align-baseline" @click="goToLogin">Sign in</button>
+            to check private repositories or to raise GitHub's rate limit.
+          </div>
+        </div>
+
         <div v-if="isCheckingLinks" class="card mb-4">
           <div class="card-body text-center">
             <div class="spinner-border text-info" role="status">
@@ -229,6 +238,7 @@ export default {
       results,
       timestamp,
       showPassing,
+      isAnonymous,
       filteredResults,
       runHealthCheck,
       linkCheckResults,
@@ -236,6 +246,15 @@ export default {
       linkCheckProgress,
       runLinkCheck
     } = useHealthCheck(props)
+
+    /**
+     * Sends the user to the login page, remembering this page as the destination
+     * so they land back on the health check after signing in.
+     */
+    const goToLogin = () => {
+      localStorage.setItem('intended_redirect', router.currentRoute.value.fullPath)
+      router.push('/login')
+    }
 
     const waitingMessages = [
       'Running health checks. This can take up to two minutes…',
@@ -371,6 +390,8 @@ export default {
       results,
       showPassing,
       timestamp,
+      isAnonymous,
+      goToLogin,
       filteredResults,
       runHealthCheck,
       linkCheckResults,

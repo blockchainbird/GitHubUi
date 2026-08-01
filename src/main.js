@@ -29,17 +29,18 @@ import googleAnalytics from './utils/googleAnalytics.js'
 
 const routes = [
   { path: '/', redirect: '/login' },
-  { path: '/login', component: LoginPage },
+  { path: '/login', component: LoginPage, meta: { public: true } },
   { path: '/home', component: HomePage },
   { path: '/create-project', component: CreateSpecUpProject },
-  { path: '/security', component: SecurityDashboard },
+  { path: '/security', component: SecurityDashboard, meta: { public: true } },
   { path: '/settings/:owner/:repo/:branch', component: Settings, props: true },
 
   { path: '/admin/:owner/:repo/:branch', component: AdminScreen, props: true },
   { path: '/files/:owner/:repo/:branch', component: FileExplorer, props: true },
   { path: '/editor/:owner/:repo/:branch/:path+', component: FileEditor, props: true },
   { path: '/external-specs/:owner/:repo/:branch', component: ExternalSpecsManager, props: true },
-  { path: '/health-check/:owner/:repo/:branch', component: HealthCheck, props: true },
+  // Read-only and works against public repositories without a token
+  { path: '/health-check/:owner/:repo/:branch', component: HealthCheck, props: true, meta: { public: true } },
   { path: '/actions/:owner/:repo/:branch', component: GitHubActions, props: true },
   { path: '/spec/:owner/:repo/:branch', component: () => import('./components/SpecViewer.vue'), props: true },
   { 
@@ -65,7 +66,6 @@ if (measurementId) {
 
 // Global navigation guard to check authentication
 router.beforeEach((to, from, next) => {
-  const publicPages = ['/login', '/color-demo', '/security'];
   const token = secureTokenManager.getToken();
   // Token alone is enough for route access; user profile is restored separately
   const isAuthenticated = !!token;
@@ -76,7 +76,8 @@ router.beforeEach((to, from, next) => {
     return;
   }
 
-  const authRequired = !publicPages.includes(to.path);
+  // Routes opt out of the login requirement with meta.public
+  const authRequired = to.meta.public !== true;
 
   if (authRequired && !isAuthenticated) {
     // Store the intended destination before redirecting to login

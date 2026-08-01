@@ -9,12 +9,18 @@ export default defineConfig(({ mode }) => {
     plugins: [vue()],
     server: {
       port: 3000,
-      open: true
+      open: true,
+      // npm-linked packages live under node_modules, which Vite ignores by default.
+      // Watch the local healthcheck so edits apply without a stale prebundle.
+      watch: {
+        ignored: ['!**/node_modules/spec-up-t-healthcheck/**']
+      }
     },
-    // Optimize dependency handling for spec-up-t-healthcheck
+    // Do not prebundle the linked healthcheck — Vite's dep cache was serving an
+    // outdated term-references check after local edits. Axios stays optimized.
     optimizeDeps: {
-      include: ['spec-up-t-healthcheck/web', 'axios'],
-      exclude: ['linkinator'] // Exclude Node.js-only packages
+      include: ['axios'],
+      exclude: ['spec-up-t-healthcheck', 'spec-up-t-healthcheck/web', 'linkinator']
     },
     resolve: {
       dedupe: ['axios'], // Prevent duplicate axios instances between packages
