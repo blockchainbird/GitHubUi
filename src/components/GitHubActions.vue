@@ -6,7 +6,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
           <h2>
             <i class="bi bi-play-circle me-2"></i>
-            GitHub Actions
+            Actions
           </h2>
           <RepoInfo :owner="owner" :repo="repo" :branch="branch" />
         </div>

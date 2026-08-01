@@ -40,7 +40,7 @@
               :class="['nav-link', 'btn', 'btn-link', { active: isActiveRoute('/actions') }]"
               title="Run GitHub Actions">
               <i class="bi bi-play-circle"></i>
-              Render
+              Actions
             </button>
           </li>
 

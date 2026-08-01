@@ -6,8 +6,7 @@
           <div>
             <h2 class="mb-0">
               <i class="bi bi-folder"></i>
-              Files
-            </h2>
+              Explorer            </h2>
 
             <!-- <button @click="$router.push('/home')" class="btn btn-outline-secondary">
           <i class="bi bi-arrow-left"></i>
